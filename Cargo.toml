@@ -1,5 +1,5 @@
 [package]
-name = "gpio_driver"
+name = "tc37x-hal"
 version = "0.1.0"
 edition = "2021"
 
