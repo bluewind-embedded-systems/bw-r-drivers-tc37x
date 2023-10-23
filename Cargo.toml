@@ -1,0 +1,19 @@
+[package]
+name = "gpio_driver"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[dependencies]
+tc37x-pac = { git = "ssh://git@git.bwlocal.it/bw-rust/tc37x-pac.git", branch = "illd_version", features = [
+    "scu",
+    "src",
+    "cpu0",
+    "smu",
+] }
+
+[dependencies.embedded-hal]
+git = "https://github.com/rust-embedded/embedded-hal.git"
+rev = "v1.0.0-rc.1"
