@@ -3,13 +3,6 @@
 #![cfg_attr(target_arch = "tricore", no_main)]
 #![cfg_attr(target_arch = "tricore", no_std)]
 
-#[cfg_attr(target_arch = "tricore", panic_handler)]
-#[allow(unused)]
-fn panic(panic: &core::panic::PanicInfo<'_>) -> ! {
-    #[allow(clippy::empty_loop)]
-    loop {}
-}
-
 #[cfg(target_arch = "tricore")]
 tc37x_rt::entry!(main);
 

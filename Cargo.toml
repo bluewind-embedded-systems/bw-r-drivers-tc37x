@@ -37,3 +37,4 @@ features = [
 default = []
 defmt = ["dep:defmt", "dep:defmt-rtt"]
 rt = ["dep:tc37x-rt"]
+panic_handler = []
