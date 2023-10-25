@@ -93,3 +93,10 @@ impl Reporter for PrintEffectReporter {
         println!("load_modify_store 0x{:08X} val={}", ptr, val);
     }
 }
+
+pub fn redirect_to_print() {
+    use std::boxed::Box;
+    use tc37x_pac as pac;
+    let reporter = PrintEffectReporter::default();
+    pac::tracing::set_effect_reporter(Box::new(reporter.clone()));
+}

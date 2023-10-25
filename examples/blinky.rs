@@ -51,38 +51,27 @@ fn port_00_set_mode(index: usize, mode: u32) {
 
 fn main() -> ! {
     #[cfg(not(target_arch = "tricore"))]
-    setup_tracing();
+    tc37x_hal::tracing::redirect_to_print();
 
     // TODO Adapt this example taken from https://github.com/stm32-rs/stm32f4xx-hal
 
-    let pin_index = 5; // TODO Check pin index
-
-    // Initialization
-    // port.set_pin_mode_output(pin, OutputMode::PUSH_PULL, OutputIdx::GENERAL);
+    const PIN_INDEX: usize = 5;
     const OUTPUT_PUSH_PULL_GENERAL: u32 = 0x80;
-    port_00_set_mode(pin_index, OUTPUT_PUSH_PULL_GENERAL);
+    port_00_set_mode(PIN_INDEX, OUTPUT_PUSH_PULL_GENERAL);
 
     // TODO Refactor to something similar to this:
-    // let p = pac::Peripherals::take().unwrap();
-    // let gpioc = p.GPIOC.split();
-    // let mut led = gpioc.pc13.into_push_pull_output();
+    // TODO let p = pac::Peripherals::take().unwrap();
+    // TODO let gpioc = p.GPIOC.split();
+    // TODO let mut led = gpioc.pc13.into_push_pull_output();
 
     loop {
         for _ in 0..10_000 {
             // TODO led.set_high();
-            port_00_set_high(pin_index);
+            port_00_set_high(PIN_INDEX);
         }
         for _ in 0..10_000 {
             // TODO led.set_low();
-            port_00_set_low(pin_index);
+            port_00_set_low(PIN_INDEX);
         }
     }
-}
-
-#[cfg(not(target_arch = "tricore"))]
-fn setup_tracing() {
-    use tc37x_hal::tracing::PrintEffectReporter;
-
-    let reporter = PrintEffectReporter::default();
-    pac::tracing::set_effect_reporter(Box::new(reporter.clone()));
 }
