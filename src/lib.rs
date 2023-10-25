@@ -6,3 +6,5 @@ mod panic_handler;
 
 #[cfg(not(target_arch = "tricore"))]
 pub mod tracing;
+
+pub mod gpio;
