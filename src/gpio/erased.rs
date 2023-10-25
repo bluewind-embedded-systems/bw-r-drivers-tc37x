@@ -66,7 +66,7 @@ impl<MODE> ErasedPin<MODE> {
     }
 
     /// Convert type erased pin to `Pin` with fixed type
-    pub fn restore<const P: char, const N: u8>(self) -> Pin<P, N, MODE> {
+    pub fn restore<const P: usize, const N: u8>(self) -> Pin<P, N, MODE> {
         assert_eq!(self.port_id(), P as u8 - b'A');
         assert_eq!(self.pin_id(), N);
         Pin::new()

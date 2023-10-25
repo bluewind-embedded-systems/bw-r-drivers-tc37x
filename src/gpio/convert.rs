@@ -1,13 +1,13 @@
 use super::*;
 
-impl<const P: char, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
+impl<const P: usize, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
     /// Turns pin alternate configuration pin into open drain
     pub fn set_open_drain(self) -> Pin<P, N, Alternate<A, OpenDrain>> {
         self.into_mode()
     }
 }
 
-impl<const P: char, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
+impl<const P: usize, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
     /// Configures the pin to operate alternate mode
     pub fn into_alternate<const A: u8>(self) -> Pin<P, N, Alternate<A, PushPull>>
     where
@@ -165,7 +165,7 @@ impl<MODE: PinMode> ErasedPin<MODE> {
 }
 
 use super::PartiallyErasedPin;
-impl<const P: char, MODE: PinMode> PartiallyErasedPin<P, MODE> {
+impl<const P: usize, MODE: PinMode> PartiallyErasedPin<P, MODE> {
     #[inline(always)]
     pub(super) fn mode<M: PinMode>(&mut self) {
         let n = self.pin_id();
@@ -181,7 +181,7 @@ impl<const P: char, MODE: PinMode> PartiallyErasedPin<P, MODE> {
     }
 }
 
-impl<const P: char, const N: u8, MODE> Pin<P, N, MODE>
+impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE>
 where
     MODE: PinMode,
 {
@@ -275,11 +275,11 @@ where
 }
 
 /// Wrapper around a pin that transitions the pin to mode ORIG when dropped
-struct ResetMode<const P: char, const N: u8, CURRENT: PinMode, ORIG: PinMode> {
+struct ResetMode<const P: usize, const N: u8, CURRENT: PinMode, ORIG: PinMode> {
     pub pin: Pin<P, N, CURRENT>,
     _mode: PhantomData<ORIG>,
 }
-impl<const P: char, const N: u8, CURRENT: PinMode, ORIG: PinMode> ResetMode<P, N, CURRENT, ORIG> {
+impl<const P: usize, const N: u8, CURRENT: PinMode, ORIG: PinMode> ResetMode<P, N, CURRENT, ORIG> {
     fn new() -> Self {
         Self {
             pin: Pin::new(),
@@ -287,7 +287,7 @@ impl<const P: char, const N: u8, CURRENT: PinMode, ORIG: PinMode> ResetMode<P, N
         }
     }
 }
-impl<const P: char, const N: u8, CURRENT: PinMode, ORIG: PinMode> Drop
+impl<const P: usize, const N: u8, CURRENT: PinMode, ORIG: PinMode> Drop
     for ResetMode<P, N, CURRENT, ORIG>
 {
     fn drop(&mut self) {

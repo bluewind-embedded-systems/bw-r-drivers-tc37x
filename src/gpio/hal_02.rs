@@ -11,7 +11,7 @@ use embedded_hal::digital::v2::{
 
 // Implementations for `Pin`
 
-impl<const P: char, const N: u8, MODE> OutputPin for Pin<P, N, Output<MODE>> {
+impl<const P: usize, const N: u8, MODE> OutputPin for Pin<P, N, Output<MODE>> {
     type Error = Infallible;
 
     #[inline(always)]
@@ -27,7 +27,7 @@ impl<const P: char, const N: u8, MODE> OutputPin for Pin<P, N, Output<MODE>> {
     }
 }
 
-impl<const P: char, const N: u8, MODE> StatefulOutputPin for Pin<P, N, Output<MODE>> {
+impl<const P: usize, const N: u8, MODE> StatefulOutputPin for Pin<P, N, Output<MODE>> {
     #[inline(always)]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
         Ok(self.is_set_high())
@@ -39,7 +39,7 @@ impl<const P: char, const N: u8, MODE> StatefulOutputPin for Pin<P, N, Output<MO
     }
 }
 
-impl<const P: char, const N: u8, MODE> ToggleableOutputPin for Pin<P, N, Output<MODE>> {
+impl<const P: usize, const N: u8, MODE> ToggleableOutputPin for Pin<P, N, Output<MODE>> {
     type Error = Infallible;
 
     #[inline(always)]
@@ -49,7 +49,7 @@ impl<const P: char, const N: u8, MODE> ToggleableOutputPin for Pin<P, N, Output<
     }
 }
 
-impl<const P: char, const N: u8, MODE> InputPin for Pin<P, N, MODE>
+impl<const P: usize, const N: u8, MODE> InputPin for Pin<P, N, MODE>
 where
     MODE: marker::Readable,
 {
@@ -66,7 +66,7 @@ where
     }
 }
 
-impl<const P: char, const N: u8> IoPin<Self, Self> for Pin<P, N, Output<OpenDrain>> {
+impl<const P: usize, const N: u8> IoPin<Self, Self> for Pin<P, N, Output<OpenDrain>> {
     type Error = Infallible;
     fn into_input_pin(self) -> Result<Self, Self::Error> {
         Ok(self)
@@ -77,7 +77,7 @@ impl<const P: char, const N: u8> IoPin<Self, Self> for Pin<P, N, Output<OpenDrai
     }
 }
 
-impl<const P: char, const N: u8, Otype> IoPin<Pin<P, N, Input>, Self> for Pin<P, N, Output<Otype>>
+impl<const P: usize, const N: u8, Otype> IoPin<Pin<P, N, Input>, Self> for Pin<P, N, Output<Otype>>
 where
     Output<Otype>: PinMode,
 {
@@ -91,7 +91,7 @@ where
     }
 }
 
-impl<const P: char, const N: u8, Otype> IoPin<Self, Pin<P, N, Output<Otype>>> for Pin<P, N, Input>
+impl<const P: usize, const N: u8, Otype> IoPin<Self, Pin<P, N, Output<Otype>>> for Pin<P, N, Input>
 where
     Output<Otype>: PinMode,
 {
@@ -164,7 +164,7 @@ where
 
 // Implementations for `PartiallyErasedPin`
 
-impl<const P: char, MODE> OutputPin for PartiallyErasedPin<P, Output<MODE>> {
+impl<const P: usize, MODE> OutputPin for PartiallyErasedPin<P, Output<MODE>> {
     type Error = Infallible;
 
     #[inline(always)]
@@ -180,7 +180,7 @@ impl<const P: char, MODE> OutputPin for PartiallyErasedPin<P, Output<MODE>> {
     }
 }
 
-impl<const P: char, MODE> StatefulOutputPin for PartiallyErasedPin<P, Output<MODE>> {
+impl<const P: usize, MODE> StatefulOutputPin for PartiallyErasedPin<P, Output<MODE>> {
     #[inline(always)]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
         Ok(self.is_set_high())
@@ -192,7 +192,7 @@ impl<const P: char, MODE> StatefulOutputPin for PartiallyErasedPin<P, Output<MOD
     }
 }
 
-impl<const P: char, MODE> ToggleableOutputPin for PartiallyErasedPin<P, Output<MODE>> {
+impl<const P: usize, MODE> ToggleableOutputPin for PartiallyErasedPin<P, Output<MODE>> {
     type Error = Infallible;
 
     #[inline(always)]
@@ -202,7 +202,7 @@ impl<const P: char, MODE> ToggleableOutputPin for PartiallyErasedPin<P, Output<M
     }
 }
 
-impl<const P: char, MODE> InputPin for PartiallyErasedPin<P, MODE>
+impl<const P: usize, MODE> InputPin for PartiallyErasedPin<P, MODE>
 where
     MODE: marker::Readable,
 {
@@ -221,7 +221,7 @@ where
 
 // Implementations for `DynamicPin`
 
-impl<const P: char, const N: u8> OutputPin for DynamicPin<P, N> {
+impl<const P: usize, const N: u8> OutputPin for DynamicPin<P, N> {
     type Error = PinModeError;
     fn set_high(&mut self) -> Result<(), Self::Error> {
         self.set_high()
@@ -231,7 +231,7 @@ impl<const P: char, const N: u8> OutputPin for DynamicPin<P, N> {
     }
 }
 
-impl<const P: char, const N: u8> InputPin for DynamicPin<P, N> {
+impl<const P: usize, const N: u8> InputPin for DynamicPin<P, N> {
     type Error = PinModeError;
     fn is_high(&self) -> Result<bool, Self::Error> {
         self.is_high()

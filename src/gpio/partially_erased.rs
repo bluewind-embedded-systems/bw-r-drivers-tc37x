@@ -6,12 +6,12 @@ pub use PartiallyErasedPin as PEPin;
 ///
 /// - `MODE` is one of the pin modes (see [Modes](crate::gpio#modes) section).
 /// - `P` is port name: `A` for GPIOA, `B` for GPIOB, etc.
-pub struct PartiallyErasedPin<const P: char, MODE> {
+pub struct PartiallyErasedPin<const P: usize, MODE> {
     pub(crate) i: u8,
     _mode: PhantomData<MODE>,
 }
 
-impl<const P: char, MODE> PartiallyErasedPin<P, MODE> {
+impl<const P: usize, MODE> PartiallyErasedPin<P, MODE> {
     pub(crate) fn new(i: u8) -> Self {
         Self {
             i,
@@ -26,7 +26,7 @@ impl<const P: char, MODE> PartiallyErasedPin<P, MODE> {
     }
 }
 
-impl<const P: char, MODE> fmt::Debug for PartiallyErasedPin<P, MODE> {
+impl<const P: usize, MODE> fmt::Debug for PartiallyErasedPin<P, MODE> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_fmt(format_args!(
             "P{}({})<{}>",
@@ -38,7 +38,7 @@ impl<const P: char, MODE> fmt::Debug for PartiallyErasedPin<P, MODE> {
 }
 
 #[cfg(feature = "defmt")]
-impl<const P: char, MODE> defmt::Format for PartiallyErasedPin<P, MODE> {
+impl<const P: usize, MODE> defmt::Format for PartiallyErasedPin<P, MODE> {
     fn format(&self, f: defmt::Formatter) {
         defmt::write!(
             f,
@@ -50,7 +50,7 @@ impl<const P: char, MODE> defmt::Format for PartiallyErasedPin<P, MODE> {
     }
 }
 
-impl<const P: char, MODE> PinExt for PartiallyErasedPin<P, MODE> {
+impl<const P: usize, MODE> PinExt for PartiallyErasedPin<P, MODE> {
     type Mode = MODE;
 
     #[inline(always)]
@@ -63,7 +63,7 @@ impl<const P: char, MODE> PinExt for PartiallyErasedPin<P, MODE> {
     }
 }
 
-impl<const P: char, MODE> PartiallyErasedPin<P, Output<MODE>> {
+impl<const P: usize, MODE> PartiallyErasedPin<P, Output<MODE>> {
     /// Drives the pin high
     #[inline(always)]
     pub fn set_high(&mut self) {
@@ -129,7 +129,7 @@ impl<const P: char, MODE> PartiallyErasedPin<P, Output<MODE>> {
     }
 }
 
-impl<const P: char, MODE> PartiallyErasedPin<P, MODE>
+impl<const P: usize, MODE> PartiallyErasedPin<P, MODE>
 where
     MODE: marker::Readable,
 {
@@ -149,7 +149,7 @@ where
     }
 }
 
-impl<const P: char, MODE> From<PartiallyErasedPin<P, MODE>> for ErasedPin<MODE> {
+impl<const P: usize, MODE> From<PartiallyErasedPin<P, MODE>> for ErasedPin<MODE> {
     /// Partially erased pin-to-erased pin conversion using the [`From`] trait.
     ///
     /// Note that [`From`] is the reciprocal of [`Into`].

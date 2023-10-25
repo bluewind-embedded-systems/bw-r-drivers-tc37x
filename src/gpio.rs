@@ -241,18 +241,18 @@ af!(
 /// Generic pin type
 ///
 /// - `MODE` is one of the pin modes (see [Modes](crate::gpio#modes) section).
-/// - `P` is port name: `A` for GPIOA, `B` for GPIOB, etc.
+/// - `P` is port id
 /// - `N` is pin number: from `0` to `15`.
-pub struct Pin<const P: char, const N: u8, MODE = DefaultMode> {
+pub struct Pin<const P: usize, const N: u8, MODE = DefaultMode> {
     _mode: PhantomData<MODE>,
 }
-impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
+impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE> {
     const fn new() -> Self {
         Self { _mode: PhantomData }
     }
 }
 
-impl<const P: char, const N: u8, MODE> fmt::Debug for Pin<P, N, MODE> {
+impl<const P: usize, const N: u8, MODE> fmt::Debug for Pin<P, N, MODE> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_fmt(format_args!(
             "P{}{}<{}>",
@@ -264,13 +264,13 @@ impl<const P: char, const N: u8, MODE> fmt::Debug for Pin<P, N, MODE> {
 }
 
 #[cfg(feature = "defmt")]
-impl<const P: char, const N: u8, MODE> defmt::Format for Pin<P, N, MODE> {
+impl<const P: usize, const N: u8, MODE> defmt::Format for Pin<P, N, MODE> {
     fn format(&self, f: defmt::Formatter) {
         defmt::write!(f, "P{}{}<{}>", P, N, crate::stripped_type_name::<MODE>());
     }
 }
 
-impl<const P: char, const N: u8, MODE> PinExt for Pin<P, N, MODE> {
+impl<const P: usize, const N: u8, MODE> PinExt for Pin<P, N, MODE> {
     type Mode = MODE;
 
     #[inline(always)]
@@ -305,7 +305,7 @@ pub trait PinPull: Sized {
     }
 }
 
-impl<const P: char, const N: u8, MODE> PinSpeed for Pin<P, N, MODE>
+impl<const P: usize, const N: u8, MODE> PinSpeed for Pin<P, N, MODE>
 where
     MODE: marker::OutputSpeed,
 {
@@ -315,7 +315,7 @@ where
     }
 }
 
-impl<const P: char, const N: u8, MODE> Pin<P, N, MODE>
+impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE>
 where
     MODE: marker::OutputSpeed,
 {
@@ -338,7 +338,7 @@ where
     }
 }
 
-impl<const P: char, const N: u8, MODE> PinPull for Pin<P, N, MODE>
+impl<const P: usize, const N: u8, MODE> PinPull for Pin<P, N, MODE>
 where
     MODE: marker::Active,
 {
@@ -348,7 +348,7 @@ where
     }
 }
 
-impl<const P: char, const N: u8, MODE> Pin<P, N, MODE>
+impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE>
 where
     MODE: marker::Active,
 {
@@ -389,7 +389,7 @@ where
     }
 }
 
-impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
+impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE> {
     /// Erases the pin number from the type
     ///
     /// This is useful when you want to collect the pins into an array where you
@@ -407,7 +407,7 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     }
 }
 
-impl<const P: char, const N: u8, MODE> From<Pin<P, N, MODE>> for PartiallyErasedPin<P, MODE> {
+impl<const P: usize, const N: u8, MODE> From<Pin<P, N, MODE>> for PartiallyErasedPin<P, MODE> {
     /// Pin-to-partially erased pin conversion using the [`From`] trait.
     ///
     /// Note that [`From`] is the reciprocal of [`Into`].
@@ -416,7 +416,7 @@ impl<const P: char, const N: u8, MODE> From<Pin<P, N, MODE>> for PartiallyErased
     }
 }
 
-impl<const P: char, const N: u8, MODE> From<Pin<P, N, MODE>> for ErasedPin<MODE> {
+impl<const P: usize, const N: u8, MODE> From<Pin<P, N, MODE>> for ErasedPin<MODE> {
     /// Pin-to-erased pin conversion using the [`From`] trait.
     ///
     /// Note that [`From`] is the reciprocal of [`Into`].
@@ -425,7 +425,7 @@ impl<const P: char, const N: u8, MODE> From<Pin<P, N, MODE>> for ErasedPin<MODE>
     }
 }
 
-impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
+impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE> {
     /// Set the output of the pin regardless of its mode.
     /// Primarily used to set the output value of the pin
     /// before changing its mode to an output to avoid
@@ -463,7 +463,7 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     }
 }
 
-impl<const P: char, const N: u8, MODE> Pin<P, N, Output<MODE>> {
+impl<const P: usize, const N: u8, MODE> Pin<P, N, Output<MODE>> {
     /// Drives the pin high
     #[inline(always)]
     pub fn set_high(&mut self) {
@@ -526,7 +526,7 @@ pub trait ReadPin {
     fn is_low(&self) -> bool;
 }
 
-impl<const P: char, const N: u8, MODE> ReadPin for Pin<P, N, MODE>
+impl<const P: usize, const N: u8, MODE> ReadPin for Pin<P, N, MODE>
 where
     MODE: marker::Readable,
 {
@@ -536,7 +536,7 @@ where
     }
 }
 
-impl<const P: char, const N: u8, MODE> Pin<P, N, MODE>
+impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE>
 where
     MODE: marker::Readable,
 {
@@ -616,8 +616,8 @@ use gpio;
 // TODO (alepez) Was crate::pac::gpioa::RegisterBlock in stm32f4xx-hal
 type RegisterBlock = crate::pac::port_00::Port_00;
 
-struct Gpio<const P: char>;
-impl<const P: char> Gpio<P> {
+struct Gpio<const P: usize>;
+impl<const P: usize> Gpio<P> {
     const fn ptr() -> *const RegisterBlock {
         // TODO (alepez)
         todo!()
