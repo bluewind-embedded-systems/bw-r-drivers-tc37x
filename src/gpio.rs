@@ -600,32 +600,33 @@ macro_rules! gpio {
 }
 use gpio;
 
-mod f4;
-pub use f4::*;
-
-struct Gpio<const P: char>;
-impl<const P: char> Gpio<P> {
-    const fn ptr() -> *const crate::pac::gpioa::RegisterBlock {
-        match P {
-            'A' => crate::pac::GPIOA::ptr(),
-            'B' => crate::pac::GPIOB::ptr() as _,
-            'C' => crate::pac::GPIOC::ptr() as _,
-            #[cfg(feature = "gpiod")]
-            'D' => crate::pac::GPIOD::ptr() as _,
-            #[cfg(feature = "gpioe")]
-            'E' => crate::pac::GPIOE::ptr() as _,
-            #[cfg(feature = "gpiof")]
-            'F' => crate::pac::GPIOF::ptr() as _,
-            #[cfg(feature = "gpiog")]
-            'G' => crate::pac::GPIOG::ptr() as _,
-            'H' => crate::pac::GPIOH::ptr() as _,
-            #[cfg(feature = "gpioi")]
-            'I' => crate::pac::GPIOI::ptr() as _,
-            #[cfg(feature = "gpioj")]
-            'J' => crate::pac::GPIOJ::ptr() as _,
-            #[cfg(feature = "gpiok")]
-            'K' => crate::pac::GPIOK::ptr() as _,
-            _ => panic!("Unknown GPIO port"),
-        }
-    }
-}
+// TODO Must be translated to TC37x
+// mod f4;
+// pub use f4::*;
+//
+// struct Gpio<const P: char>;
+// impl<const P: char> Gpio<P> {
+//     const fn ptr() -> *const crate::pac::gpioa::RegisterBlock {
+//         match P {
+//             'A' => crate::pac::GPIOA::ptr(),
+//             'B' => crate::pac::GPIOB::ptr() as _,
+//             'C' => crate::pac::GPIOC::ptr() as _,
+//             #[cfg(feature = "gpiod")]
+//             'D' => crate::pac::GPIOD::ptr() as _,
+//             #[cfg(feature = "gpioe")]
+//             'E' => crate::pac::GPIOE::ptr() as _,
+//             #[cfg(feature = "gpiof")]
+//             'F' => crate::pac::GPIOF::ptr() as _,
+//             #[cfg(feature = "gpiog")]
+//             'G' => crate::pac::GPIOG::ptr() as _,
+//             'H' => crate::pac::GPIOH::ptr() as _,
+//             #[cfg(feature = "gpioi")]
+//             'I' => crate::pac::GPIOI::ptr() as _,
+//             #[cfg(feature = "gpioj")]
+//             'J' => crate::pac::GPIOJ::ptr() as _,
+//             #[cfg(feature = "gpiok")]
+//             'K' => crate::pac::GPIOK::ptr() as _,
+//             _ => panic!("Unknown GPIO port"),
+//         }
+//     }
+// }
