@@ -15,6 +15,12 @@ version = "0.3.5"
 
 [dependencies.embedded-hal]
 git = "https://github.com/rust-embedded/embedded-hal.git"
+rev = "v0.2.7"
+features = ["unproven"]
+
+[dependencies.embedded-hal-one]
+package = "embedded-hal"
+git = "https://github.com/rust-embedded/embedded-hal.git"
 rev = "v1.0.0-rc.1"
 
 [dependencies.tc37x-rt]
