@@ -1,14 +1,11 @@
-[target.tc162-htc-none]
-rustflags = [
-  # This is needed if your flash or ram addresses are not aligned to 0x10000 in memory.x
-  # See https://github.com/rust-embedded/cortex-m-quickstart/pull/95
-  "-C", "link-arg=--nmagic",
-  # --- ADD following new flag ---
-  "-C", "link-arg=-Tdefmt.x",
-  "-C", "link-args=-Llinker-scripts -Ttc37xA_memory.ld"
-]
-
-runner = ["tricore-probe"]
-
-[build]
-target = "tc162-htc-none"
+#[target.tc162-htc-none]
+#rustflags = [
+#  "-C", "link-arg=--nmagic",
+#  "-C", "link-arg=-Tdefmt.x",
+#  "-C", "link-args=-Llinker-scripts -Ttc37xA_memory.ld"
+#]
+#
+#runner = ["tricore-probe"]
+#
+#[build]
+#target = "tc162-htc-none"
