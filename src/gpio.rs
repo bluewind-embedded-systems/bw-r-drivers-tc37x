@@ -77,6 +77,7 @@ pub use embedded_hal::digital::v2::PinState;
 pub use Input as DefaultMode;
 
 use core::fmt;
+use tc37x_pac::RegValue;
 
 /// A filler pin type
 #[derive(Debug, Default)]
@@ -440,14 +441,26 @@ impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE> {
     #[inline(always)]
     fn _set_high(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
-        // TODO (alepez) unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << N)) }
-        todo!()
+        // TODO (alepez) test this
+        unsafe {
+            Gpio::<P>::ptr().omr().init(|mut r| {
+                let data = r.data_mut_ref();
+                *data = (1u32 << N).into();
+                r
+            });
+        }
     }
     #[inline(always)]
     fn _set_low(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
-        // TODO (alepez) unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << (16 + N))) }
-        todo!()
+        // TODO (alepez) test this
+        unsafe {
+            Gpio::<P>::ptr().omr().init(|mut r| {
+                let data = r.data_mut_ref();
+                *data = (0u32 << N).into();
+                r
+            });
+        }
     }
     #[inline(always)]
     fn _is_set_low(&self) -> bool {
@@ -620,27 +633,9 @@ struct Gpio<const P: usize>;
 impl<const P: usize> Gpio<P> {
     const fn ptr() -> *const RegisterBlock {
         // TODO (alepez)
-        todo!()
-        // match P {
-        //     'A' => crate::pac::GPIOA::ptr(),
-        //     'B' => crate::pac::GPIOB::ptr() as _,
-        //     'C' => crate::pac::GPIOC::ptr() as _,
-        //     #[cfg(feature = "gpiod")]
-        //     'D' => crate::pac::GPIOD::ptr() as _,
-        //     #[cfg(feature = "gpioe")]
-        //     'E' => crate::pac::GPIOE::ptr() as _,
-        //     #[cfg(feature = "gpiof")]
-        //     'F' => crate::pac::GPIOF::ptr() as _,
-        //     #[cfg(feature = "gpiog")]
-        //     'G' => crate::pac::GPIOG::ptr() as _,
-        //     'H' => crate::pac::GPIOH::ptr() as _,
-        //     #[cfg(feature = "gpioi")]
-        //     'I' => crate::pac::GPIOI::ptr() as _,
-        //     #[cfg(feature = "gpioj")]
-        //     'J' => crate::pac::GPIOJ::ptr() as _,
-        //     #[cfg(feature = "gpiok")]
-        //     'K' => crate::pac::GPIOK::ptr() as _,
-        //     _ => panic!("Unknown GPIO port"),
-        // }
+        match P {
+            0 => &crate::pac::PORT_00 as _,
+            _ => panic!("Unknown GPIO port"),
+        }
     }
 }
