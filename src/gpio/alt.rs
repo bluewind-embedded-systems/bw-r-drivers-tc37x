@@ -1,5 +1,6 @@
-mod f4;
-pub use f4::*;
+// TODO Must be translated to TC37x
+// mod f4;
+// pub use f4::*;
 
 macro_rules! extipin {
     ($( $(#[$attr:meta])* $PX:ident,)*) => {
