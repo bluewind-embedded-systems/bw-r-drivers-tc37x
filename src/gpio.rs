@@ -63,8 +63,8 @@ mod partially_erased;
 pub use partially_erased::{PEPin, PartiallyErasedPin};
 mod erased;
 pub use erased::{EPin, ErasedPin};
-mod exti;
-pub use exti::ExtiPin;
+// TODO (alepez) mod exti;
+// TODO (alepez) pub use exti::ExtiPin;
 mod dynamic;
 pub use dynamic::{Dynamic, DynamicPin};
 mod hal_02;
@@ -72,6 +72,9 @@ mod hal_1;
 pub mod outport;
 
 pub use embedded_hal::digital::v2::PinState;
+
+// TODO (alepez) Added because it was previously imported by use f4::*
+pub use Input as DefaultMode;
 
 use core::fmt;
 
@@ -320,11 +323,12 @@ where
     pub fn set_speed(&mut self, speed: Speed) {
         let offset = 2 * { N };
 
-        unsafe {
-            (*Gpio::<P>::ptr())
-                .ospeedr
-                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset)));
-        }
+        // TODO (alepez)
+        // unsafe {
+        //     (*Gpio::<P>::ptr())
+        //         .ospeedr
+        //         .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset)));
+        // }
     }
 
     /// Set pin speed
@@ -352,11 +356,12 @@ where
     pub fn set_internal_resistor(&mut self, resistor: Pull) {
         let offset = 2 * { N };
         let value = resistor as u32;
-        unsafe {
-            (*Gpio::<P>::ptr())
-                .pupdr
-                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (value << offset)));
-        }
+        // TODO (alepez)
+        // unsafe {
+        //     (*Gpio::<P>::ptr())
+        //         .pupdr
+        //         .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (value << offset)));
+        // }
     }
 
     /// Set the internal pull-up and pull-down resistor
@@ -435,22 +440,26 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     #[inline(always)]
     fn _set_high(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
-        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << N)) }
+        // TODO (alepez) unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << N)) }
+        todo!()
     }
     #[inline(always)]
     fn _set_low(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
-        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << (16 + N))) }
+        // TODO (alepez) unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << (16 + N))) }
+        todo!()
     }
     #[inline(always)]
     fn _is_set_low(&self) -> bool {
         // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << N) == 0 }
+        // TODO (alepez) unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << N) == 0 }
+        todo!()
     }
     #[inline(always)]
     fn _is_low(&self) -> bool {
         // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << N) == 0 }
+        // TODO (alepez) unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << N) == 0 }
+        todo!()
     }
 }
 
@@ -600,33 +609,38 @@ macro_rules! gpio {
 }
 use gpio;
 
-// TODO Must be translated to TC37x
+// TODO (alepez) Must be translated to TC37x
 // mod f4;
 // pub use f4::*;
-//
-// struct Gpio<const P: char>;
-// impl<const P: char> Gpio<P> {
-//     const fn ptr() -> *const crate::pac::gpioa::RegisterBlock {
-//         match P {
-//             'A' => crate::pac::GPIOA::ptr(),
-//             'B' => crate::pac::GPIOB::ptr() as _,
-//             'C' => crate::pac::GPIOC::ptr() as _,
-//             #[cfg(feature = "gpiod")]
-//             'D' => crate::pac::GPIOD::ptr() as _,
-//             #[cfg(feature = "gpioe")]
-//             'E' => crate::pac::GPIOE::ptr() as _,
-//             #[cfg(feature = "gpiof")]
-//             'F' => crate::pac::GPIOF::ptr() as _,
-//             #[cfg(feature = "gpiog")]
-//             'G' => crate::pac::GPIOG::ptr() as _,
-//             'H' => crate::pac::GPIOH::ptr() as _,
-//             #[cfg(feature = "gpioi")]
-//             'I' => crate::pac::GPIOI::ptr() as _,
-//             #[cfg(feature = "gpioj")]
-//             'J' => crate::pac::GPIOJ::ptr() as _,
-//             #[cfg(feature = "gpiok")]
-//             'K' => crate::pac::GPIOK::ptr() as _,
-//             _ => panic!("Unknown GPIO port"),
-//         }
-//     }
-// }
+
+// TODO (alepez) Was crate::pac::gpioa::RegisterBlock in stm32f4xx-hal
+type RegisterBlock = crate::pac::port_00::Port_00;
+
+struct Gpio<const P: char>;
+impl<const P: char> Gpio<P> {
+    const fn ptr() -> *const RegisterBlock {
+        // TODO (alepez)
+        todo!()
+        // match P {
+        //     'A' => crate::pac::GPIOA::ptr(),
+        //     'B' => crate::pac::GPIOB::ptr() as _,
+        //     'C' => crate::pac::GPIOC::ptr() as _,
+        //     #[cfg(feature = "gpiod")]
+        //     'D' => crate::pac::GPIOD::ptr() as _,
+        //     #[cfg(feature = "gpioe")]
+        //     'E' => crate::pac::GPIOE::ptr() as _,
+        //     #[cfg(feature = "gpiof")]
+        //     'F' => crate::pac::GPIOF::ptr() as _,
+        //     #[cfg(feature = "gpiog")]
+        //     'G' => crate::pac::GPIOG::ptr() as _,
+        //     'H' => crate::pac::GPIOH::ptr() as _,
+        //     #[cfg(feature = "gpioi")]
+        //     'I' => crate::pac::GPIOI::ptr() as _,
+        //     #[cfg(feature = "gpioj")]
+        //     'J' => crate::pac::GPIOJ::ptr() as _,
+        //     #[cfg(feature = "gpiok")]
+        //     'K' => crate::pac::GPIOK::ptr() as _,
+        //     _ => panic!("Unknown GPIO port"),
+        // }
+    }
+}

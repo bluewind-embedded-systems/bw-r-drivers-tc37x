@@ -31,29 +31,32 @@ macro_rules! out_port {
             #[doc=concat!("Set/reset pins according to `", $n, "` lower bits")]
             #[inline(never)]
             pub fn write(&mut self, word: u32) {
-                unsafe {
-                    (*Gpio::<P>::ptr())
-                        .bsrr
-                        .write(|w| w.bits(Self::value_for_write_bsrr(word)))
-                }
+                // TODO (alepez)
+                // unsafe {
+                //     (*Gpio::<P>::ptr())
+                //         .bsrr
+                //         .write(|w| w.bits(Self::value_for_write_bsrr(word)))
+                // }
             }
 
             /// Set all pins to `PinState::High`
             pub fn all_high(&mut self) {
-                unsafe {
-                    (*Gpio::<P>::ptr())
-                        .bsrr
-                        .write(|w| w.bits(Self::mask()))
-                }
+                // TODO (alepez)
+                // unsafe {
+                //     (*Gpio::<P>::ptr())
+                //         .bsrr
+                //         .write(|w| w.bits(Self::mask()))
+                // }
             }
 
             /// Reset all pins to `PinState::Low`
             pub fn all_low(&mut self) {
-                unsafe {
-                    (*Gpio::<P>::ptr())
-                        .bsrr
-                        .write(|w| w.bits(Self::mask() << 16))
-                }
+                // TODO (alepez)
+                // unsafe {
+                //     (*Gpio::<P>::ptr())
+                //         .bsrr
+                //         .write(|w| w.bits(Self::mask() << 16))
+                // }
             }
         }
     }
@@ -97,24 +100,27 @@ impl<const P: char, const SIZE: usize> OutPortArray<P, SIZE> {
     /// Set/reset pins according to `SIZE` lower bits
     #[inline(never)]
     pub fn write(&mut self, word: u32) {
-        unsafe {
-            (*Gpio::<P>::ptr())
-                .bsrr
-                .write(|w| w.bits(self.value_for_write_bsrr(word)))
-        }
+        // TODO (alepez)
+        // unsafe {
+        //     (*Gpio::<P>::ptr())
+        //         .bsrr
+        //         .write(|w| w.bits(self.value_for_write_bsrr(word)))
+        // }
     }
 
     /// Set all pins to `PinState::High`
     pub fn all_high(&mut self) {
-        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(self.mask())) }
+        // TODO (alepez)
+        // unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(self.mask())) }
     }
 
     /// Reset all pins to `PinState::Low`
     pub fn all_low(&mut self) {
-        unsafe {
-            (*Gpio::<P>::ptr())
-                .bsrr
-                .write(|w| w.bits(self.mask() << 16))
-        }
+        // TODO (alepez)
+        // unsafe {
+        //     (*Gpio::<P>::ptr())
+        //         .bsrr
+        //         .write(|w| w.bits(self.mask() << 16))
+        // }
     }
 }

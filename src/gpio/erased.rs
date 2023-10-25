@@ -72,8 +72,9 @@ impl<MODE> ErasedPin<MODE> {
         Pin::new()
     }
 
+    // TODO (alepez) Return type was &crate::pac::gpioa::RegisterBlock
     #[inline]
-    pub(crate) fn block(&self) -> &crate::pac::gpioa::RegisterBlock {
+    pub(crate) unsafe fn block(&self) -> &RegisterBlock {
         // This function uses pointer arithmetic instead of branching to be more efficient
 
         // The logic relies on the following assumptions:
@@ -86,8 +87,12 @@ impl<MODE> ErasedPin<MODE> {
         const GPIO_REGISTER_OFFSET: usize = 0x0400;
 
         let offset = GPIO_REGISTER_OFFSET * self.port_id() as usize;
-        let block_ptr =
-            (crate::pac::GPIOA::ptr() as usize + offset) as *const crate::pac::gpioa::RegisterBlock;
+
+        // TODO (alepez) note: it was like this
+        // let block_ptr =
+        //     (crate::pac::GPIOA::ptr() as usize + offset) as *const crate::gpio::RegisterBlock;
+
+        let block_ptr = (&crate::pac::PORT_00 as *const RegisterBlock).add(offset);
 
         unsafe { &*block_ptr }
     }
@@ -98,18 +103,20 @@ impl<MODE> ErasedPin<Output<MODE>> {
     #[inline(always)]
     pub fn set_high(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
-        unsafe { self.block().bsrr.write(|w| w.bits(1 << self.pin_id())) };
+        // TODO (alepez)
+        // unsafe { self.block().bsrr.write(|w| w.bits(1 << self.pin_id())) };
     }
 
     /// Drives the pin low
     #[inline(always)]
     pub fn set_low(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
-        unsafe {
-            self.block()
-                .bsrr
-                .write(|w| w.bits(1 << (self.pin_id() + 16)))
-        };
+        // TODO (alepez)
+        // unsafe {
+        //     self.block()
+        //         .bsrr
+        //         .write(|w| w.bits(1 << (self.pin_id() + 16)))
+        // };
     }
 
     /// Is the pin in drive high or low mode?
@@ -140,7 +147,9 @@ impl<MODE> ErasedPin<Output<MODE>> {
     /// Is the pin in drive low mode?
     #[inline(always)]
     pub fn is_set_low(&self) -> bool {
-        self.block().odr.read().bits() & (1 << self.pin_id()) == 0
+        // TODO (alepez)
+        // self.block().odr.read().bits() & (1 << self.pin_id()) == 0
+        todo!()
     }
 
     /// Toggle pin output
@@ -167,6 +176,8 @@ where
     /// Is the input pin low?
     #[inline(always)]
     pub fn is_low(&self) -> bool {
-        self.block().idr.read().bits() & (1 << self.pin_id()) == 0
+        // TODO (alepez)
+        // self.block().idr.read().bits() & (1 << self.pin_id()) == 0
+        todo!()
     }
 }

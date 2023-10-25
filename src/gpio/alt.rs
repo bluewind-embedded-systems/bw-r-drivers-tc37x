@@ -351,17 +351,18 @@ pub trait I2cCommon {
 }
 
 // I2S pins
-pub trait I2sCommon {
-    type Ck: crate::gpio::PinSpeed;
-    type Sd;
-    type Ws: crate::gpio::ReadPin + crate::gpio::ExtiPin;
-}
-pub trait I2sMaster {
-    type Mck;
-}
-pub trait I2sExtPin {
-    type ExtSd;
-}
+// TODO (alepez)
+// pub trait I2sCommon {
+//     type Ck: crate::gpio::PinSpeed;
+//     type Sd;
+//     type Ws: crate::gpio::ReadPin + crate::gpio::ExtiPin;
+// }
+// pub trait I2sMaster {
+//     type Mck;
+// }
+// pub trait I2sExtPin {
+//     type ExtSd;
+// }
 
 // QuadSPI pins
 
