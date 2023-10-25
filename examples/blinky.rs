@@ -50,6 +50,9 @@ fn port_00_set_mode(index: usize, mode: u32) {
 }
 
 fn main() -> ! {
+    #[cfg(not(target_arch = "tricore"))]
+    setup_tracing();
+
     // TODO Adapt this example taken from https://github.com/stm32-rs/stm32f4xx-hal
 
     let pin_index = 5; // TODO Check pin index
@@ -74,4 +77,12 @@ fn main() -> ! {
             port_00_set_low(pin_index);
         }
     }
+}
+
+#[cfg(not(target_arch = "tricore"))]
+fn setup_tracing() {
+    use tc37x_hal::tracing::PrintEffectReporter;
+
+    let reporter = PrintEffectReporter::default();
+    pac::tracing::set_effect_reporter(Box::new(reporter.clone()));
 }
