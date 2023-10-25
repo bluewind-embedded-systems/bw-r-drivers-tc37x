@@ -8,3 +8,5 @@ mod panic_handler;
 pub mod tracing;
 
 pub mod gpio;
+
+pub use tc37x_pac as pac;

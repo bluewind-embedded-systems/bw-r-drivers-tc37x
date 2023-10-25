@@ -13,7 +13,7 @@ use defmt::println;
 #[cfg(not(feature = "defmt"))]
 use std::println;
 
-use tc37x_pac::tracing::Reporter;
+use crate::pac::tracing::Reporter;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReportData {
@@ -96,7 +96,7 @@ impl Reporter for PrintEffectReporter {
 
 pub fn redirect_to_print() {
     use std::boxed::Box;
-    use tc37x_pac as pac;
+    use crate::pac;
     let reporter = PrintEffectReporter::default();
     pac::tracing::set_effect_reporter(Box::new(reporter.clone()));
 }

@@ -6,8 +6,8 @@
 #[cfg(target_arch = "tricore")]
 tc37x_rt::entry!(main);
 
-use tc37x_pac as pac;
-use tc37x_pac::{RegValue, PORT_00};
+use pac::{RegValue, PORT_00};
+use tc37x_hal::pac;
 
 fn port_00_set_high(index: usize) {
     unsafe {
