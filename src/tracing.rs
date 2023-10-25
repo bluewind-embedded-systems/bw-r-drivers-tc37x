@@ -81,15 +81,15 @@ pub struct PrintEffectReporter;
 
 impl Reporter for PrintEffectReporter {
     fn read_volatile(&self, ptr: usize, len: usize) -> u32 {
-        println!("read_volatile {ptr} {len}");
+        println!("read_volatile 0x{:08X} len={}", ptr, len);
         READ_VALUE
     }
 
     fn write_volatile(&self, ptr: usize, len: usize, val: u32) {
-        println!("write_volatile {ptr} {len} {val}");
+        println!("write_volatile 0x{:08X} len={} val={}", ptr, len, val);
     }
 
     fn load_modify_store(&self, ptr: usize, val: u64) {
-        println!("load_modify_store {ptr} {val}");
+        println!("load_modify_store 0x{:08X} val={}", ptr, val);
     }
 }
