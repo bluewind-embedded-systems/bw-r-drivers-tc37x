@@ -36,4 +36,4 @@ features = [
 [features]
 default = []
 defmt = ["dep:defmt", "dep:defmt-rtt"]
-tc375 = ["dep:tc37x-rt"]
+rt = ["dep:tc37x-rt"]
