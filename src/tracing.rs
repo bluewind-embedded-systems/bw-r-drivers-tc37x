@@ -76,7 +76,7 @@ impl Reporter for LogEffectReporter {
     }
 }
 
-#[derive(Default, Copy, Clone)]
+#[derive(Copy, Clone)]
 pub struct PrintEffectReporter;
 
 impl Reporter for PrintEffectReporter {
@@ -97,6 +97,5 @@ impl Reporter for PrintEffectReporter {
 pub fn redirect_to_print() {
     use std::boxed::Box;
     use crate::pac;
-    let reporter = PrintEffectReporter::default();
-    pac::tracing::set_effect_reporter(Box::new(reporter.clone()));
+    pac::tracing::set_effect_reporter(Box::new(PrintEffectReporter));
 }
