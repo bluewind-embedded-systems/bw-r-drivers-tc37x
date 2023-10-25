@@ -1,3 +1,5 @@
+//! Blinks an LED
+
 #![no_std]
 #![no_main]
 
@@ -11,5 +13,19 @@ fn panic(panic: &core::panic::PanicInfo<'_>) -> ! {
 tc37x_rt::entry!(main);
 
 fn main() -> ! {
-    loop {}
+    // TODO Adapt this example taken from https://github.com/stm32-rs/stm32f4xx-hal
+
+    // let p = pac::Peripherals::take().unwrap();
+    //
+    // let gpioc = p.GPIOC.split();
+    // let mut led = gpioc.pc13.into_push_pull_output();
+    //
+    loop {
+        //     for _ in 0..10_000 {
+        //         led.set_high();
+        //     }
+        //     for _ in 0..10_000 {
+        //         led.set_low();
+        //     }
+    }
 }
