@@ -67,13 +67,16 @@ fn main() -> ! {
     // TODO let mut led = gpioc.pc13.into_push_pull_output();
 
     loop {
+        defmt::info!("|");
+        port_00_set_state(PIN_INDEX, State::High);
+        wait_nop(100000);
         defmt::info!(".");
-        port_00_set_state(PIN_INDEX, State::Toggled);
+        port_00_set_state(PIN_INDEX, State::Low);
         wait_nop(100000);
     }
 }
 
-pub fn wait_nop(cycle: u32) {
+fn wait_nop(cycle: u32) {
     for _ in 0..cycle {
         unsafe { asm!("nop") };
     }
