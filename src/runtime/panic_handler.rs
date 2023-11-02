@@ -11,10 +11,8 @@ use tc37x_rt::{
 };
 
 #[panic_handler]
-#[allow(unused)]
 fn panic(panic: &PanicInfo<'_>) -> ! {
     defmt::error!("Panic! {}", defmt::Display2Format(panic));
-
     #[allow(clippy::empty_loop)]
     loop {}
 }

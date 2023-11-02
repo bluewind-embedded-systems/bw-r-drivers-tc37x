@@ -1,3 +1,5 @@
+// #![allow(unused)]
+
 #[cfg(feature = "panic_handler")]
 mod panic_handler;
 

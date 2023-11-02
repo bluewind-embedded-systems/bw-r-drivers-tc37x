@@ -6,14 +6,12 @@ use tc37x_rt::{
 };
 
 pre_init!(pre_init_fn);
-#[allow(unused)]
 fn pre_init_fn() {
     #[cfg(feature = "disable_watchdogs")]
     disable_watchdogs();
 }
 
 post_init!(post_init_fn);
-#[allow(unused)]
 fn post_init_fn() {
     load_interrupt_table();
 }
