@@ -6,24 +6,23 @@
 #[cfg(target_arch = "tricore")]
 tc37x_rt::entry!(main);
 
+use core::arch::asm;
 use tc37x_hal::pac;
 use tc37x_pac::RegValue;
 
-fn port_00_set_high(index: usize) {
-    unsafe {
-        pac::PORT_00.omr().init(|mut r| {
-            let data = r.data_mut_ref();
-            *data = (1u32 << index).into();
-            r
-        });
-    };
+pub enum State {
+    NotChanged = 0,
+    High = 1,
+    Low = 1 << 16,
+    Toggled = (1 << 16) | 1,
 }
 
-fn port_00_set_low(index: usize) {
+fn port_00_set_state(index: usize, state: State) {
+    let state = state as u32;
     unsafe {
         pac::PORT_00.omr().init(|mut r| {
             let data = r.data_mut_ref();
-            *data = (0u32 << index).into();
+            *data = (state << index).into();
             r
         });
     };
@@ -59,6 +58,7 @@ fn main() -> ! {
 
     const PIN_INDEX: usize = 5;
     const OUTPUT_PUSH_PULL_GENERAL: u32 = 0x80;
+    port_00_set_state(PIN_INDEX, State::High);
     port_00_set_mode(PIN_INDEX, OUTPUT_PUSH_PULL_GENERAL);
 
     // TODO Refactor to something similar to this:
@@ -67,15 +67,14 @@ fn main() -> ! {
     // TODO let mut led = gpioc.pc13.into_push_pull_output();
 
     loop {
-        defmt::info!("H");
-        for _ in 0..10_000 {
-            // TODO led.set_high();
-            port_00_set_high(PIN_INDEX);
-        }
-        defmt::info!("L");
-        for _ in 0..10_000 {
-            // TODO led.set_low();
-            port_00_set_low(PIN_INDEX);
-        }
+        defmt::info!(".");
+        port_00_set_state(PIN_INDEX, State::Toggled);
+        wait_nop(100000);
+    }
+}
+
+pub fn wait_nop(cycle: u32) {
+    for _ in 0..cycle {
+        unsafe { asm!("nop") };
     }
 }
