@@ -39,13 +39,14 @@ features = [
 ]
 
 [dependencies.critical-section]
+optional = true
 version = "1.1.1"
 features = ["restore-state-bool"]
 
 [features]
 default = []
 defmt = ["dep:defmt", "dep:defmt-rtt"]
-rt = ["dep:tc37x-rt"]
+rt = ["dep:tc37x-rt", "dep:critical-section"]
 panic_handler = []
 
 [[example]]
