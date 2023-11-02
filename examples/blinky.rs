@@ -50,6 +50,8 @@ fn port_00_set_mode(index: usize, mode: u32) {
 }
 
 fn main() -> ! {
+    defmt::info!("Hello world!");
+
     #[cfg(not(target_arch = "tricore"))]
     tc37x_hal::tracing::redirect_to_print();
 
