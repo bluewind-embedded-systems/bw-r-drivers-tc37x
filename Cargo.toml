@@ -40,6 +40,10 @@ features = [
     "port_00",
 ]
 
+[dependencies.critical-section]
+version = "1.1.1"
+features = ["restore-state-bool"]
+
 [features]
 default = ["rt", "panic_handler", "defmt"]
 defmt = ["dep:defmt", "dep:defmt-rtt"]
