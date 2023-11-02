@@ -6,7 +6,7 @@
 //! ```rust
 //! // Acquire the GPIOC peripheral
 //! // NOTE: `dp` is the device peripherals from the `PAC` crate
-//! let mut gpioa = dp.GPIOA.split();
+//! // TODO (alepez) let mut gpioa = dp.GPIOA.split();
 //! ```
 //!
 //! This gives you a struct containing all the pins `px0..px15`.
@@ -14,8 +14,8 @@
 //! For example, to set `pa5` high, you would call
 //!
 //! ```rust
-//! let output = gpioa.pa5.into_push_pull_output();
-//! output.set_high();
+//! // TODO (alepez) let output = gpioa.pa5.into_push_pull_output();
+//! // TODO (alepez) output.set_high();
 //! ```
 //!
 //! ## Modes
