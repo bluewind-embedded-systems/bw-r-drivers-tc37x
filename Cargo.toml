@@ -48,7 +48,8 @@ default = []
 defmt = ["dep:defmt", "dep:defmt-rtt"]
 rt = ["dep:tc37x-rt", "dep:critical-section"]
 panic_handler = []
+disable_watchdogs = []
 
 [[example]]
 name = "blinky"
-required-features = ["rt", "panic_handler", "defmt"]
+required-features = ["rt", "panic_handler", "defmt", "disable_watchdogs"]
