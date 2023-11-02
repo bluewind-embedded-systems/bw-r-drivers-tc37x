@@ -8,11 +8,11 @@ You should have a workspace with this setup:
 
 ```txt
 ├── tc37x-hal
-│   ├── Cargo.toml
-    ...
+│   ├── Cargo.toml
+│   ...
 ├── tc37x-pac
-│   ├── Cargo.toml
-    ...
+│   ├── Cargo.toml
+│    ...
 └── tc37x-rt
     ├── Cargo.toml
     ...
@@ -29,5 +29,5 @@ Make sure you have a TC37x board attached to yout PC through a debugger  and
 launch an example:
 
 ```sh
-cargo run --example=blinky --features=rt,panic_handler,defmt
+cargo run --example=blinky --features=example
 ```
