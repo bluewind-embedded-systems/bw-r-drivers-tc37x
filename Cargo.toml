@@ -41,7 +41,7 @@ features = [
 ]
 
 [features]
-default = []
+default = ["rt", "panic_handler", "defmt"]
 defmt = ["dep:defmt", "dep:defmt-rtt"]
 rt = ["dep:tc37x-rt"]
 panic_handler = []
