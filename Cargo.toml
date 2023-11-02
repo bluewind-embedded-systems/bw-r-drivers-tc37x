@@ -45,7 +45,11 @@ version = "1.1.1"
 features = ["restore-state-bool"]
 
 [features]
-default = ["rt", "panic_handler", "defmt"]
+default = []
 defmt = ["dep:defmt", "dep:defmt-rtt"]
 rt = ["dep:tc37x-rt"]
 panic_handler = []
+
+[[example]]
+name = "blinky"
+required-features = ["rt", "panic_handler", "defmt"]
