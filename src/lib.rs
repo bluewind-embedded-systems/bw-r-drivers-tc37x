@@ -7,14 +7,8 @@
 // TODO Remove asap
 #![allow(clippy::extra_unused_type_parameters)]
 
-#[cfg(all(target_arch = "tricore", feature = "panic_handler"))]
-mod panic_handler;
-
-#[cfg(all(target_arch = "tricore", feature = "panic_handler"))]
-mod critical_section;
-
-#[cfg(all(target_arch = "tricore", feature = "panic_handler"))]
-mod init;
+#[cfg(target_arch = "tricore")]
+mod runtime;
 
 #[cfg(not(target_arch = "tricore"))]
 pub mod tracing;
