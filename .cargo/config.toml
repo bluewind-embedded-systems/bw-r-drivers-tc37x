@@ -2,7 +2,7 @@
 rustflags = [
   "-C", "link-arg=--nmagic",
   "-C", "link-arg=-Tdefmt.x",
-  "-C", "link-args=-Llinker-scripts -Ttc37xA_memory.ld"
+  "-C", "link-arg=-Ttc37xA_memory.ld"
 ]
 
 runner = ["tricore-probe"]
