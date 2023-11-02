@@ -25,13 +25,11 @@ rev = "v1.0.0-rc.1"
 
 [dependencies.tc37x-rt]
 optional = true
-git = "ssh://git@git.bwlocal.it/bw-rust/tc37x-rt.git"
-branch = "remove_hal"
+path = "../tc37x-rt"
 features = []
 
 [dependencies.tc37x-pac]
-git = "ssh://git@git.bwlocal.it/bw-rust/tc37x-pac.git"
-branch = "illd_version"
+path = "../tc37x-pac"
 features = [
     "scu",
     "src",
