@@ -1,6 +1,3 @@
-// link with defmt implementation
-extern crate defmt_rtt;
-
 use core::{arch::asm, panic::PanicInfo};
 use critical_section::RawRestoreState;
 use tc37x_rt::{
@@ -10,11 +7,17 @@ use tc37x_rt::{
     *,
 };
 
-#[panic_handler]
+pre_init!(pre_init_fn);
 #[allow(unused)]
-fn panic(panic: &PanicInfo<'_>) -> ! {
-    defmt::error!("Panic! {}", defmt::Display2Format(panic));
+fn pre_init_fn() {
+    if read_cpu_core_id() == 0 {
+        disable_safety_watchdog();
+    }
+    disable_cpu_watchdog();
+}
 
-    #[allow(clippy::empty_loop)]
-    loop {}
+post_init!(post_init_fn);
+#[allow(unused)]
+fn post_init_fn() {
+    load_interrupt_table();
 }
