@@ -6,8 +6,8 @@
 #[cfg(target_arch = "tricore")]
 tc37x_rt::entry!(main);
 
-use pac::{RegValue, PORT_00};
 use tc37x_hal::pac;
+use tc37x_pac::RegValue;
 
 fn port_00_set_high(index: usize) {
     unsafe {
@@ -34,7 +34,7 @@ fn port_00_set_mode(index: usize, mode: u32) {
     let shift = (index & 0x3) * 8;
 
     let iocr: pac::Reg<pac::port_00::Iocr0, pac::RW> = unsafe {
-        let iocr0 = PORT_00.iocr0();
+        let iocr0 = pac::PORT_00.iocr0();
         let addr: *mut u32 = core::mem::transmute(iocr0);
         let addr = addr.add(ioc_index as _);
         core::mem::transmute(addr)
@@ -67,10 +67,12 @@ fn main() -> ! {
     // TODO let mut led = gpioc.pc13.into_push_pull_output();
 
     loop {
+        defmt::info!("H");
         for _ in 0..10_000 {
             // TODO led.set_high();
             port_00_set_high(PIN_INDEX);
         }
+        defmt::info!("L");
         for _ in 0..10_000 {
             // TODO led.set_low();
             port_00_set_low(PIN_INDEX);
