@@ -628,6 +628,51 @@ use gpio;
 // mod f4;
 // pub use f4::*;
 
+// TODO (alepez) WIP working on macro expansion from
+// The macro expansion was obtained by running cargo expand on stm32f4xx-hal
+// cargo expand --lib --tests gpio::f4 --features stm32f401
+// The I removed all pins except one
+
+mod tc375 {
+    pub use super::Input as DefaultMode;
+    use super::*;
+    /// GPIO
+    pub mod gpio00 {
+        use crate::pac::port_00::Port_00;
+        // TODO (alepez) use crate::rcc::{Enable, Reset};
+        /// GPIO parts
+        pub struct Parts {
+            pub p00_5: P00_5,
+        }
+        impl super::GpioExt for Port_00 {
+            type Parts = Parts;
+            fn split(self) -> Parts {
+                unsafe {
+                    // TODO (alepez) Port_00::enable_unchecked();
+                    // TODO (alepez) Port_00::reset_unchecked();
+                }
+                Parts {
+                    p00_5: P00_5::new(),
+                }
+            }
+        }
+        ///Common type for
+        ///GPIO00
+        /// related pins
+        pub type P00n<MODE> = super::PartiallyErasedPin<0, MODE>;
+        ///P00_5
+        /// pin
+        pub type P00_5<MODE = super::DefaultMode> = super::Pin<0, 0, MODE>;
+        // TODO (alepez) These are alternate functions mappings
+        impl<MODE> super::marker::IntoAf<1> for P00_5<MODE> {}
+        impl<MODE> super::marker::IntoAf<2> for P00_5<MODE> {}
+        impl<MODE> super::marker::IntoAf<7> for P00_5<MODE> {}
+    }
+    pub use gpioa::{
+        P00_5
+    };
+}
+
 // TODO (alepez) Was crate::pac::gpioa::RegisterBlock in stm32f4xx-hal
 type RegisterBlock = crate::pac::port_00::Port_00;
 
