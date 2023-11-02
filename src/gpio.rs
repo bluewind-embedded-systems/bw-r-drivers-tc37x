@@ -443,11 +443,12 @@ impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE> {
         // NOTE(unsafe) atomic write to a stateless register
         // TODO (alepez) test this
         unsafe {
-            Gpio::<P>::ptr().omr().init(|mut r| {
-                let data = r.data_mut_ref();
-                *data = (1u32 << N).into();
-                r
-            });
+            // TODO (alepez)
+            // Gpio::<P>::ptr().omr().init(|mut r| {
+            //     let data = r.data_mut_ref();
+            //     *data = (1u32 << N).into();
+            //     r
+            // });
         }
     }
     #[inline(always)]
@@ -455,11 +456,12 @@ impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE> {
         // NOTE(unsafe) atomic write to a stateless register
         // TODO (alepez) test this
         unsafe {
-            Gpio::<P>::ptr().omr().init(|mut r| {
-                let data = r.data_mut_ref();
-                *data = (0u32 << N).into();
-                r
-            });
+            // TODO (alepez)
+            // Gpio::<P>::ptr().omr().init(|mut r| {
+            //     let data = r.data_mut_ref();
+            //     *data = (0u32 << N).into();
+            //     r
+            // });
         }
     }
     #[inline(always)]
