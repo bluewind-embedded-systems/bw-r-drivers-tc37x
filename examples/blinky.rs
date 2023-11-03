@@ -7,9 +7,9 @@
 tc37x_rt::entry!(main);
 
 use core::arch::asm;
-use tc37x_hal::pac;
-use tc37x_pac::RegValue;
 use tc37x_hal::gpio::GpioExt;
+use tc37x_hal::pac;
+use tc37x_pac::RegisterValue;
 
 pub enum State {
     NotChanged = 0,
@@ -21,11 +21,9 @@ pub enum State {
 fn port_00_set_state(index: usize, state: State) {
     let state = state as u32;
     unsafe {
-        pac::PORT_00.omr().init(|mut r| {
-            let data = r.data_mut_ref();
-            *data = (state << index).into();
-            r
-        });
+        pac::PORT_00
+            .omr()
+            .init(|r| r.set_raw((state << index).into()));
     };
 }
 
@@ -39,6 +37,8 @@ fn port_00_set_mode(index: usize, mode: u32) {
         let addr = addr.add(ioc_index as _);
         core::mem::transmute(addr)
     };
+
+    use tc37x_pac::common::hidden::RegValue;
 
     unsafe {
         iocr.modify_atomic(|mut r| {

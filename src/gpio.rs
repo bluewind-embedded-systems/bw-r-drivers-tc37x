@@ -80,7 +80,7 @@ pub use embedded_hal::digital::v2::PinState;
 pub use Input as DefaultMode;
 
 use core::fmt;
-use tc37x_pac::RegValue;
+use tc37x_pac::RegisterValue;
 
 /// A filler pin type
 #[derive(Debug, Default)]
@@ -441,11 +441,9 @@ impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE> {
             PinState::Low => 1 << 16,
         };
         unsafe {
-            (*Gpio::<P>::ptr()).omr().init(|mut r| {
-                let data = r.data_mut_ref();
-                *data = (state << N).into();
-                r
-            });
+            (*Gpio::<P>::ptr())
+                .omr()
+                .init(|mut r| r.set_raw((state << N).into()));
         };
     }
     #[inline(always)]
@@ -624,13 +622,13 @@ use gpio;
 // cargo expand --lib --tests gpio::f4 --features stm32f401
 // The I removed all pins except one
 
-gpio!(port_00, Port_00, gpio00, 0, P00n, [
+gpio!(port_00, Port00, gpio00, 0, P00n, [
     P00_5: (p00_5, 5, [1]),
     P00_6: (p00_6, 6, [1]),
 ]);
 
 // TODO (alepez) Was crate::pac::gpioa::RegisterBlock in stm32f4xx-hal
-type RegisterBlock = crate::pac::port_00::Port_00;
+type RegisterBlock = crate::pac::port_00::Port00;
 
 struct Gpio<const P: usize>;
 impl<const P: usize> Gpio<P> {
