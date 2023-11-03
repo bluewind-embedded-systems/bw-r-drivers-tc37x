@@ -1,4 +1,5 @@
-#![no_std]
+#![cfg_attr(target_arch = "tricore", no_std)]
+
 // TODO Enable asap
 // TODO #![deny(unsafe_op_in_unsafe_fn)]
 
