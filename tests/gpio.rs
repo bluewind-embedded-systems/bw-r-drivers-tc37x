@@ -1,4 +1,4 @@
-use tc37x_hal::tracing::*;
+use tc37x_hal::tracing::print::redirect_to_print;
 
 #[test]
 fn test_pin_set_high() {
