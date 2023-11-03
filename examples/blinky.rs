@@ -50,7 +50,7 @@ fn port_00_set_mode(index: usize, mode: u32) {
 }
 
 fn main() -> ! {
-    defmt::info!("Hello world!");
+    // defmt::info!("Hello world!");
 
     #[cfg(not(target_arch = "tricore"))]
     tc37x_hal::tracing::redirect_to_print();
@@ -62,30 +62,27 @@ fn main() -> ! {
 
     const OUTPUT_PUSH_PULL_GENERAL: u32 = 0x80;
 
+    // TODO Remove this
     port_00_set_state(LED1_PIN_INDEX, State::High);
     port_00_set_mode(LED1_PIN_INDEX, OUTPUT_PUSH_PULL_GENERAL);
 
+    // TODO Remove this
     port_00_set_state(LED2_PIN_INDEX, State::High);
     port_00_set_mode(LED2_PIN_INDEX, OUTPUT_PUSH_PULL_GENERAL);
 
     // TODO Refactor to something similar to this:
-    // TODO let p = pac::Peripherals::take().unwrap();
-    // TODO let gpioc = p.GPIOC.split();
-    // TODO let mut led = gpioc.pc13.into_push_pull_output();
-
-    // let gpio00 = pac::PORT_00.split();
-    // let mut led1 = gpio00.p00_5.into_push_pull_output();
+    let gpio00 = pac::PORT_00.split();
+    let mut led1 = gpio00.p00_5.into_push_pull_output();
+    let mut led2 = gpio00.p00_6.into_push_pull_output();
 
     loop {
-        defmt::info!("|");
-        port_00_set_state(LED1_PIN_INDEX, State::High);
-        port_00_set_state(LED2_PIN_INDEX, State::Low);
-        // led1.set_high();
+        // defmt::info!("|");
+        led1.set_low();
+        led2.set_high();
         wait_nop(100000);
-        defmt::info!(".");
-        port_00_set_state(LED1_PIN_INDEX, State::Low);
-        port_00_set_state(LED2_PIN_INDEX, State::High);
-        // led1.set_low();
+        // defmt::info!(".");
+        led1.set_high();
+        led2.set_low();
         wait_nop(100000);
     }
 }
