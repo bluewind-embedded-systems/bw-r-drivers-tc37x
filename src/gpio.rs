@@ -632,6 +632,7 @@ mod tc375 {
         /// GPIO parts
         pub struct Parts {
             pub p00_5: P00_5,
+            pub p00_6: P00_6,
         }
         impl super::GpioExt for Port_00 {
             type Parts = Parts;
@@ -642,6 +643,7 @@ mod tc375 {
                 }
                 Parts {
                     p00_5: P00_5::new(),
+                    p00_6: P00_6::new(),
                 }
             }
         }
@@ -651,13 +653,16 @@ mod tc375 {
         pub type P00n<MODE> = super::PartiallyErasedPin<0, MODE>;
         ///P00_5
         /// pin
-        pub type P00_5<MODE = super::DefaultMode> = super::Pin<0, 0, MODE>;
+        pub type P00_5<MODE = super::DefaultMode> = super::Pin<0, 5, MODE>;
         // TODO (alepez) These are alternate functions mappings
         impl<MODE> super::marker::IntoAf<1> for P00_5<MODE> {}
         impl<MODE> super::marker::IntoAf<2> for P00_5<MODE> {}
         impl<MODE> super::marker::IntoAf<7> for P00_5<MODE> {}
+
+        pub type P00_6<MODE = super::DefaultMode> = super::Pin<0, 6, MODE>;
     }
     pub use gpio00::P00_5;
+    pub use gpio00::P00_6;
 }
 
 // TODO (alepez) Was crate::pac::gpioa::RegisterBlock in stm32f4xx-hal
