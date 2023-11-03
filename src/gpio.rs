@@ -4,9 +4,9 @@
 //! `gpioa`, `gpiob`... modules. To get access to the pins, you first need to convert them into a
 //! HAL designed struct from the `pac` struct using the [split](trait.GpioExt.html#tymethod.split) function.
 //! ```rust
-//! // Acquire the GPIOC peripheral
-//! // NOTE: `dp` is the device peripherals from the `PAC` crate
-//! // TODO (alepez) let mut gpioa = dp.GPIOA.split();
+//! use tc37x_pac::PORT_00;
+//! use tc37x_hal::gpio::GpioExt;
+//! let mut gpio00 = PORT_00.split();
 //! ```
 //!
 //! This gives you a struct containing all the pins `px0..px15`.
@@ -14,8 +14,11 @@
 //! For example, to set `pa5` high, you would call
 //!
 //! ```rust
-//! // TODO (alepez) let output = gpioa.pa5.into_push_pull_output();
-//! // TODO (alepez) output.set_high();
+//! use tc37x_pac::PORT_00;
+//! use tc37x_hal::gpio::GpioExt;
+//! let mut gpio00 = PORT_00.split();
+//! let mut output = gpio00.p00_5.into_push_pull_output();
+//! output.set_high();
 //! ```
 //!
 //! ## Modes
