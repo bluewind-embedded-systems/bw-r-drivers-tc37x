@@ -558,13 +558,12 @@ where
 }
 
 macro_rules! gpio {
-    ($GPIOX:ident, $gpiox:ident, $PEPin:ident, $port_id:expr, $PXn:ident, [
+    ($pac_module:ident, $GPIOX:ident, $gpiox:ident, $port_id:expr, $PXn:ident, [
         $($PXi:ident: ($pxi:ident, $i:expr, [$($A:literal),*] $(, $MODE:ty)?),)+
     ]) => {
         /// GPIO
         pub mod $gpiox {
-            use crate::pac::$GPIOX;
-            use crate::rcc::{Enable, Reset};
+            use crate::pac::$pac_module::$GPIOX;
 
             /// GPIO parts
             pub struct Parts {
@@ -580,8 +579,8 @@ macro_rules! gpio {
                 fn split(self) -> Parts {
                     unsafe {
                         // Enable clock.
-                        $GPIOX::enable_unchecked();
-                        $GPIOX::reset_unchecked();
+                        // TODO (alepez) $GPIOX::enable_unchecked();
+                        // TODO (alepez) $GPIOX::reset_unchecked();
                     }
                     Parts {
                         $(
@@ -622,48 +621,10 @@ use gpio;
 // cargo expand --lib --tests gpio::f4 --features stm32f401
 // The I removed all pins except one
 
-mod tc375 {
-    pub use super::Input as DefaultMode;
-    use super::*;
-    /// GPIO
-    pub mod gpio00 {
-        use crate::pac::port_00::Port_00;
-        // TODO (alepez) use crate::rcc::{Enable, Reset};
-        /// GPIO parts
-        pub struct Parts {
-            pub p00_5: P00_5,
-            pub p00_6: P00_6,
-        }
-        impl super::GpioExt for Port_00 {
-            type Parts = Parts;
-            fn split(self) -> Parts {
-                unsafe {
-                    // TODO (alepez) Port_00::enable_unchecked();
-                    // TODO (alepez) Port_00::reset_unchecked();
-                }
-                Parts {
-                    p00_5: P00_5::new(),
-                    p00_6: P00_6::new(),
-                }
-            }
-        }
-        ///Common type for
-        ///GPIO00
-        /// related pins
-        pub type P00n<MODE> = super::PartiallyErasedPin<0, MODE>;
-        ///P00_5
-        /// pin
-        pub type P00_5<MODE = super::DefaultMode> = super::Pin<0, 5, MODE>;
-        // TODO (alepez) These are alternate functions mappings
-        impl<MODE> super::marker::IntoAf<1> for P00_5<MODE> {}
-        impl<MODE> super::marker::IntoAf<2> for P00_5<MODE> {}
-        impl<MODE> super::marker::IntoAf<7> for P00_5<MODE> {}
-
-        pub type P00_6<MODE = super::DefaultMode> = super::Pin<0, 6, MODE>;
-    }
-    pub use gpio00::P00_5;
-    pub use gpio00::P00_6;
-}
+gpio!(port_00, Port_00, gpio00, 0, P00n, [
+    P00_5: (p00_5, 5, [1]),
+    P00_6: (p00_6, 6, [1]),
+]);
 
 // TODO (alepez) Was crate::pac::gpioa::RegisterBlock in stm32f4xx-hal
 type RegisterBlock = crate::pac::port_00::Port_00;
