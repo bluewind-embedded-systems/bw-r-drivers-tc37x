@@ -9,6 +9,7 @@ tc37x_rt::entry!(main);
 use core::arch::asm;
 use tc37x_hal::pac;
 use tc37x_pac::RegValue;
+use tc37x_hal::gpio::GpioExt;
 
 pub enum State {
     NotChanged = 0,
@@ -66,12 +67,17 @@ fn main() -> ! {
     // TODO let gpioc = p.GPIOC.split();
     // TODO let mut led = gpioc.pc13.into_push_pull_output();
 
+    // let gpio00 = pac::PORT_00.split();
+    // let mut led1 = gpio00.p00_5.into_push_pull_output();
+
     loop {
         defmt::info!("|");
         port_00_set_state(PIN_INDEX, State::High);
+        // led1.set_high();
         wait_nop(100000);
         defmt::info!(".");
         port_00_set_state(PIN_INDEX, State::Low);
+        // led1.set_low();
         wait_nop(100000);
     }
 }

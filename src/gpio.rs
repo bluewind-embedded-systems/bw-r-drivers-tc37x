@@ -433,36 +433,25 @@ impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE> {
     /// a short spike of an incorrect value
     #[inline(always)]
     fn _set_state(&mut self, state: PinState) {
-        match state {
-            PinState::High => self._set_high(),
-            PinState::Low => self._set_low(),
-        }
+        let state: u32 = match state {
+            PinState::High => 1,
+            PinState::Low => 1 << 16,
+        };
+        unsafe {
+            (*Gpio::<P>::ptr()).omr().init(|mut r| {
+                let data = r.data_mut_ref();
+                *data = (state << N).into();
+                r
+            });
+        };
     }
     #[inline(always)]
     fn _set_high(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        // TODO (alepez) test this
-        unsafe {
-            // TODO (alepez)
-            // Gpio::<P>::ptr().omr().init(|mut r| {
-            //     let data = r.data_mut_ref();
-            //     *data = (1u32 << N).into();
-            //     r
-            // });
-        }
+        self._set_state(PinState::High)
     }
     #[inline(always)]
     fn _set_low(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        // TODO (alepez) test this
-        unsafe {
-            // TODO (alepez)
-            // Gpio::<P>::ptr().omr().init(|mut r| {
-            //     let data = r.data_mut_ref();
-            //     *data = (0u32 << N).into();
-            //     r
-            // });
-        }
+        self._set_state(PinState::Low)
     }
     #[inline(always)]
     fn _is_set_low(&self) -> bool {
@@ -668,9 +657,7 @@ mod tc375 {
         impl<MODE> super::marker::IntoAf<2> for P00_5<MODE> {}
         impl<MODE> super::marker::IntoAf<7> for P00_5<MODE> {}
     }
-    pub use gpioa::{
-        P00_5
-    };
+    pub use gpio00::P00_5;
 }
 
 // TODO (alepez) Was crate::pac::gpioa::RegisterBlock in stm32f4xx-hal
