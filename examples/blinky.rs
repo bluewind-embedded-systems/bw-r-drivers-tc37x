@@ -57,10 +57,16 @@ fn main() -> ! {
 
     // TODO Adapt this example taken from https://github.com/stm32-rs/stm32f4xx-hal
 
-    const PIN_INDEX: usize = 5;
+    const LED1_PIN_INDEX: usize = 5;
+    const LED2_PIN_INDEX: usize = 6;
+
     const OUTPUT_PUSH_PULL_GENERAL: u32 = 0x80;
-    port_00_set_state(PIN_INDEX, State::High);
-    port_00_set_mode(PIN_INDEX, OUTPUT_PUSH_PULL_GENERAL);
+
+    port_00_set_state(LED1_PIN_INDEX, State::High);
+    port_00_set_mode(LED1_PIN_INDEX, OUTPUT_PUSH_PULL_GENERAL);
+
+    port_00_set_state(LED2_PIN_INDEX, State::High);
+    port_00_set_mode(LED2_PIN_INDEX, OUTPUT_PUSH_PULL_GENERAL);
 
     // TODO Refactor to something similar to this:
     // TODO let p = pac::Peripherals::take().unwrap();
@@ -72,11 +78,13 @@ fn main() -> ! {
 
     loop {
         defmt::info!("|");
-        port_00_set_state(PIN_INDEX, State::High);
+        port_00_set_state(LED1_PIN_INDEX, State::High);
+        port_00_set_state(LED2_PIN_INDEX, State::Low);
         // led1.set_high();
         wait_nop(100000);
         defmt::info!(".");
-        port_00_set_state(PIN_INDEX, State::Low);
+        port_00_set_state(LED1_PIN_INDEX, State::Low);
+        port_00_set_state(LED2_PIN_INDEX, State::High);
         // led1.set_low();
         wait_nop(100000);
     }
