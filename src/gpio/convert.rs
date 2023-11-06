@@ -97,8 +97,7 @@ impl<const P: usize, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
     /// ensure they use this properly.
     #[inline(always)]
     pub(super) fn mode<M: PinMode>(&mut self) {
-        // TODO (alepez)
-        // change_mode!((*Gpio::<P>::ptr()), N);
+        change_mode!((*Gpio::<P>::ptr()), N);
     }
 
     #[inline(always)]
@@ -152,8 +151,7 @@ impl<MODE: PinMode> ErasedPin<MODE> {
     #[inline(always)]
     pub(super) fn mode<M: PinMode>(&mut self) {
         let n = self.pin_id();
-        // TODO (alepez)
-        // change_mode!(self.block(), n);
+        change_mode!(self.block(), n);
     }
 
     #[inline(always)]
