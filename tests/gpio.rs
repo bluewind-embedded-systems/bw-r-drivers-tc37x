@@ -1,18 +1,31 @@
 use tc37x_hal::gpio::GpioExt;
-use tc37x_hal::tracing::log::reporter;
-use tc37x_hal::tracing::test_with;
+use tc37x_hal::tracing;
 use tc37x_pac::PORT_00;
 
 #[test]
 fn test_pin_set_high() {
-    let (reporter, report) = reporter();
+    let report = tracing::log::Report::new();
 
-    test_with(reporter, || {
-        let gpio00 = PORT_00.split();
-        let mut output = gpio00.p00_5.into_push_pull_output();
-        output.set_high();
-        assert_eq!(report.get_logs().len(), 2);
-    });
+    let gpio00 = PORT_00.split();
+    let mut output = gpio00.p00_5.into_push_pull_output();
+
+    output.set_high();
+    assert_eq!(report.get_logs().len(), 2);
+
+    output.set_low();
+    assert_eq!(report.get_logs().len(), 1);
+}
+
+#[test]
+fn test_pin_set_high_print() {
+    let _report = tracing::print::Report::new();
+
+    let gpio00 = PORT_00.split();
+    let mut output = gpio00.p00_5.into_push_pull_output();
+
+    output.set_high();
+
+    output.set_low();
 }
 
 #[test]

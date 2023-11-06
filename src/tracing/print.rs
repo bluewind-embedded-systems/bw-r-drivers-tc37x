@@ -1,10 +1,19 @@
 use std::any::Any;
-use tc37x_pac::tracing::Reporter;
+use tc37x_pac::tracing::TraceGuard;
 
-#[derive(Copy, Clone)]
-pub struct PrintEffectReporter;
+struct Reporter;
 
-impl Reporter for PrintEffectReporter {
+pub struct Report(TraceGuard);
+
+impl Report {
+    pub fn new() -> Self {
+        let reporter = Reporter;
+        let guard = TraceGuard::new(reporter);
+        Self(guard)
+    }
+}
+
+impl tc37x_pac::tracing::Reporter for Reporter {
     fn read_volatile(&self, ptr: usize, len: usize) -> u32 {
         println!("read_volatile 0x{:08X} len={}", ptr, len);
         0 // FIXME
