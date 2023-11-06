@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use tc37x_pac::tracing::TraceGuard;
 
 struct Reporter {
-    data: Arc<Mutex<Vec<ReportData>>>,
+    shared_log: Arc<Mutex<Vec<ReportData>>>,
 }
 
 pub struct Report {
@@ -15,7 +15,9 @@ pub struct Report {
 impl Report {
     pub fn new() -> Self {
         let data = Arc::new(Mutex::new(Vec::new()));
-        let reporter = Reporter { data: data.clone() };
+        let reporter = Reporter {
+            shared_log: data.clone(),
+        };
         let guard = TraceGuard::new(reporter);
         Self {
             data: data.clone(),
@@ -32,7 +34,7 @@ impl Report {
 
 impl Reporter {
     fn push(&self, report: ReportData) {
-        self.data.lock().unwrap().push(report);
+        self.shared_log.lock().unwrap().push(report);
     }
 
     fn report(&self, action: ReportAction, addr: usize, len: usize) {
