@@ -1,6 +1,7 @@
-use crate::tracing::{ReportAction, ReportData};
+use crate::tracing::{LoadModifyStoreEntry, ReadEntry, ReportEntry, WriteEntry};
 use std::any::Any;
 use std::collections::{HashMap, VecDeque};
+use std::fmt::{Debug, Display, Formatter, Write};
 use std::sync::{Arc, Mutex};
 use tc37x_pac::tracing::TraceGuard;
 
@@ -15,7 +16,7 @@ struct ReadFifo(VecDeque<ReadFifoEntry>);
 
 #[derive(Default)]
 struct SharedData {
-    log: Vec<ReportData>,
+    log: Log,
     read_fifo: ReadFifo,
 }
 
@@ -41,10 +42,10 @@ impl Report {
         }
     }
 
-    pub fn get_logs(&self) -> Vec<ReportData> {
+    pub fn get_log(&self) -> Log {
         let mut g = self.shared_data.lock().unwrap();
-        let len = g.log.len();
-        g.log.drain(0..len).collect()
+        let len = g.log.0.len();
+        Log(g.log.0.drain(0..len).collect())
     }
 
     pub fn expect_read(&self, addr: usize, len: usize, val: u64) {
@@ -58,18 +59,14 @@ impl Report {
 }
 
 impl Reporter {
-    fn push(&self, report: ReportData) {
-        self.shared_data.lock().unwrap().log.push(report);
-    }
-
-    fn report(&self, action: ReportAction, addr: usize, len: usize) {
-        self.push(ReportData::new(action, addr, len))
+    fn push(&self, report: ReportEntry) {
+        self.shared_data.lock().unwrap().log.0.push(report);
     }
 }
 
 impl tc37x_pac::tracing::Reporter for Reporter {
     fn read_volatile(&self, addr: usize, len: usize) -> u64 {
-        self.report(ReportAction::Read, addr, len);
+        self.push(ReportEntry::Read(ReadEntry { addr, len }));
 
         let entry = self
             .shared_data
@@ -88,15 +85,14 @@ impl tc37x_pac::tracing::Reporter for Reporter {
     }
 
     fn write_volatile(&self, addr: usize, len: usize, val: u64) {
-        self.report(ReportAction::Write(val), addr, len);
+        self.push(ReportEntry::Write(WriteEntry { addr, len, val }));
     }
 
     fn load_modify_store(&self, addr: usize, val: u64) {
-        self.report(
-            ReportAction::LoadModifyStore(val),
+        self.push(ReportEntry::LoadModifyStore(LoadModifyStoreEntry {
             addr,
-            core::mem::size_of::<u64>(),
-        );
+            val,
+        }));
     }
 }
 
@@ -105,5 +101,28 @@ impl Drop for Reporter {
         if !self.shared_data.lock().unwrap().read_fifo.0.is_empty() {
             panic!("More read where expected");
         }
+    }
+}
+
+#[derive(Default)]
+pub struct Log(Vec<ReportEntry>);
+
+impl Display for Log {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Ok(for entry in &self.0 {
+            match entry {
+                ReportEntry::Read(x) => {
+                    write!(f, "r    {:08X} {:02}", x.addr, x.len);
+                }
+                ReportEntry::Write(x) => {
+                    write!(f, "w    {:08X} {:02} {:08X}", x.addr, x.len, x.val);
+                }
+                ReportEntry::LoadModifyStore(x) => {
+                    write!(f, "ldms {:08X}   {:08X}", x.addr, x.val);
+                }
+            }
+
+            f.write_char('\n');
+        })
     }
 }

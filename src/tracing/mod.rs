@@ -12,22 +12,28 @@ use std::{
 
 use crate::pac::tracing::Reporter;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ReportData {
-    pub addr: usize,
-    pub len: usize,
-    pub action: ReportAction,
+#[derive(Debug, PartialEq, Eq)]
+pub enum ReportEntry {
+    Read(ReadEntry),
+    Write(WriteEntry),
+    LoadModifyStore(LoadModifyStoreEntry),
 }
 
-impl ReportData {
-    pub fn new(action: ReportAction, addr: usize, len: usize) -> Self {
-        Self { addr, len, action }
-    }
+#[derive(Debug, PartialEq, Eq)]
+pub struct ReadEntry {
+    addr: usize,
+    len: usize,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ReportAction {
-    Read,
-    Write(u64),
-    LoadModifyStore(u64),
+#[derive(Debug, PartialEq, Eq)]
+pub struct WriteEntry {
+    addr: usize,
+    len: usize,
+    val: u64,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct LoadModifyStoreEntry {
+    addr: usize,
+    val: u64,
 }
