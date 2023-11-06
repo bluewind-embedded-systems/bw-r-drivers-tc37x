@@ -46,8 +46,4 @@ impl tc37x_pac::tracing::Reporter for Reporter {
             core::mem::size_of::<u64>(),
         );
     }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
 }

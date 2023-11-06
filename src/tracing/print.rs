@@ -17,8 +17,4 @@ impl Reporter for PrintEffectReporter {
     fn load_modify_store(&self, ptr: usize, val: u64) {
         println!("load_modify_store 0x{:08X} val={}", ptr, val);
     }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
 }
