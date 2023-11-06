@@ -1,11 +1,22 @@
 use crate::tracing::{ReportAction, ReportData};
 use std::any::Any;
+use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex};
 use tc37x_pac::tracing::TraceGuard;
+
+struct ReadFifoEntry {
+    addr: usize,
+    len: usize,
+    val: u32,
+}
+
+#[derive(Default)]
+struct ReadFifo(VecDeque<ReadFifoEntry>);
 
 #[derive(Default)]
 struct SharedData {
     log: Vec<ReportData>,
+    read_fifo: ReadFifo,
 }
 
 struct Reporter {
@@ -35,6 +46,15 @@ impl Report {
         let len = g.log.len();
         g.log.drain(0..len).collect()
     }
+
+    pub fn expect_read(&self, addr: usize, len: usize, val: u32) {
+        self.shared_data
+            .lock()
+            .unwrap()
+            .read_fifo
+            .0
+            .push_front(ReadFifoEntry { addr, len, val })
+    }
 }
 
 impl Reporter {
@@ -50,7 +70,21 @@ impl Reporter {
 impl tc37x_pac::tracing::Reporter for Reporter {
     fn read_volatile(&self, addr: usize, len: usize) -> u32 {
         self.report(ReportAction::Read, addr, len);
-        0 // FIXME
+
+        let entry = self
+            .shared_data
+            .lock()
+            .unwrap()
+            .read_fifo
+            .0
+            .pop_front()
+            .expect("Unexpected read");
+
+        if entry.addr == addr && entry.len == len {
+            entry.val
+        } else {
+            panic!("Unexpected read at address {} with len {}", addr, len)
+        }
     }
 
     fn write_volatile(&self, addr: usize, len: usize, val: u32) {
@@ -63,5 +97,13 @@ impl tc37x_pac::tracing::Reporter for Reporter {
             addr,
             core::mem::size_of::<u64>(),
         );
+    }
+}
+
+impl Drop for Reporter {
+    fn drop(&mut self) {
+        if !self.shared_data.lock().unwrap().read_fifo.0.is_empty() {
+            panic!("More read where expected");
+        }
     }
 }
