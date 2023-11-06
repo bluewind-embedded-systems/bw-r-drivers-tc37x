@@ -109,40 +109,24 @@ impl<const P: usize, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
 }
 macro_rules! change_mode {
     ($block:expr, $N:ident) => {
-        let offset = 2 * $N;
+        use tc37x_pac::hidden::RegValue;
+
+        let ioc_index = $N / 4;
+        let shift = ($N & 0x3) * 8;
+
+        let mode = 0x80; // FIXME (alepez) this is always OUTPUT_PUSH_PULL_GENERAL, must be converted from self.mode
+
         unsafe {
-            if MODE::OTYPER != M::OTYPER {
-                if let Some(otyper) = M::OTYPER {
-                    $block
-                        .otyper
-                        .modify(|r, w| w.bits(r.bits() & !(0b1 << $N) | (otyper << $N)));
-                }
-            }
-
-            if MODE::AFR != M::AFR {
-                if let Some(afr) = M::AFR {
-                    if $N < 8 {
-                        let offset2 = 4 * { $N };
-                        $block.afrl.modify(|r, w| {
-                            w.bits((r.bits() & !(0b1111 << offset2)) | (afr << offset2))
-                        });
-                    } else {
-                        let offset2 = 4 * { $N - 8 };
-                        $block.afrh.modify(|r, w| {
-                            w.bits((r.bits() & !(0b1111 << offset2)) | (afr << offset2))
-                        });
-                    }
-                }
-            }
-
-            if MODE::MODER != M::MODER {
-                $block
-                    .moder
-                    .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (M::MODER << offset)));
-            }
-        }
+            $block.iocr0().modify_atomic(|mut r| {
+                *r.data_mut_ref() = (mode) << shift;
+                *r.get_mask_mut_ref() = 0xFFu32 << shift;
+                r
+            })
+        };
     };
 }
+
+// FIXME (alepez) Remove, legacy, only for example
 macro_rules! _change_mode {
     ($block:expr, $N:ident) => {
         let offset = 2 * $N;
@@ -202,8 +186,7 @@ impl<const P: usize, MODE: PinMode> PartiallyErasedPin<P, MODE> {
     #[inline(always)]
     pub(super) fn mode<M: PinMode>(&mut self) {
         let n = self.pin_id();
-        // TODO (alepez)
-        // change_mode!((*Gpio::<P>::ptr()), n);
+        change_mode!((*Gpio::<P>::ptr()), n);
     }
 
     #[inline(always)]
