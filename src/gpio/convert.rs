@@ -107,8 +107,43 @@ impl<const P: usize, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
         Pin::new()
     }
 }
-
 macro_rules! change_mode {
+    ($block:expr, $N:ident) => {
+        let offset = 2 * $N;
+        unsafe {
+            if MODE::OTYPER != M::OTYPER {
+                if let Some(otyper) = M::OTYPER {
+                    $block
+                        .otyper
+                        .modify(|r, w| w.bits(r.bits() & !(0b1 << $N) | (otyper << $N)));
+                }
+            }
+
+            if MODE::AFR != M::AFR {
+                if let Some(afr) = M::AFR {
+                    if $N < 8 {
+                        let offset2 = 4 * { $N };
+                        $block.afrl.modify(|r, w| {
+                            w.bits((r.bits() & !(0b1111 << offset2)) | (afr << offset2))
+                        });
+                    } else {
+                        let offset2 = 4 * { $N - 8 };
+                        $block.afrh.modify(|r, w| {
+                            w.bits((r.bits() & !(0b1111 << offset2)) | (afr << offset2))
+                        });
+                    }
+                }
+            }
+
+            if MODE::MODER != M::MODER {
+                $block
+                    .moder
+                    .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (M::MODER << offset)));
+            }
+        }
+    };
+}
+macro_rules! _change_mode {
     ($block:expr, $N:ident) => {
         let offset = 2 * $N;
         unsafe {
