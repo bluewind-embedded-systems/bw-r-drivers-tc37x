@@ -3,38 +3,43 @@ use std::any::Any;
 use std::sync::{Arc, Mutex};
 use tc37x_pac::tracing::TraceGuard;
 
+#[derive(Default)]
+struct SharedData {
+    log: Vec<ReportData>,
+}
+
 struct Reporter {
-    shared_log: Arc<Mutex<Vec<ReportData>>>,
+    shared_data: Arc<Mutex<SharedData>>,
 }
 
 pub struct Report {
-    data: Arc<Mutex<Vec<ReportData>>>,
+    shared_data: Arc<Mutex<SharedData>>,
     _guard: TraceGuard,
 }
 
 impl Report {
     pub fn new() -> Self {
-        let data = Arc::new(Mutex::new(Vec::new()));
+        let data = Arc::new(Mutex::new(SharedData::default()));
         let reporter = Reporter {
-            shared_log: data.clone(),
+            shared_data: data.clone(),
         };
         let guard = TraceGuard::new(reporter);
         Self {
-            data: data.clone(),
+            shared_data: data.clone(),
             _guard: guard,
         }
     }
 
     pub fn get_logs(&self) -> Vec<ReportData> {
-        let mut g = self.data.lock().unwrap();
-        let len = g.len();
-        g.drain(0..len).collect()
+        let mut g = self.shared_data.lock().unwrap();
+        let len = g.log.len();
+        g.log.drain(0..len).collect()
     }
 }
 
 impl Reporter {
     fn push(&self, report: ReportData) {
-        self.shared_log.lock().unwrap().push(report);
+        self.shared_data.lock().unwrap().log.push(report);
     }
 
     fn report(&self, action: ReportAction, addr: usize, len: usize) {
