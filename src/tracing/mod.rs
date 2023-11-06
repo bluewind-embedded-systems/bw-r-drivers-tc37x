@@ -31,5 +31,3 @@ pub enum ReportAction {
     Write(u32),
     LoadModifyStore(u64),
 }
-
-pub use tc37x_pac::tracing::test_with;
