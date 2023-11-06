@@ -1,0 +1,9 @@
+---
+source: tests/gpio.rs
+expression: report.get_log()
+---
+w    0xF003A004 04 0x00200000
+ldms 0xF003A010 0x0000FF00 0x00008000
+w    0xF003A004 04 0x00000020
+w    0xF003A004 04 0x00200000
+
