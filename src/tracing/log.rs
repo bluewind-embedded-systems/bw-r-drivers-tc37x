@@ -112,13 +112,15 @@ impl Display for Log {
         Ok(for entry in &self.0 {
             match entry {
                 ReportEntry::Read(x) => {
-                    write!(f, "r    {:08X} {:02}", x.addr, x.len);
+                    write!(f, "r    0x{:08X} {:02}", x.addr, x.len);
                 }
                 ReportEntry::Write(x) => {
-                    write!(f, "w    {:08X} {:02} {:08X}", x.addr, x.len, x.val);
+                    write!(f, "w    0x{:08X} {:02} 0x{:08X}", x.addr, x.len, x.val);
                 }
                 ReportEntry::LoadModifyStore(x) => {
-                    write!(f, "ldms {:08X}   {:08X}", x.addr, x.val);
+                    let mask = (x.val >> 32);
+                    let val = (x.val & 0xFFFFFFFF);
+                    write!(f, "ldms 0x{:08X} 0x{:08X} 0x{:08X}", x.addr, mask, val);
                 }
             }
 
