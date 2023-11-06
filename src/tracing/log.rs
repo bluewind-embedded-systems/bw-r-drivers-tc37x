@@ -7,7 +7,7 @@ use tc37x_pac::tracing::TraceGuard;
 struct ReadFifoEntry {
     addr: usize,
     len: usize,
-    val: u32,
+    val: u64,
 }
 
 #[derive(Default)]
@@ -47,7 +47,7 @@ impl Report {
         g.log.drain(0..len).collect()
     }
 
-    pub fn expect_read(&self, addr: usize, len: usize, val: u32) {
+    pub fn expect_read(&self, addr: usize, len: usize, val: u64) {
         self.shared_data
             .lock()
             .unwrap()
@@ -68,7 +68,7 @@ impl Reporter {
 }
 
 impl tc37x_pac::tracing::Reporter for Reporter {
-    fn read_volatile(&self, addr: usize, len: usize) -> u32 {
+    fn read_volatile(&self, addr: usize, len: usize) -> u64 {
         self.report(ReportAction::Read, addr, len);
 
         let entry = self
@@ -87,7 +87,7 @@ impl tc37x_pac::tracing::Reporter for Reporter {
         }
     }
 
-    fn write_volatile(&self, addr: usize, len: usize, val: u32) {
+    fn write_volatile(&self, addr: usize, len: usize, val: u64) {
         self.report(ReportAction::Write(val), addr, len);
     }
 

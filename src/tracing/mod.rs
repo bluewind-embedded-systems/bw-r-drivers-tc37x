@@ -28,6 +28,6 @@ impl ReportData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ReportAction {
     Read,
-    Write(u32),
+    Write(u64),
     LoadModifyStore(u64),
 }

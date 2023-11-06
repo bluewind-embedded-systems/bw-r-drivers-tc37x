@@ -1,6 +1,5 @@
 use tc37x_hal::gpio::GpioExt;
 use tc37x_hal::tracing;
-use tc37x_hal::tracing::{ReportAction, ReportData};
 use tc37x_pac::PORT_00;
 
 #[test]

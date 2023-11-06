@@ -14,12 +14,12 @@ impl Report {
 }
 
 impl tc37x_pac::tracing::Reporter for Reporter {
-    fn read_volatile(&self, ptr: usize, len: usize) -> u32 {
+    fn read_volatile(&self, ptr: usize, len: usize) -> u64 {
         println!("read_volatile 0x{:08X} len={}", ptr, len);
         0 // FIXME
     }
 
-    fn write_volatile(&self, ptr: usize, len: usize, val: u32) {
+    fn write_volatile(&self, ptr: usize, len: usize, val: u64) {
         println!("write_volatile 0x{:08X} len={} val={}", ptr, len, val);
     }
 
