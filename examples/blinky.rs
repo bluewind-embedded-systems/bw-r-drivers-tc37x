@@ -53,7 +53,7 @@ fn main() -> ! {
     // defmt::info!("Hello world!");
 
     #[cfg(not(target_arch = "tricore"))]
-    tc37x_hal::tracing::redirect_to_print();
+    let _report = tc37x_hal::tracing::print::Report::new();
 
     // TODO Adapt this example taken from https://github.com/stm32-rs/stm32f4xx-hal
 
