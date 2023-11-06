@@ -1,4 +1,5 @@
 use crate::tracing::{ReportAction, ReportData};
+use std::any::Any;
 use std::sync::{Arc, Mutex};
 use tc37x_pac::tracing::Reporter;
 
@@ -37,5 +38,9 @@ impl Reporter for LogEffectReporter {
             addr,
             core::mem::size_of::<u64>(),
         );
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }

@@ -1,6 +1,5 @@
 #![allow(unused)]
 
-mod dummy;
 pub mod log;
 pub mod print;
 
@@ -12,7 +11,6 @@ use std::{
 };
 
 use crate::pac::tracing::Reporter;
-use crate::tracing::dummy::DummyEffectReporter;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReportData {
@@ -34,9 +32,4 @@ pub enum ReportAction {
     LoadModifyStore(u64),
 }
 
-pub fn test_with(reporter: impl FnOnce() -> Box<dyn Reporter>, test_body: impl FnOnce() -> ()) {
-    let reporter = reporter();
-    crate::pac::tracing::set_effect_reporter(reporter);
-    test_body();
-    crate::pac::tracing::set_effect_reporter(Box::new(DummyEffectReporter));
-}
+pub use tc37x_pac::tracing::test_with;

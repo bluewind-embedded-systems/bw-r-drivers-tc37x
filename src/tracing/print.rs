@@ -1,3 +1,4 @@
+use std::any::Any;
 use tc37x_pac::tracing::Reporter;
 
 #[derive(Copy, Clone)]
@@ -16,10 +17,8 @@ impl Reporter for PrintEffectReporter {
     fn load_modify_store(&self, ptr: usize, val: u64) {
         println!("load_modify_store 0x{:08X} val={}", ptr, val);
     }
-}
 
-pub fn redirect_to_print() {
-    use std::boxed::Box;
-    use crate::pac;
-    pac::tracing::set_effect_reporter(Box::new(PrintEffectReporter));
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
