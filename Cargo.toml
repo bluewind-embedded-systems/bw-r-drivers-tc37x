@@ -54,3 +54,6 @@ disable_watchdogs = []
 [[example]]
 name = "blinky"
 required-features = ["example"]
+
+[dev-dependencies]
+insta = { version = "1.34.0", features = ["ron"] }
