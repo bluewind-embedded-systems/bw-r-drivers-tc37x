@@ -1,18 +1,25 @@
 use crate::tracing::{ReportAction, ReportData};
 use std::any::Any;
 use std::sync::{Arc, Mutex};
-use tc37x_pac::tracing::Reporter;
 
-#[derive(Default, Clone)]
-pub struct LogEffectReporter(Arc<Mutex<Vec<ReportData>>>);
+pub struct Reporter(Arc<Mutex<Vec<ReportData>>>);
 
-impl LogEffectReporter {
+pub struct Report(Arc<Mutex<Vec<ReportData>>>);
+
+pub fn reporter() -> (Reporter, Report) {
+    let x = Arc::new(Mutex::new(Vec::new()));
+    (Reporter(x.clone()), Report(x.clone()))
+}
+
+impl Report {
     pub fn get_logs(&self) -> Vec<ReportData> {
         let mut g = self.0.lock().unwrap();
         let len = g.len();
         g.drain(0..len).collect()
     }
+}
 
+impl Reporter {
     fn push(&self, report: ReportData) {
         self.0.lock().unwrap().push(report);
     }
@@ -22,7 +29,7 @@ impl LogEffectReporter {
     }
 }
 
-impl Reporter for LogEffectReporter {
+impl tc37x_pac::tracing::Reporter for Reporter {
     fn read_volatile(&self, addr: usize, len: usize) -> u32 {
         self.report(ReportAction::Read, addr, len);
         0 // FIXME
