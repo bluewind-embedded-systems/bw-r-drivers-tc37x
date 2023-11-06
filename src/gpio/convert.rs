@@ -111,13 +111,16 @@ macro_rules! change_mode {
     ($block:expr, $N:ident) => {
         use tc37x_pac::hidden::RegValue;
 
-        let ioc_index = $N / 4;
+        let iocr_index = $N / 4;
         let shift = ($N & 0x3) * 8;
 
-        let mode = 0x80; // FIXME (alepez) this is always OUTPUT_PUSH_PULL_GENERAL, must be converted from self.mode
+        // FIXME (alepez) this is always OUTPUT_PUSH_PULL_GENERAL, must be converted from self.mode
+        let mode = 0x80;
 
         unsafe {
-            $block.iocr0().modify_atomic(|mut r| {
+            // FIXME (alepez) the index (N in iocrN, like iocr0, iocr1) must be iocr_index
+            let iocr = $block.iocr4();
+            iocr.modify_atomic(|mut r| {
                 *r.data_mut_ref() = (mode) << shift;
                 *r.get_mask_mut_ref() = 0xFFu32 << shift;
                 r

@@ -43,6 +43,11 @@ optional = true
 version = "1.1.1"
 features = ["restore-state-bool"]
 
+[dependencies.insta]
+optional = true
+version = "1.34.0"
+features = ["ron"]
+
 [features]
 default = []
 example = ["rt", "panic_handler", "log", "disable_watchdogs"]
@@ -50,10 +55,8 @@ log = ["dep:defmt", "dep:defmt-rtt"]
 rt = ["dep:tc37x-rt", "dep:critical-section"]
 panic_handler = []
 disable_watchdogs = []
+tracing = ["dep:insta"]
 
 [[example]]
 name = "blinky"
 required-features = ["example"]
-
-[dev-dependencies]
-insta = { version = "1.34.0", features = ["ron"] }
