@@ -115,7 +115,7 @@ macro_rules! change_mode {
         let shift : usize = (($N & 0x3) * 8).into();
         let iocr_offset : usize = ($N / 4).into();
 
-        // FIXME (alepez) this is always OUTPUT_PUSH_PULL_GENERAL, must be converted from self.mode
+        // FIXME (alepez) this is always OUTPUT_PUSH_PULL_GENERAL, must be converted from MODE
         let mode = 0x80;
 
         let mode_bits : u32 = (mode) << shift;
@@ -287,6 +287,27 @@ impl<const P: usize, const N: u8, CURRENT: PinMode, ORIG: PinMode> Drop
         self.pin.mode::<ORIG>();
     }
 }
+
+// TODO (alepez) Change PinMode to work wit TC37 modes:
+//     pub const INPUT_NO_PULL_DEVICE: Mode = Self(0);
+//     pub const INPUT_PULL_DOWN: Mode = Self(8);
+//     pub const INPUT_PULL_UP: Mode = Self(0x10);
+//     pub const OUTPUT_PUSH_PULL_GENERAL: Mode = Self(0x80);
+//     pub const OUTPUT_PUSH_PULL_ALT1: Mode = Self(0x88);
+//     pub const OUTPUT_PUSH_PULL_ALT2: Mode = Self(0x90);
+//     pub const OUTPUT_PUSH_PULL_ALT3: Mode = Self(0x98);
+//     pub const OUTPUT_PUSH_PULL_ALT4: Mode = Self(0xA0);
+//     pub const OUTPUT_PUSH_PULL_ALT5: Mode = Self(0xA8);
+//     pub const OUTPUT_PUSH_PULL_ALT6: Mode = Self(0xB0);
+//     pub const OUTPUT_PUSH_PULL_ALT7: Mode = Self(0xB8);
+//     pub const OUTPUT_OPEN_DRAIN_GENERAL: Mode = Self(0xC0);
+//     pub const OUTPUT_OPEN_DRAIN_ALT1: Mode = Self(0xC8);
+//     pub const OUTPUT_OPEN_DRAIN_ALT2: Mode = Self(0xD0);
+//     pub const OUTPUT_OPEN_DRAIN_ALT3: Mode = Self(0xD8);
+//     pub const OUTPUT_OPEN_DRAIN_ALT4: Mode = Self(0xE0);
+//     pub const OUTPUT_OPEN_DRAIN_ALT5: Mode = Self(0xE8);
+//     pub const OUTPUT_OPEN_DRAIN_ALT6: Mode = Self(0xF0);
+//     pub const OUTPUT_OPEN_DRAIN_ALT7: Mode = Self(0xF8);
 
 /// Marker trait for valid pin modes (type state).
 ///
