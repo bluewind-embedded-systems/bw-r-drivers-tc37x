@@ -110,6 +110,7 @@ impl<const P: usize, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
 macro_rules! change_mode {
     ($block:expr, $N:ident) => {
         use tc37x_pac::hidden::RegValue;
+        use crate::pac;
 
         let iocr_index = $N / 4;
         let shift = ($N & 0x3) * 8;
@@ -117,9 +118,14 @@ macro_rules! change_mode {
         // FIXME (alepez) this is always OUTPUT_PUSH_PULL_GENERAL, must be converted from self.mode
         let mode = 0x80;
 
+        let iocr: pac::Reg<pac::port_00::Iocr0, pac::RW> = unsafe {
+            let iocr0 = $block.iocr0();
+            let addr: *mut u32 = core::mem::transmute(iocr0);
+            let addr = addr.add(iocr_index as _);
+            core::mem::transmute(addr)
+        };
+
         unsafe {
-            // FIXME (alepez) the index (N in iocrN, like iocr0, iocr1) must be iocr_index
-            let iocr = $block.iocr4();
             iocr.modify_atomic(|mut r| {
                 *r.data_mut_ref() = (mode) << shift;
                 *r.get_mask_mut_ref() = 0xFFu32 << shift;
