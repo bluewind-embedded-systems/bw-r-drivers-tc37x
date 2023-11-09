@@ -112,23 +112,28 @@ macro_rules! change_mode {
         use tc37x_pac::hidden::RegValue;
         use crate::pac;
 
-        let iocr_index = $N / 4;
-        let shift = ($N & 0x3) * 8;
+        let shift : usize = (($N & 0x3) * 8).into();
+        let iocr_offset : usize = ($N / 4).into();
 
         // FIXME (alepez) this is always OUTPUT_PUSH_PULL_GENERAL, must be converted from self.mode
         let mode = 0x80;
 
+        let mode_bits : u32 = (mode) << shift;
+        let mode_mask : u32 = 0xFF << shift;
+
+        // Violates pac APIs, but it's a simple way to select the correct IOCR register, given
+        // the port and the pin index.
         let iocr: pac::Reg<pac::port_00::Iocr0, pac::RW> = unsafe {
             let iocr0 = $block.iocr0();
             let addr: *mut u32 = core::mem::transmute(iocr0);
-            let addr = addr.add(iocr_index as _);
+            let addr = addr.add(iocr_offset);
             core::mem::transmute(addr)
         };
 
         unsafe {
             iocr.modify_atomic(|mut r| {
-                *r.data_mut_ref() = (mode) << shift;
-                *r.get_mask_mut_ref() = 0xFFu32 << shift;
+                *r.data_mut_ref() = mode_bits;
+                *r.get_mask_mut_ref() = mode_mask;
                 r
             })
         };
