@@ -31,7 +31,6 @@ fn test_pin_set_two_pins_same_port_high() {
     insta::assert_display_snapshot!(report.get_log());
 }
 
-
 #[test]
 fn test_pin_set_two_pins_on_two_ports_high() {
     let report = tracing::log::Report::new();

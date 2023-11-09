@@ -159,8 +159,8 @@ impl<MODE> ErasedPin<Output<MODE>> {
 }
 
 impl<MODE> ErasedPin<MODE>
-    where
-        MODE: marker::Readable,
+where
+    MODE: marker::Readable,
 {
     /// Is the input pin high?
     #[inline(always)]

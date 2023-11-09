@@ -109,17 +109,17 @@ impl<const P: usize, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
 }
 macro_rules! change_mode {
     ($block:expr, $N:ident) => {
-        use tc37x_pac::hidden::RegValue;
         use crate::pac;
+        use tc37x_pac::hidden::RegValue;
 
-        let shift : usize = (($N & 0x3) * 8).into();
-        let iocr_offset : usize = ($N / 4).into();
+        let shift: usize = (($N & 0x3) * 8).into();
+        let iocr_offset: usize = ($N / 4).into();
 
         // FIXME (alepez) this is always OUTPUT_PUSH_PULL_GENERAL, must be converted from MODE
         let mode = 0x80;
 
-        let mode_bits : u32 = (mode) << shift;
-        let mode_mask : u32 = 0xFF << shift;
+        let mode_bits: u32 = (mode) << shift;
+        let mode_mask: u32 = 0xFF << shift;
 
         // Violates pac APIs, but it's a simple way to select the correct IOCR register, given
         // the port and the pin index.

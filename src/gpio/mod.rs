@@ -67,8 +67,8 @@ pub use convert::PinMode;
 pub use dynamic::{Dynamic, DynamicPin};
 pub use erased::{EPin, ErasedPin};
 // TODO (alepez) Added because it was previously imported by use f4::*
+pub use partially_erased::{PEPin, PartiallyErasedPin};
 pub use Input as DefaultMode;
-pub use partially_erased::{PartiallyErasedPin, PEPin};
 
 pub mod alt;
 mod convert;
@@ -333,8 +333,8 @@ pub trait PinPull: Sized {
 }
 
 impl<const P: usize, const N: u8, MODE> PinSpeed for Pin<P, N, MODE>
-    where
-        MODE: marker::OutputSpeed,
+where
+    MODE: marker::OutputSpeed,
 {
     #[inline(always)]
     fn set_speed(&mut self, speed: Speed) {
@@ -343,8 +343,8 @@ impl<const P: usize, const N: u8, MODE> PinSpeed for Pin<P, N, MODE>
 }
 
 impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE>
-    where
-        MODE: marker::OutputSpeed,
+where
+    MODE: marker::OutputSpeed,
 {
     /// Set pin speed
     pub fn set_speed(&mut self, speed: Speed) {
@@ -366,8 +366,8 @@ impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE>
 }
 
 impl<const P: usize, const N: u8, MODE> PinPull for Pin<P, N, MODE>
-    where
-        MODE: marker::Active,
+where
+    MODE: marker::Active,
 {
     #[inline(always)]
     fn set_internal_resistor(&mut self, resistor: Pull) {
@@ -376,8 +376,8 @@ impl<const P: usize, const N: u8, MODE> PinPull for Pin<P, N, MODE>
 }
 
 impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE>
-    where
-        MODE: marker::Active,
+where
+    MODE: marker::Active,
 {
     /// Set the internal pull-up and pull-down resistor
     pub fn set_internal_resistor(&mut self, resistor: Pull) {
@@ -555,8 +555,8 @@ pub trait ReadPin {
 }
 
 impl<const P: usize, const N: u8, MODE> ReadPin for Pin<P, N, MODE>
-    where
-        MODE: marker::Readable,
+where
+    MODE: marker::Readable,
 {
     #[inline(always)]
     fn is_low(&self) -> bool {
@@ -565,8 +565,8 @@ impl<const P: usize, const N: u8, MODE> ReadPin for Pin<P, N, MODE>
 }
 
 impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE>
-    where
-        MODE: marker::Readable,
+where
+    MODE: marker::Readable,
 {
     /// Is the input pin high?
     #[inline(always)]

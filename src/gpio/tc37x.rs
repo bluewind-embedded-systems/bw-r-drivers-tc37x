@@ -1,5 +1,5 @@
-use super::*;
 pub use super::Input as DefaultMode;
+use super::*;
 
 gpio!(gpio00, crate::pac::port_00::Port00, 0, P00n, [
     P00_5: (p00_5, 5, [1]),
