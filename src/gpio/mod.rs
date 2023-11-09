@@ -637,9 +637,6 @@ use gpio;
 mod tc37x;
 pub use self::tc37x::*;
 
-// TODO (alepez) Was crate::pac::gpioa::RegisterBlock in stm32f4xx-hal
-type RegisterBlock = crate::pac::port_00::Port00;
-
 struct Gpio<const P: usize>;
 
 impl<const P: usize> Gpio<P> {

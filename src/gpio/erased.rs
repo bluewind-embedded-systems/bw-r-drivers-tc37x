@@ -1,6 +1,6 @@
-use super::*;
-
 pub use ErasedPin as EPin;
+
+use super::*;
 
 /// Fully erased pin
 ///
@@ -72,27 +72,22 @@ impl<MODE> ErasedPin<MODE> {
         Pin::new()
     }
 
-    // TODO (alepez) Return type was &crate::pac::gpioa::RegisterBlock
     #[inline]
-    pub(crate) unsafe fn block(&self) -> &RegisterBlock {
+    pub(crate) unsafe fn block(&self) -> &crate::pac::port_00::Port00 {
         // This function uses pointer arithmetic instead of branching to be more efficient
 
         // The logic relies on the following assumptions:
-        // - GPIOA register is available on all chips
+        // - PORT_00 register is available on all chips
         // - all gpio register blocks have the same layout
-        // - consecutive gpio register blocks have the same offset between them, namely 0x0400
+        // - consecutive gpio register blocks have the same offset between them: 0x100 (256)
         // - ErasedPin::new was called with a valid port
 
         // FIXME could be calculated after const_raw_ptr_to_usize_cast stabilization #51910
-        const GPIO_REGISTER_OFFSET: usize = 0x0400;
+        const GPIO_REGISTER_OFFSET: usize = 0x100;
 
         let offset = GPIO_REGISTER_OFFSET * self.port_id() as usize;
 
-        // TODO (alepez) note: it was like this
-        // let block_ptr =
-        //     (crate::pac::GPIOA::ptr() as usize + offset) as *const crate::gpio::RegisterBlock;
-
-        let block_ptr = (&crate::pac::PORT_00 as *const RegisterBlock).add(offset);
+        let block_ptr = (&crate::pac::PORT_00 as *const crate::pac::port_00::Port00).add(offset);
 
         unsafe { &*block_ptr }
     }
@@ -164,8 +159,8 @@ impl<MODE> ErasedPin<Output<MODE>> {
 }
 
 impl<MODE> ErasedPin<MODE>
-where
-    MODE: marker::Readable,
+    where
+        MODE: marker::Readable,
 {
     /// Is the input pin high?
     #[inline(always)]
