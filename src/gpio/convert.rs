@@ -115,10 +115,9 @@ macro_rules! change_mode {
         let shift: usize = (($N & 0x3) * 8).into();
         let iocr_offset: usize = ($N / 4).into();
 
-        // FIXME (alepez) this is always OUTPUT_PUSH_PULL_GENERAL, must be converted from MODE
-        let mode = 0x80;
+        let mode: u32 = M::MODE.into();
 
-        let mode_bits: u32 = (mode) << shift;
+        let mode_bits: u32 = mode << shift;
         let mode_mask: u32 = 0xFF << shift;
 
         // Violates pac APIs, but it's a simple way to select the correct IOCR register, given
@@ -288,72 +287,44 @@ impl<const P: usize, const N: u8, CURRENT: PinMode, ORIG: PinMode> Drop
     }
 }
 
-// TODO (alepez) Change PinMode to work wit TC37 modes:
-//     pub const INPUT_NO_PULL_DEVICE: Mode = Self(0);
-//     pub const INPUT_PULL_DOWN: Mode = Self(8);
-//     pub const INPUT_PULL_UP: Mode = Self(0x10);
-//     pub const OUTPUT_PUSH_PULL_GENERAL: Mode = Self(0x80);
-//     pub const OUTPUT_PUSH_PULL_ALT1: Mode = Self(0x88);
-//     pub const OUTPUT_PUSH_PULL_ALT2: Mode = Self(0x90);
-//     pub const OUTPUT_PUSH_PULL_ALT3: Mode = Self(0x98);
-//     pub const OUTPUT_PUSH_PULL_ALT4: Mode = Self(0xA0);
-//     pub const OUTPUT_PUSH_PULL_ALT5: Mode = Self(0xA8);
-//     pub const OUTPUT_PUSH_PULL_ALT6: Mode = Self(0xB0);
-//     pub const OUTPUT_PUSH_PULL_ALT7: Mode = Self(0xB8);
-//     pub const OUTPUT_OPEN_DRAIN_GENERAL: Mode = Self(0xC0);
-//     pub const OUTPUT_OPEN_DRAIN_ALT1: Mode = Self(0xC8);
-//     pub const OUTPUT_OPEN_DRAIN_ALT2: Mode = Self(0xD0);
-//     pub const OUTPUT_OPEN_DRAIN_ALT3: Mode = Self(0xD8);
-//     pub const OUTPUT_OPEN_DRAIN_ALT4: Mode = Self(0xE0);
-//     pub const OUTPUT_OPEN_DRAIN_ALT5: Mode = Self(0xE8);
-//     pub const OUTPUT_OPEN_DRAIN_ALT6: Mode = Self(0xF0);
-//     pub const OUTPUT_OPEN_DRAIN_ALT7: Mode = Self(0xF8);
-
 /// Marker trait for valid pin modes (type state).
 ///
 /// It can not be implemented by outside types.
 pub trait PinMode: crate::Sealed {
-    // These constants are used to implement the pin configuration code.
-    // They are not part of public API.
-
-    #[doc(hidden)]
-    const MODER: u32 = u32::MAX;
-    #[doc(hidden)]
-    const OTYPER: Option<u32> = None;
-    #[doc(hidden)]
-    const AFR: Option<u32> = None;
+    // TODO (alepez) check if MODE=0 is correct. I guess it should be the default value on the register.
+    const MODE: u8 = 0xFF;
 }
 
 impl crate::Sealed for Input {}
+
 impl PinMode for Input {
-    const MODER: u32 = 0b00;
+    const MODE: u8 = 0x00;
 }
 
+// TODO (alepez) Remove Analog
 impl crate::Sealed for Analog {}
+
+// TODO (alepez) Remove Analog
 impl PinMode for Analog {
-    const MODER: u32 = 0b11;
+    const MODE: u8 = 0; // TODO (alepez)
 }
 
 impl<Otype> crate::Sealed for Output<Otype> {}
+
 impl PinMode for Output<OpenDrain> {
-    const MODER: u32 = 0b01;
-    const OTYPER: Option<u32> = Some(0b1);
+    const MODE: u8 = 0xC0;
 }
 
 impl PinMode for Output<PushPull> {
-    const MODER: u32 = 0b01;
-    const OTYPER: Option<u32> = Some(0b0);
+    const MODE: u8 = 0x80;
 }
 
 impl<const A: u8, Otype> crate::Sealed for Alternate<A, Otype> {}
+
 impl<const A: u8> PinMode for Alternate<A, OpenDrain> {
-    const MODER: u32 = 0b10;
-    const OTYPER: Option<u32> = Some(0b1);
-    const AFR: Option<u32> = Some(A as _);
+    const MODE: u8 = 0xC0 | (A << 3);
 }
 
 impl<const A: u8> PinMode for Alternate<A, PushPull> {
-    const MODER: u32 = 0b10;
-    const OTYPER: Option<u32> = Some(0b0);
-    const AFR: Option<u32> = Some(A as _);
+    const MODE: u8 = 0x80 | (A << 3);
 }
