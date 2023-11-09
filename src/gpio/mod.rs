@@ -634,24 +634,8 @@ macro_rules! gpio {
 }
 use gpio;
 
-// TODO (alepez) Must be translated to TC37x
-// mod f4;
-// pub use f4::*;
-
-// TODO (alepez) WIP working on macro expansion from
-// The macro expansion was obtained by running cargo expand on stm32f4xx-hal
-// cargo expand --lib --tests gpio::f4 --features stm32f401
-// The I removed all pins except one
-
-gpio!(gpio00, crate::pac::port_00::Port00, 0, P00n, [
-    P00_5: (p00_5, 5, [1]),
-    P00_6: (p00_6, 6, [1]),
-]);
-
-gpio!(gpio01, crate::pac::port_01::Port01, 1, P01n, [
-    P01_9: (p01_9, 9, [1]),
-    P01_10: (p01_10, 10, [1]),
-]);
+mod tc37x;
+pub use self::tc37x::*;
 
 // TODO (alepez) Was crate::pac::gpioa::RegisterBlock in stm32f4xx-hal
 type RegisterBlock = crate::pac::port_00::Port00;
@@ -659,7 +643,7 @@ type RegisterBlock = crate::pac::port_00::Port00;
 struct Gpio<const P: usize>;
 
 impl<const P: usize> Gpio<P> {
-    const fn ptr() -> *const RegisterBlock {
+    const fn ptr() -> *const crate::pac::port_00::Port00 {
         // TODO (alepez) add ports
         // TODO (alepez) check if the assumptions are correct
         // The logic relies on the following assumptions:
