@@ -582,13 +582,11 @@ impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE>
 }
 
 macro_rules! gpio {
-    ($pac_module:ident, $GPIOX:ident, $gpiox:ident, $port_id:expr, $PXn:ident, [
+    ($PORTX:ty, $gpiox:ident, $port_id:expr, $PXn:ident, [
         $($PXi:ident: ($pxi:ident, $i:expr, [$($A:literal),*] $(, $MODE:ty)?),)+
     ]) => {
         /// GPIO
         pub mod $gpiox {
-            use crate::pac::$pac_module::$GPIOX;
-
             /// GPIO parts
             pub struct Parts {
                 $(
@@ -597,14 +595,14 @@ macro_rules! gpio {
                 )+
             }
 
-            impl super::GpioExt for $GPIOX {
+            impl super::GpioExt for $PORTX {
                 type Parts = Parts;
 
                 fn split(self) -> Parts {
                     unsafe {
                         // Enable clock.
-                        // TODO (alepez) $GPIOX::enable_unchecked();
-                        // TODO (alepez) $GPIOX::reset_unchecked();
+                        // TODO (alepez) $PORTX::enable_unchecked();
+                        // TODO (alepez) $PORTX::reset_unchecked();
                     }
                     Parts {
                         $(
@@ -615,7 +613,7 @@ macro_rules! gpio {
             }
 
             #[doc="Common type for "]
-            #[doc=stringify!($GPIOX)]
+            #[doc=stringify!($PORTX)]
             #[doc=" related pins"]
             pub type $PXn<MODE> = super::PartiallyErasedPin<$port_id, MODE>;
 
@@ -645,12 +643,12 @@ use gpio;
 // cargo expand --lib --tests gpio::f4 --features stm32f401
 // The I removed all pins except one
 
-gpio!(port_00, Port00, gpio00, 0, P00n, [
+gpio!(crate::pac::port_00::Port00, gpio00, 0, P00n, [
     P00_5: (p00_5, 5, [1]),
     P00_6: (p00_6, 6, [1]),
 ]);
 
-gpio!(port_01, Port01, gpio01, 1, P01n, [
+gpio!(crate::pac::port_01::Port01, gpio01, 1, P01n, [
     P01_9: (p01_9, 9, [1]),
     P01_10: (p01_10, 10, [1]),
 ]);
