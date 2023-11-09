@@ -57,35 +57,39 @@
 //! To make a pin dynamic, use the `into_dynamic` function, and then use the `make_<mode>` functions to
 //! change the mode
 
+use core::fmt;
 use core::marker::PhantomData;
+
+pub use embedded_hal::digital::v2::PinState;
+use tc37x_pac::RegisterValue;
+
+pub use convert::PinMode;
+pub use dynamic::{Dynamic, DynamicPin};
+pub use erased::{EPin, ErasedPin};
+// TODO (alepez) Added because it was previously imported by use f4::*
+pub use Input as DefaultMode;
+pub use partially_erased::{PartiallyErasedPin, PEPin};
 
 pub mod alt;
 mod convert;
-pub use convert::PinMode;
+
 mod partially_erased;
-pub use partially_erased::{PEPin, PartiallyErasedPin};
+
 mod erased;
-pub use erased::{EPin, ErasedPin};
+
 // TODO (alepez) mod exti;
 // TODO (alepez) pub use exti::ExtiPin;
 mod dynamic;
-pub use dynamic::{Dynamic, DynamicPin};
+
 mod hal_02;
 mod hal_1;
 pub mod outport;
-
-pub use embedded_hal::digital::v2::PinState;
-
-// TODO (alepez) Added because it was previously imported by use f4::*
-pub use Input as DefaultMode;
-
-use core::fmt;
-use tc37x_pac::RegisterValue;
 
 /// A filler pin type
 #[derive(Debug, Default)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct NoPin<Otype = PushPull>(PhantomData<Otype>);
+
 impl<Otype> NoPin<Otype> {
     pub fn new() -> Self {
         Self(PhantomData)
@@ -161,31 +165,49 @@ pub type Debugger = Alternate<0, PushPull>;
 pub(crate) mod marker {
     /// Marker trait that show if `ExtiPin` can be implemented
     pub trait Interruptible {}
+
     /// Marker trait for readable pin modes
     pub trait Readable {}
+
     /// Marker trait for slew rate configurable pin modes
     pub trait OutputSpeed {}
+
     /// Marker trait for active pin modes
     pub trait Active {}
+
     /// Marker trait for all pin modes except alternate
     pub trait NotAlt {}
+
     /// Marker trait for pins with alternate function `A` mapping
     pub trait IntoAf<const A: u8> {}
 }
 
 impl<MODE> marker::Interruptible for Output<MODE> {}
+
 impl marker::Interruptible for Input {}
+
 impl marker::Readable for Input {}
+
 impl marker::Readable for Output<OpenDrain> {}
+
 impl<const A: u8, Otype> marker::Interruptible for Alternate<A, Otype> {}
+
 impl<const A: u8, Otype> marker::Readable for Alternate<A, Otype> {}
+
 impl marker::Active for Input {}
+
 impl<Otype> marker::OutputSpeed for Output<Otype> {}
+
 impl<const A: u8, Otype> marker::OutputSpeed for Alternate<A, Otype> {}
+
 impl<Otype> marker::Active for Output<Otype> {}
+
 impl<const A: u8, Otype> marker::Active for Alternate<A, Otype> {}
+
 impl marker::NotAlt for Input {}
+
 impl<Otype> marker::NotAlt for Output<Otype> {}
+
 impl marker::NotAlt for Analog {}
 
 /// GPIO Pin speed selection
@@ -250,6 +272,7 @@ af!(
 pub struct Pin<const P: usize, const N: u8, MODE = DefaultMode> {
     _mode: PhantomData<MODE>,
 }
+
 impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE> {
     const fn new() -> Self {
         Self { _mode: PhantomData }
@@ -310,8 +333,8 @@ pub trait PinPull: Sized {
 }
 
 impl<const P: usize, const N: u8, MODE> PinSpeed for Pin<P, N, MODE>
-where
-    MODE: marker::OutputSpeed,
+    where
+        MODE: marker::OutputSpeed,
 {
     #[inline(always)]
     fn set_speed(&mut self, speed: Speed) {
@@ -320,8 +343,8 @@ where
 }
 
 impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE>
-where
-    MODE: marker::OutputSpeed,
+    where
+        MODE: marker::OutputSpeed,
 {
     /// Set pin speed
     pub fn set_speed(&mut self, speed: Speed) {
@@ -343,8 +366,8 @@ where
 }
 
 impl<const P: usize, const N: u8, MODE> PinPull for Pin<P, N, MODE>
-where
-    MODE: marker::Active,
+    where
+        MODE: marker::Active,
 {
     #[inline(always)]
     fn set_internal_resistor(&mut self, resistor: Pull) {
@@ -353,8 +376,8 @@ where
 }
 
 impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE>
-where
-    MODE: marker::Active,
+    where
+        MODE: marker::Active,
 {
     /// Set the internal pull-up and pull-down resistor
     pub fn set_internal_resistor(&mut self, resistor: Pull) {
@@ -532,8 +555,8 @@ pub trait ReadPin {
 }
 
 impl<const P: usize, const N: u8, MODE> ReadPin for Pin<P, N, MODE>
-where
-    MODE: marker::Readable,
+    where
+        MODE: marker::Readable,
 {
     #[inline(always)]
     fn is_low(&self) -> bool {
@@ -542,8 +565,8 @@ where
 }
 
 impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE>
-where
-    MODE: marker::Readable,
+    where
+        MODE: marker::Readable,
 {
     /// Is the input pin high?
     #[inline(always)]
@@ -627,16 +650,29 @@ gpio!(port_00, Port00, gpio00, 0, P00n, [
     P00_6: (p00_6, 6, [1]),
 ]);
 
+gpio!(port_01, Port01, gpio01, 1, P01n, [
+    P01_9: (p01_9, 9, [1]),
+    P01_10: (p01_10, 10, [1]),
+]);
+
 // TODO (alepez) Was crate::pac::gpioa::RegisterBlock in stm32f4xx-hal
 type RegisterBlock = crate::pac::port_00::Port00;
 
 struct Gpio<const P: usize>;
+
 impl<const P: usize> Gpio<P> {
     const fn ptr() -> *const RegisterBlock {
-        // TODO (alepez)
-        match P {
-            0 => &crate::pac::PORT_00 as _,
-            _ => panic!("Unknown GPIO port"),
+        // TODO (alepez) add ports
+        // TODO (alepez) check if the assumptions are correct
+        // The logic relies on the following assumptions:
+        // - PORT_00 register are available on all chips
+        // - all PORT register blocks have the same layout
+        unsafe {
+            match P {
+                0 => core::mem::transmute(&crate::pac::PORT_00),
+                1 => core::mem::transmute(&crate::pac::PORT_01),
+                _ => panic!("Unknown GPIO port"),
+            }
         }
     }
 }

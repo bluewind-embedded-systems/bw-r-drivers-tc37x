@@ -36,6 +36,7 @@ features = [
     "cpu0",
     "smu",
     "port_00",
+    "port_01",
 ]
 
 [dependencies.critical-section]
