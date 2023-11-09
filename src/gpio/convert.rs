@@ -109,6 +109,11 @@ impl<const P: usize, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
 }
 macro_rules! change_mode {
     ($block:expr, $N:ident) => {
+        if MODE::MODE == M::MODE {
+            /* Avoid side effects when mode is not changed */
+            return;
+        }
+
         use crate::pac;
         use tc37x_pac::hidden::RegValue;
 

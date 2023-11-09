@@ -45,3 +45,14 @@ fn test_pin_set_two_pins_on_two_ports_high() {
 
     insta::assert_display_snapshot!(report.get_log());
 }
+
+#[test]
+fn avoid_side_effects_when_mode_does_not_change() {
+    let report = tracing::log::Report::new();
+
+    let port = PORT_00.split();
+    let pin = port.p00_5.into_push_pull_output();
+    let _pin = pin.into_push_pull_output();
+
+    insta::assert_display_snapshot!(report.get_log());
+}
