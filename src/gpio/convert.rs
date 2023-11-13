@@ -101,32 +101,7 @@ impl<const P: usize, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
             return;
         }
 
-        // let iocr_n = (N / 4) * 4;
-        // let pc_n = N;
-        // let port = unsafe { *Gpio::<P>::ptr() };
-        let mode = M::MODE >> 3;
-        unsafe {
-            match P {
-                0 => match N {
-                    0 => crate::pac::PORT_00.iocr0().modify_atomic(|r| r.pc0().set(mode)),
-                    1 => crate::pac::PORT_00.iocr0().modify_atomic(|r| r.pc1().set(mode)),
-                    2 => crate::pac::PORT_00.iocr0().modify_atomic(|r| r.pc2().set(mode)),
-                    3 => crate::pac::PORT_00.iocr0().modify_atomic(|r| r.pc3().set(mode)),
-                    4 => crate::pac::PORT_00.iocr4().modify_atomic(|r| r.pc4().set(mode)),
-                    5 => crate::pac::PORT_00.iocr4().modify_atomic(|r| r.pc5().set(mode)),
-                    6 => crate::pac::PORT_00.iocr4().modify_atomic(|r| r.pc6().set(mode)),
-                    7 => crate::pac::PORT_00.iocr4().modify_atomic(|r| r.pc7().set(mode)),
-                    _ => unimplemented!(),
-                },
-                1 => match N {
-                    5 => crate::pac::PORT_01.iocr4().modify_atomic(|r| r.pc5().set(mode)),
-                    6 => crate::pac::PORT_01.iocr4().modify_atomic(|r| r.pc6().set(mode)),
-                    7 => crate::pac::PORT_01.iocr4().modify_atomic(|r| r.pc7().set(mode)),
-                    _ => unimplemented!(),
-                },
-                _ => unimplemented!(),
-            }
-        }
+        change_pin_mode::<P, N, M>();
     }
 
     #[inline(always)]
@@ -136,6 +111,40 @@ impl<const P: usize, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
         Pin::new()
     }
 }
+
+fn change_pin_mode<const P: usize, const N: u8, MODE: PinMode>() {
+    use crate::pac::*;
+
+    let mode = MODE::MODE >> 3;
+
+    // let iocr_n = (N / 4) * 4;
+    // let pc_n = N;
+    // let port = unsafe { *Gpio::<P>::ptr() };
+
+    unsafe {
+        match P {
+            0 => match N {
+                0 => PORT_00.iocr0().modify_atomic(|r| r.pc0().set(mode)),
+                1 => PORT_00.iocr0().modify_atomic(|r| r.pc1().set(mode)),
+                2 => PORT_00.iocr0().modify_atomic(|r| r.pc2().set(mode)),
+                3 => PORT_00.iocr0().modify_atomic(|r| r.pc3().set(mode)),
+                4 => PORT_00.iocr4().modify_atomic(|r| r.pc4().set(mode)),
+                5 => PORT_00.iocr4().modify_atomic(|r| r.pc5().set(mode)),
+                6 => PORT_00.iocr4().modify_atomic(|r| r.pc6().set(mode)),
+                7 => PORT_00.iocr4().modify_atomic(|r| r.pc7().set(mode)),
+                _ => unimplemented!(),
+            },
+            1 => match N {
+                5 => PORT_01.iocr4().modify_atomic(|r| r.pc5().set(mode)),
+                6 => PORT_01.iocr4().modify_atomic(|r| r.pc6().set(mode)),
+                7 => PORT_01.iocr4().modify_atomic(|r| r.pc7().set(mode)),
+                _ => unimplemented!(),
+            },
+            _ => unimplemented!(),
+        }
+    }
+}
+
 macro_rules! change_mode {
     ($block:expr, $N:ident) => {
         if MODE::MODE == M::MODE {
