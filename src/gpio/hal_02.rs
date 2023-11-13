@@ -27,17 +27,17 @@ impl<const P: usize, const N: u8, MODE> OutputPin for Pin<P, N, Output<MODE>> {
     }
 }
 
-impl<const P: usize, const N: u8, MODE> StatefulOutputPin for Pin<P, N, Output<MODE>> {
-    #[inline(always)]
-    fn is_set_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_set_high())
-    }
+// impl<const P: usize, const N: u8, MODE> StatefulOutputPin for Pin<P, N, Output<MODE>> {
+//     #[inline(always)]
+//     fn is_set_high(&self) -> Result<bool, Self::Error> {
+//         Ok(self.is_set_high())
+//     }
 
-    #[inline(always)]
-    fn is_set_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_set_low())
-    }
-}
+//     #[inline(always)]
+//     fn is_set_low(&self) -> Result<bool, Self::Error> {
+//         Ok(self.is_set_low())
+//     }
+// }
 
 impl<const P: usize, const N: u8, MODE> ToggleableOutputPin for Pin<P, N, Output<MODE>> {
     type Error = Infallible;

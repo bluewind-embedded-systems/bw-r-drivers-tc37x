@@ -477,18 +477,20 @@ impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE> {
     fn _set_low(&mut self) {
         self._set_state(PinState::Low)
     }
-    #[inline(always)]
-    fn _is_set_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        // TODO (alepez) unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << N) == 0 }
-        todo!()
-    }
+    // #[inline(always)]
+    // fn _is_set_low(&self) -> bool {
+    //     unsafe {
+    //        (*Gpio::<P>::ptr()).r#in().read().p0().get()
+    //     }
+    // }
     #[inline(always)]
     fn _is_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        // TODO (alepez) unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << N) == 0 }
-        todo!()
+        unsafe {
+            !(*Gpio::<P>::ptr()).r#in().read().p0().get()  
+            //TODO (annabo) now implemented only for p0!
+        }
     }
+
 }
 
 impl<const P: usize, const N: u8, MODE> Pin<P, N, Output<MODE>> {
@@ -507,7 +509,7 @@ impl<const P: usize, const N: u8, MODE> Pin<P, N, Output<MODE>> {
     /// Is the pin in drive high or low mode?
     #[inline(always)]
     pub fn get_state(&self) -> PinState {
-        if self.is_set_low() {
+        if self._is_low() {
             PinState::Low
         } else {
             PinState::High
@@ -524,25 +526,25 @@ impl<const P: usize, const N: u8, MODE> Pin<P, N, Output<MODE>> {
     }
 
     /// Is the pin in drive high mode?
-    #[inline(always)]
-    pub fn is_set_high(&self) -> bool {
-        !self.is_set_low()
-    }
+    // #[inline(always)]
+    // pub fn is_set_high(&self) -> bool {
+    //     !self.is_set_low()
+    // }
 
     /// Is the pin in drive low mode?
-    #[inline(always)]
-    pub fn is_set_low(&self) -> bool {
-        self._is_set_low()
-    }
+    // #[inline(always)]
+    // pub fn is_set_low(&self) -> bool {
+    //     self._is_set_low()
+    // }
 
     /// Toggle pin output
     #[inline(always)]
     pub fn toggle(&mut self) {
-        if self.is_set_low() {
-            self.set_high()
-        } else {
+        // if self.is_set_low() {
+        //     self.set_high()
+        // } else {
             self.set_low()
-        }
+        //}
     }
 }
 
@@ -647,9 +649,25 @@ impl<const P: usize> Gpio<P> {
         // - PORT_00 register are available on all chips
         // - all PORT register blocks have the same layout
         unsafe {
+            // TODO (annabo) load automatically from pac file `port_##.rs`
             match P {
-                0 => core::mem::transmute(&crate::pac::PORT_00),
-                1 => core::mem::transmute(&crate::pac::PORT_01),
+                0 =>  core::mem::transmute(&crate::pac::PORT_00),
+                1 =>  core::mem::transmute(&crate::pac::PORT_01),
+                2 =>  core::mem::transmute(&crate::pac::PORT_02),
+                10 => core::mem::transmute(&crate::pac::PORT_10),
+                11 => core::mem::transmute(&crate::pac::PORT_11),
+                12 => core::mem::transmute(&crate::pac::PORT_12),
+                13 => core::mem::transmute(&crate::pac::PORT_13),
+                14 => core::mem::transmute(&crate::pac::PORT_14),
+                15 => core::mem::transmute(&crate::pac::PORT_15),
+                20 => core::mem::transmute(&crate::pac::PORT_20),
+                21 => core::mem::transmute(&crate::pac::PORT_21),
+                22 => core::mem::transmute(&crate::pac::PORT_22),
+                23 => core::mem::transmute(&crate::pac::PORT_23),
+                32 => core::mem::transmute(&crate::pac::PORT_32),
+                33 => core::mem::transmute(&crate::pac::PORT_33),
+                34 => core::mem::transmute(&crate::pac::PORT_34),
+                40 => core::mem::transmute(&crate::pac::PORT_40),
                 _ => panic!("Unknown GPIO port"),
             }
         }
