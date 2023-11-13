@@ -112,19 +112,13 @@ impl<const P: usize, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
     }
 }
 
-fn change_pin_mode<const P: usize, const N: u8, MODE: PinMode>() {
+#[inline(always)]
+fn change_pin_mode_port_pin<MODE: PinMode>(port: &crate::pac::port_00::Port00, pin: u8) {
     use crate::pac::*;
-
     let mode = MODE::MODE >> 3;
 
-    // let iocr_n = (N / 4) * 4;
-    // let pc_n = N;
-
-    // SAFETY: All Port instances have the same layout as Port00
-    let port = unsafe { *Gpio::<P>::ptr() };
-
     unsafe {
-        match N {
+        match pin {
             0 => port.iocr0().modify_atomic(|r| r.pc0().set(mode)),
             1 => port.iocr0().modify_atomic(|r| r.pc1().set(mode)),
             2 => port.iocr0().modify_atomic(|r| r.pc2().set(mode)),
@@ -146,51 +140,18 @@ fn change_pin_mode<const P: usize, const N: u8, MODE: PinMode>() {
     }
 }
 
-macro_rules! change_mode {
-    ($block:expr, $N:ident) => {
-        if MODE::MODE == M::MODE {
-            /* Avoid side effects when mode is not changed */
-            return;
-        }
-
-        use crate::pac;
-        use tc37x_pac::hidden::RegValue;
-
-        let shift: usize = (($N & 0x3) * 8).into();
-        let iocr_offset: usize = ($N / 4).into();
-
-        let mode: u32 = M::MODE.into();
-
-        let mode_bits: u32 = mode << shift;
-        let mode_mask: u32 = 0xFF << shift;
-
-        // Violates pac APIs, but it's a simple way to select the correct IOCR register, given
-        // the port and the pin index.
-        let iocr: pac::Reg<pac::port_00::Iocr0, pac::RW> = unsafe {
-            let iocr0 = $block.iocr0();
-            let addr: *mut u32 = core::mem::transmute(iocr0);
-            let addr = addr.add(iocr_offset);
-            core::mem::transmute(addr)
-        };
-
-        unsafe {
-            iocr.modify_atomic(|mut r| {
-                *r.data_mut_ref() = mode_bits;
-                *r.get_mask_mut_ref() = mode_mask;
-                r
-            })
-        };
-    };
+#[inline(always)]
+fn change_pin_mode<const P: usize, const N: u8, M: PinMode>() {
+    // SAFETY: All Port instances have the same layout as Port00
+    change_pin_mode_port_pin::<M>(&unsafe { *Gpio::<P>::ptr() }, N)
 }
-
-use change_mode;
 
 use super::ErasedPin;
 impl<MODE: PinMode> ErasedPin<MODE> {
     #[inline(always)]
     pub(super) fn mode<M: PinMode>(&mut self) {
-        let n = self.pin_id();
-        change_mode!(self.block(), n);
+        let block = unsafe { self.block() };
+        change_pin_mode_port_pin::<M>(block, self.pin_id());
     }
 
     #[inline(always)]
@@ -206,7 +167,7 @@ impl<const P: usize, MODE: PinMode> PartiallyErasedPin<P, MODE> {
     #[inline(always)]
     pub(super) fn mode<M: PinMode>(&mut self) {
         let n = self.pin_id();
-        change_mode!((*Gpio::<P>::ptr()), n);
+        change_pin_mode_port_pin::<M>(&unsafe { *Gpio::<P>::ptr() }, n)
     }
 
     #[inline(always)]
