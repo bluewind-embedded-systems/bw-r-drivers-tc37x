@@ -38,10 +38,10 @@ fn test_pin_set_two_pins_on_two_ports_high() {
     let gpio00 = PORT_00.split();
     let gpio01 = PORT_01.split();
     let mut p00_5 = gpio00.p00_5.into_push_pull_output();
-    let mut p01_10 = gpio01.p01_10.into_push_pull_output();
+    let mut p01_7 = gpio01.p01_7.into_push_pull_output();
 
     p00_5.set_high();
-    p01_10.set_high();
+    p01_7.set_high();
 
     insta::assert_display_snapshot!(report.get_log());
 }
