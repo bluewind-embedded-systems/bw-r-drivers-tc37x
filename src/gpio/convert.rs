@@ -133,6 +133,14 @@ fn change_pin_mode<const P: usize, const N: u8, MODE: PinMode>() {
             5 => port.iocr4().modify_atomic(|r| r.pc5().set(mode)),
             6 => port.iocr4().modify_atomic(|r| r.pc6().set(mode)),
             7 => port.iocr4().modify_atomic(|r| r.pc7().set(mode)),
+            8 => port.iocr8().modify_atomic(|r| r.pc8().set(mode)),
+            9 => port.iocr8().modify_atomic(|r| r.pc9().set(mode)),
+            10 => port.iocr8().modify_atomic(|r| r.pc10().set(mode)),
+            11 => port.iocr8().modify_atomic(|r| r.pc11().set(mode)),
+            12 => port.iocr12().modify_atomic(|r| r.pc12().set(mode)),
+            13 => port.iocr12().modify_atomic(|r| r.pc13().set(mode)),
+            14 => port.iocr12().modify_atomic(|r| r.pc14().set(mode)),
+            15 => port.iocr12().modify_atomic(|r| r.pc15().set(mode)),
             _ => unimplemented!(),
         }
     }
