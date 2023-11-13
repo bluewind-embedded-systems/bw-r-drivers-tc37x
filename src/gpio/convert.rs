@@ -119,27 +119,20 @@ fn change_pin_mode<const P: usize, const N: u8, MODE: PinMode>() {
 
     // let iocr_n = (N / 4) * 4;
     // let pc_n = N;
-    // let port = unsafe { *Gpio::<P>::ptr() };
+
+    // SAFETY: All Port instances have the same layout as Port00
+    let port = unsafe { *Gpio::<P>::ptr() };
 
     unsafe {
-        match P {
-            0 => match N {
-                0 => PORT_00.iocr0().modify_atomic(|r| r.pc0().set(mode)),
-                1 => PORT_00.iocr0().modify_atomic(|r| r.pc1().set(mode)),
-                2 => PORT_00.iocr0().modify_atomic(|r| r.pc2().set(mode)),
-                3 => PORT_00.iocr0().modify_atomic(|r| r.pc3().set(mode)),
-                4 => PORT_00.iocr4().modify_atomic(|r| r.pc4().set(mode)),
-                5 => PORT_00.iocr4().modify_atomic(|r| r.pc5().set(mode)),
-                6 => PORT_00.iocr4().modify_atomic(|r| r.pc6().set(mode)),
-                7 => PORT_00.iocr4().modify_atomic(|r| r.pc7().set(mode)),
-                _ => unimplemented!(),
-            },
-            1 => match N {
-                5 => PORT_01.iocr4().modify_atomic(|r| r.pc5().set(mode)),
-                6 => PORT_01.iocr4().modify_atomic(|r| r.pc6().set(mode)),
-                7 => PORT_01.iocr4().modify_atomic(|r| r.pc7().set(mode)),
-                _ => unimplemented!(),
-            },
+        match N {
+            0 => port.iocr0().modify_atomic(|r| r.pc0().set(mode)),
+            1 => port.iocr0().modify_atomic(|r| r.pc1().set(mode)),
+            2 => port.iocr0().modify_atomic(|r| r.pc2().set(mode)),
+            3 => port.iocr0().modify_atomic(|r| r.pc3().set(mode)),
+            4 => port.iocr4().modify_atomic(|r| r.pc4().set(mode)),
+            5 => port.iocr4().modify_atomic(|r| r.pc5().set(mode)),
+            6 => port.iocr4().modify_atomic(|r| r.pc6().set(mode)),
+            7 => port.iocr4().modify_atomic(|r| r.pc7().set(mode)),
             _ => unimplemented!(),
         }
     }
