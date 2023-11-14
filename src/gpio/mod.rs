@@ -461,14 +461,11 @@ impl<const P: usize, const N: usize, MODE> Pin<P, N, MODE> {
     /// a short spike of an incorrect value
     #[inline(always)]
     fn _set_state(&mut self, state: PinState) {
-        let state: u32 = match state {
-            PinState::High => 1,
-            PinState::Low => 1 << 16,
-        };
+        let port = &unsafe { (*Gpio::<P>::ptr()) };
+        let state = to_pcl_ps_bits(N, &state);
         unsafe {
-            (*Gpio::<P>::ptr())
-                .omr()
-                .init(|mut r| r.set_raw(state << N));
+            // omr is write only, no need to modify it
+            port.omr().init(|mut r| r.set_raw(state));
         };
     }
     #[inline(always)]
@@ -533,10 +530,7 @@ impl<const P: usize, const N: usize, MODE> Pin<P, N, Output<MODE>> {
     /// Drives the pin high or low depending on the provided value
     #[inline(always)]
     pub fn set_state(&mut self, state: PinState) {
-        match state {
-            PinState::Low => self.set_low(),
-            PinState::High => self.set_high(),
-        }
+        self._set_state(state)
     }
 
     /// Toggle pin output
@@ -680,3 +674,14 @@ pub struct PinId(usize);
 
 #[derive(Copy, Clone)]
 pub struct PortId(usize);
+
+/// Convert pin state to the raw register value PCLx and PSx
+#[inline(always)]
+pub(crate) const fn to_pcl_ps_bits(pin_index: usize, pin_state: &PinState) -> u32 {
+    let state_bits = match pin_state {
+        PinState::High => 1,
+        PinState::Low => 1 << 16,
+    };
+
+    state_bits << pin_index
+}

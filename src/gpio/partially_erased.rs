@@ -90,14 +90,10 @@ impl<const P: usize, MODE> PartiallyErasedPin<P, Output<MODE>> {
     /// Drives the pin high or low depending on the provided value
     #[inline(always)]
     pub fn set_state(&mut self, state: PinState) {
-        let state: u32 = match state {
-            PinState::High => 1,
-            PinState::Low => 1 << 16,
-        };
+        let port = &unsafe { (*Gpio::<P>::ptr()) };
+        let state = to_pcl_ps_bits(self.i.0, &state);
         unsafe {
-            (*Gpio::<P>::ptr())
-                .omr()
-                .init(|mut r| r.set_raw(state << self.i.0));
+            port.omr().init(|mut r| r.set_raw(state));
         };
     }
 
