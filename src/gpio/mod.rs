@@ -498,6 +498,12 @@ impl<const P: usize, const N: usize, MODE> Pin<P, N, MODE> {
             }
         }
     }
+
+    #[inline(always)]
+    fn _toggle(&mut self) {
+        let port = &unsafe { (*Gpio::<P>::ptr()) };
+        toggle_output_pin_state(port, PinId(N));
+    }
 }
 
 impl<const P: usize, const N: usize, MODE> Pin<P, N, Output<MODE>> {
@@ -532,8 +538,7 @@ impl<const P: usize, const N: usize, MODE> Pin<P, N, Output<MODE>> {
     /// Toggle pin output
     #[inline(always)]
     pub fn toggle(&mut self) {
-        // TODO (alepez) toggle is possible without knowing the current state
-        todo!()
+        self._toggle();
     }
 }
 
@@ -692,5 +697,17 @@ pub(crate) fn set_output_pin_state(
     let state = to_pcl_ps_bits(state) << pin.0;
     unsafe {
         port.omr().init(|mut r| r.set_raw(state));
+    }
+}
+
+/// Change the output pin state
+#[inline(always)]
+pub(crate) fn toggle_output_pin_state(port: &crate::pac::port_00::Port00, pin: PinId) {
+    // Instead of setting PCLx and PSx (where x is the pin number)
+    // we directly set the bits in OMR register.
+    const TOGGLE: u32 = ((1 << 16) | 1);
+    let toggle = TOGGLE << pin.0;
+    unsafe {
+        port.omr().init(|mut r| r.set_raw(toggle));
     }
 }

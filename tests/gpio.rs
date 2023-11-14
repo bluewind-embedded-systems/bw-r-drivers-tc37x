@@ -143,3 +143,15 @@ fn test_input_pin_type_erasure_port_and_number() {
     assert!(report.all_reads_are_consumed());
     insta::assert_display_snapshot!(report.get_log());
 }
+
+#[test]
+fn toggle_output_pin() {
+    let report = tracing::log::Report::new();
+
+    let gpio00 = PORT_00.split();
+    let mut output = gpio00.p00_5.into_push_pull_output();
+
+    output.toggle();
+
+    insta::assert_display_snapshot!(report.get_log());
+}
