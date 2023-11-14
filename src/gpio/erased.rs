@@ -75,19 +75,21 @@ impl<MODE> ErasedPin<MODE> {
     #[inline]
     pub(crate) unsafe fn block(&self) -> &crate::pac::port_00::Port00 {
         // This function uses pointer arithmetic instead of branching to be more efficient
-
+        //
         // The logic relies on the following assumptions:
+        //
         // - PORT_00 register is available on all chips
         // - all gpio register blocks have the same layout
         // - consecutive gpio register blocks have the same offset between them: 0x100 (256)
         // - ErasedPin::new was called with a valid port
 
-        // FIXME could be calculated after const_raw_ptr_to_usize_cast stabilization #51910
-        const GPIO_REGISTER_OFFSET: usize = 0x100;
+        use crate::pac::port_00::Port00;
+        use crate::pac::PORT_00;
 
-        let offset = GPIO_REGISTER_OFFSET * self.port_id() as usize;
+        const PORT_REGISTER_OFFSET: usize = 0x100;
 
-        let block_ptr = (&crate::pac::PORT_00 as *const crate::pac::port_00::Port00).add(offset);
+        let offset = PORT_REGISTER_OFFSET * self.port_id() as usize;
+        let block_ptr = unsafe { (&PORT_00 as *const Port00).add(offset) };
 
         unsafe { &*block_ptr }
     }
