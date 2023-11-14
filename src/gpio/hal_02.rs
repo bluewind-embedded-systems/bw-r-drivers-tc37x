@@ -27,17 +27,19 @@ impl<const P: usize, const N: u8, MODE> OutputPin for Pin<P, N, Output<MODE>> {
     }
 }
 
-// impl<const P: usize, const N: u8, MODE> StatefulOutputPin for Pin<P, N, Output<MODE>> {
-//     #[inline(always)]
-//     fn is_set_high(&self) -> Result<bool, Self::Error> {
-//         Ok(self.is_set_high())
-//     }
+// TODO (alepez) StatefulOutputPin was implemented in stm32. It let the user know the state of output pin
+//   tc37x output register are read only, so it's only possible by remembering the state.
+impl<const P: usize, const N: u8, MODE> StatefulOutputPin for Pin<P, N, Output<MODE>> {
+    #[inline(always)]
+    fn is_set_high(&self) -> Result<bool, Self::Error> {
+        todo!()
+    }
 
-//     #[inline(always)]
-//     fn is_set_low(&self) -> Result<bool, Self::Error> {
-//         Ok(self.is_set_low())
-//     }
-// }
+    #[inline(always)]
+    fn is_set_low(&self) -> Result<bool, Self::Error> {
+        todo!()
+    }
+}
 
 impl<const P: usize, const N: u8, MODE> ToggleableOutputPin for Pin<P, N, Output<MODE>> {
     type Error = Infallible;

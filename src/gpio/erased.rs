@@ -142,19 +142,14 @@ impl<MODE> ErasedPin<Output<MODE>> {
     /// Is the pin in drive low mode?
     #[inline(always)]
     pub fn is_set_low(&self) -> bool {
-        // TODO (alepez)
-        // self.block().odr.read().bits() & (1 << self.pin_id()) == 0
+        // TODO (alepez) there's no way to read the output state from registers
         todo!()
     }
 
     /// Toggle pin output
     #[inline(always)]
     pub fn toggle(&mut self) {
-        if self.is_set_low() {
-            self.set_high()
-        } else {
-            self.set_low()
-        }
+        // TODO (alepez) in tc37x toggle is possible without knowing the state
     }
 }
 

@@ -477,20 +477,14 @@ impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE> {
     fn _set_low(&mut self) {
         self._set_state(PinState::Low)
     }
-    // #[inline(always)]
-    // fn _is_set_low(&self) -> bool {
-    //     unsafe {
-    //        (*Gpio::<P>::ptr()).r#in().read().p0().get()
-    //     }
-    // }
+
     #[inline(always)]
     fn _is_low(&self) -> bool {
         unsafe {
-            !(*Gpio::<P>::ptr()).r#in().read().p0().get()  
+            !(*Gpio::<P>::ptr()).r#in().read().p0().get()
             //TODO (annabo) now implemented only for p0!
         }
     }
-
 }
 
 impl<const P: usize, const N: u8, MODE> Pin<P, N, Output<MODE>> {
@@ -525,26 +519,11 @@ impl<const P: usize, const N: u8, MODE> Pin<P, N, Output<MODE>> {
         }
     }
 
-    /// Is the pin in drive high mode?
-    // #[inline(always)]
-    // pub fn is_set_high(&self) -> bool {
-    //     !self.is_set_low()
-    // }
-
-    /// Is the pin in drive low mode?
-    // #[inline(always)]
-    // pub fn is_set_low(&self) -> bool {
-    //     self._is_set_low()
-    // }
-
     /// Toggle pin output
     #[inline(always)]
     pub fn toggle(&mut self) {
-        // if self.is_set_low() {
-        //     self.set_high()
-        // } else {
-            self.set_low()
-        //}
+        // TODO (alepez) toggle is possible without knowing the current state
+        todo!()
     }
 }
 
