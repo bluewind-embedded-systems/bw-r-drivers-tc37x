@@ -78,11 +78,6 @@ impl<const P: usize, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
         self.into_mode()
     }
 
-    /// Configures the pin to operate as an analog input pin
-    pub fn into_analog(self) -> Pin<P, N, Analog> {
-        self.into_mode()
-    }
-
     /// Configures the pin as a pin that can change between input
     /// and output without changing the type. It starts out
     /// as a floating input
@@ -204,14 +199,6 @@ where
         self.with_mode(f)
     }
 
-    /// Temporarily configures this pin as an analog pin.
-    ///
-    /// The closure `f` is called with the reconfigured pin. After it returns,
-    /// the pin will be configured back.
-    pub fn with_analog<R>(&mut self, f: impl FnOnce(&mut Pin<P, N, Analog>) -> R) -> R {
-        self.with_mode(f)
-    }
-
     /// Temporarily configures this pin as an open drain output.
     ///
     /// The closure `f` is called with the reconfigured pin. After it returns,
@@ -304,14 +291,6 @@ impl crate::Sealed for Input {}
 
 impl PinMode for Input {
     const MODE: u8 = 0x00;
-}
-
-// TODO (alepez) Remove Analog
-impl crate::Sealed for Analog {}
-
-// TODO (alepez) Remove Analog
-impl PinMode for Analog {
-    const MODE: u8 = 0; // TODO (alepez)
 }
 
 impl<Otype> crate::Sealed for Output<Otype> {}
