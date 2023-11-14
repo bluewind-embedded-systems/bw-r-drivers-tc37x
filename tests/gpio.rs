@@ -1,3 +1,4 @@
+use embedded_hal::digital::StatefulOutputPin;
 use tc37x_pac::PORT_00;
 use tc37x_pac::PORT_01;
 
@@ -178,6 +179,62 @@ fn toggle_output_pin_type_erasure_port_and_number() {
     let mut output = output.erase();
 
     output.toggle();
+
+    insta::assert_display_snapshot!(report.get_log());
+}
+
+#[test]
+fn toggle_stateful_output_pin_stateful() {
+    let report = tracing::log::Report::new();
+
+    let gpio00 = PORT_00.split();
+    let mut output = gpio00.p00_5.into_push_pull_output();
+
+    output.toggle();
+
+    // TODO
+    // report.expect_read(0xF003A000, 4, 0b00000000000000000000000000000000);
+    //
+    // let is_high = output.is_set_high();
+    // assert!(is_high.unwrap());
+
+    insta::assert_display_snapshot!(report.get_log());
+}
+
+#[test]
+fn toggle_stateful_output_pin_type_erasure_number() {
+    let report = tracing::log::Report::new();
+
+    let gpio00 = PORT_00.split();
+    let output = gpio00.p00_5.into_push_pull_output();
+    let mut output = output.erase_number();
+
+    output.toggle();
+
+    // TODO
+    // report.expect_read(0xF003A000, 4, 0b00000000000000000000000000000000);
+    //
+    // let is_high = output.is_set_high();
+    // assert!(is_high.unwrap());
+
+    insta::assert_display_snapshot!(report.get_log());
+}
+
+#[test]
+fn toggle_stateful_output_pin_type_erasure_port_and_number() {
+    let report = tracing::log::Report::new();
+
+    let gpio00 = PORT_00.split();
+    let output = gpio00.p00_5.into_push_pull_output();
+    let mut output = output.erase();
+
+    output.toggle();
+
+    // TODO
+    // report.expect_read(0xF003A000, 4, 0b00000000000000000000000000000000);
+    //
+    // let is_high = output.is_set_high();
+    // assert!(is_high.unwrap());
 
     insta::assert_display_snapshot!(report.get_log());
 }
