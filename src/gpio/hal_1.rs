@@ -4,9 +4,8 @@ use super::{
     dynamic::PinModeError, marker, DynamicPin, ErasedPin, Output, PartiallyErasedPin, Pin,
 };
 
-pub use embedded_hal_one::digital::PinState;
-use embedded_hal_one::digital::{
-    ErrorType, InputPin, OutputPin, StatefulOutputPin, ToggleableOutputPin,
+use embedded_hal::digital::{
+    ErrorType, InputPin, OutputPin, PinState, StatefulOutputPin, ToggleableOutputPin,
 };
 
 // Implementations for `Pin`

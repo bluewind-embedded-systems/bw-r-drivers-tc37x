@@ -63,7 +63,7 @@
 use core::fmt;
 use core::marker::PhantomData;
 
-pub use embedded_hal::digital::v2::PinState;
+pub use embedded_hal::digital::PinState;
 use tc37x_pac::RegisterValue;
 
 pub use convert::PinMode;
@@ -84,7 +84,6 @@ mod erased;
 // TODO (alepez) pub use exti::ExtiPin;
 mod dynamic;
 
-mod hal_02;
 mod hal_1;
 pub mod outport;
 
