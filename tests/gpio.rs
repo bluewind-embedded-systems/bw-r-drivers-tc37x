@@ -155,3 +155,29 @@ fn toggle_output_pin() {
 
     insta::assert_display_snapshot!(report.get_log());
 }
+
+#[test]
+fn toggle_output_pin_type_erasure_number() {
+    let report = tracing::log::Report::new();
+
+    let gpio00 = PORT_00.split();
+    let output = gpio00.p00_5.into_push_pull_output();
+    let mut output = output.erase_number();
+
+    output.toggle();
+
+    insta::assert_display_snapshot!(report.get_log());
+}
+
+#[test]
+fn toggle_output_pin_type_erasure_port_and_number() {
+    let report = tracing::log::Report::new();
+
+    let gpio00 = PORT_00.split();
+    let output = gpio00.p00_5.into_push_pull_output();
+    let mut output = output.erase();
+
+    output.toggle();
+
+    insta::assert_display_snapshot!(report.get_log());
+}

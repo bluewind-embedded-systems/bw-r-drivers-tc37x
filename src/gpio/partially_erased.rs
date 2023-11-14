@@ -112,11 +112,8 @@ impl<const P: usize, MODE> PartiallyErasedPin<P, Output<MODE>> {
     /// Toggle pin output
     #[inline(always)]
     pub fn toggle(&mut self) {
-        if self.is_set_low() {
-            self.set_high()
-        } else {
-            self.set_low()
-        }
+        let port = &unsafe { (*Gpio::<P>::ptr()) };
+        toggle_output_pin_state(port, self.i)
     }
 }
 

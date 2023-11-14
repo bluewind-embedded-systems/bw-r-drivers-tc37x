@@ -135,7 +135,8 @@ impl<MODE> ErasedPin<Output<MODE>> {
     /// Toggle pin output
     #[inline(always)]
     pub fn toggle(&mut self) {
-        // TODO (alepez) in tc37x toggle is possible without knowing the state
+        let port = unsafe { self.block() };
+        toggle_output_pin_state(port, self.pin)
     }
 }
 
