@@ -1,14 +1,7 @@
 // link with defmt implementation
 extern crate defmt_rtt;
 
-use core::{arch::asm, panic::PanicInfo};
-use critical_section::RawRestoreState;
-use tc37x_rt::{
-    asm_calls::read_cpu_core_id,
-    isr::load_interrupt_table,
-    wdtcon::{disable_cpu_watchdog, disable_safety_watchdog},
-    *,
-};
+use core::panic::PanicInfo;
 
 #[panic_handler]
 fn panic(panic: &PanicInfo<'_>) -> ! {
