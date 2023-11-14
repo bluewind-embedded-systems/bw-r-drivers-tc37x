@@ -32,12 +32,12 @@ impl<const P: usize, const N: usize, MODE> OutputPin for Pin<P, N, Output<MODE>>
 impl<const P: usize, const N: usize, MODE> StatefulOutputPin for Pin<P, N, Output<MODE>> {
     #[inline(always)]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
-        todo!()
+        Ok(self._is_set_high())
     }
 
     #[inline(always)]
     fn is_set_low(&self) -> Result<bool, Self::Error> {
-        todo!()
+        self.is_set_high().map(|x| !x)
     }
 }
 

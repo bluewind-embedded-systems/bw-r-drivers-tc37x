@@ -500,6 +500,32 @@ impl<const P: usize, const N: usize, MODE> Pin<P, N, MODE> {
     }
 
     #[inline(always)]
+    fn _is_set_high(&self) -> bool {
+        let port = &(unsafe { *Gpio::<P>::ptr() });
+        unsafe {
+            match N {
+                0 => port.out().read().p0().get(),
+                1 => port.out().read().p1().get(),
+                2 => port.out().read().p2().get(),
+                3 => port.out().read().p3().get(),
+                4 => port.out().read().p4().get(),
+                5 => port.out().read().p5().get(),
+                6 => port.out().read().p6().get(),
+                7 => port.out().read().p7().get(),
+                8 => port.out().read().p8().get(),
+                9 => port.out().read().p9().get(),
+                10 => port.out().read().p10().get(),
+                11 => port.out().read().p11().get(),
+                12 => port.out().read().p12().get(),
+                13 => port.out().read().p13().get(),
+                14 => port.out().read().p14().get(),
+                15 => port.out().read().p15().get(),
+                _ => unreachable!(),
+            }
+        }
+    }
+
+    #[inline(always)]
     fn _toggle(&mut self) {
         let port = &unsafe { (*Gpio::<P>::ptr()) };
         toggle_output_pin_state(port, PinId(N));
