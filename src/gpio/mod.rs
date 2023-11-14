@@ -253,8 +253,8 @@ af!(
     4: AF4,
     5: AF5,
     6: AF6,
-    7: AF7
-    // 8: AF8, 
+    7: AF7,
+    // 8: AF8,
     // 9: AF9,
     // 10: AF10,
     // 11: AF11,
@@ -630,9 +630,9 @@ impl<const P: usize> Gpio<P> {
         unsafe {
             // TODO (annabo) load automatically from pac file `port_##.rs`
             match P {
-                0 =>  core::mem::transmute(&crate::pac::PORT_00),
-                1 =>  core::mem::transmute(&crate::pac::PORT_01),
-                2 =>  core::mem::transmute(&crate::pac::PORT_02),
+                0 => core::mem::transmute(&crate::pac::PORT_00),
+                1 => core::mem::transmute(&crate::pac::PORT_01),
+                2 => core::mem::transmute(&crate::pac::PORT_02),
                 10 => core::mem::transmute(&crate::pac::PORT_10),
                 11 => core::mem::transmute(&crate::pac::PORT_11),
                 12 => core::mem::transmute(&crate::pac::PORT_12),
