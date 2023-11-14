@@ -479,9 +479,9 @@ impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE> {
     }
 
     #[inline(always)]
-    fn _is_low(&self) -> bool {
+    fn _is_high(&self) -> bool {
         unsafe {
-            !(*Gpio::<P>::ptr()).r#in().read().p0().get()
+            (*Gpio::<P>::ptr()).r#in().read().p0().get()
             //TODO (annabo) now implemented only for p0!
         }
     }
@@ -503,10 +503,10 @@ impl<const P: usize, const N: u8, MODE> Pin<P, N, Output<MODE>> {
     /// Is the pin in drive high or low mode?
     #[inline(always)]
     pub fn get_state(&self) -> PinState {
-        if self._is_low() {
-            PinState::Low
-        } else {
+        if self._is_high() {
             PinState::High
+        } else {
+            PinState::Low
         }
     }
 
@@ -552,13 +552,13 @@ where
     /// Is the input pin high?
     #[inline(always)]
     pub fn is_high(&self) -> bool {
-        !self.is_low()
+        self._is_high()
     }
 
     /// Is the input pin low?
     #[inline(always)]
     pub fn is_low(&self) -> bool {
-        self._is_low()
+        !self._is_high()
     }
 }
 

@@ -140,15 +140,15 @@ impl<const P: usize, const N: u8> DynamicPin<P, N> {
 
     /// Is the input pin high?
     pub fn is_high(&self) -> Result<bool, PinModeError> {
-        self.is_low().map(|b| !b)
+        if self.mode.is_input() {
+            Ok(Pin::<P, N, Unknown>::new()._is_high())
+        } else {
+            Err(PinModeError::IncorrectMode)
+        }
     }
 
     /// Is the input pin low?
     pub fn is_low(&self) -> Result<bool, PinModeError> {
-        if self.mode.is_input() {
-            Ok(Pin::<P, N, Unknown>::new()._is_low())
-        } else {
-            Err(PinModeError::IncorrectMode)
-        }
+        self.is_high().map(|b| !b)
     }
 }
