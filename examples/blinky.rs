@@ -1,4 +1,4 @@
-//! Blinks an LED
+//! Blinks LED1 and LED2 on Aurix Lite Kit V2. Blinks faster when BUTTON1 is pressed.
 
 #![cfg_attr(target_arch = "tricore", no_main)]
 #![cfg_attr(target_arch = "tricore", no_std)]
@@ -25,14 +25,16 @@ fn main() -> ! {
 
     let mut led1 = gpio00.p00_5.into_push_pull_output();
     let mut led2 = gpio00.p00_6.into_push_pull_output();
+    let mut button1 = gpio00.p00_7.into_input();
 
     loop {
+        let period = if button1.is_high() { 100_000 } else { 25_000 };
         led1.set_low();
         led2.set_high();
-        wait_nop(100000);
+        wait_nop(period);
         led1.set_high();
         led2.set_low();
-        wait_nop(100000);
+        wait_nop(period);
     }
 }
 

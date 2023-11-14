@@ -59,7 +59,6 @@
 
 use core::fmt;
 use core::marker::PhantomData;
-use std::hint::unreachable_unchecked;
 
 pub use embedded_hal::digital::v2::PinState;
 use tc37x_pac::RegisterValue;
