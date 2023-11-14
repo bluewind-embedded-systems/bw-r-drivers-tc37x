@@ -462,11 +462,7 @@ impl<const P: usize, const N: usize, MODE> Pin<P, N, MODE> {
     #[inline(always)]
     fn _set_state(&mut self, state: PinState) {
         let port = &unsafe { (*Gpio::<P>::ptr()) };
-        let state = to_pcl_ps_bits(N, &state);
-        unsafe {
-            // omr is write only, no need to modify it
-            port.omr().init(|mut r| r.set_raw(state));
-        };
+        set_output_pin_state(port, PinId(N), state);
     }
     #[inline(always)]
     fn _set_high(&mut self) {
@@ -684,4 +680,16 @@ pub(crate) const fn to_pcl_ps_bits(pin_index: usize, pin_state: &PinState) -> u3
     };
 
     state_bits << pin_index
+}
+
+#[inline(always)]
+pub(crate) fn set_output_pin_state(
+    port: &crate::pac::port_00::Port00,
+    pin: PinId,
+    state: PinState,
+) {
+    let state = to_pcl_ps_bits(pin.0, &state);
+    unsafe {
+        port.omr().init(|mut r| r.set_raw(state));
+    }
 }

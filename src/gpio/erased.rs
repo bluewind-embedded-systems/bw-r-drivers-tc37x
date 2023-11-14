@@ -115,10 +115,8 @@ impl<MODE> ErasedPin<Output<MODE>> {
     /// Drives the pin high or low depending on the provided value
     #[inline(always)]
     pub fn set_state(&mut self, state: PinState) {
-        let state = to_pcl_ps_bits(self.pin.0, &state);
-        unsafe {
-            self.block().omr().init(|mut r| r.set_raw(state));
-        };
+        let port = unsafe { self.block() };
+        set_output_pin_state(port, self.pin, state);
     }
 
     /// Is the pin in drive high mode?
