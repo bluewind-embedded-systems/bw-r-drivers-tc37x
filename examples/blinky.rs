@@ -25,15 +25,15 @@ fn main() -> ! {
 
     let mut led1 = gpio00.p00_5.into_push_pull_output();
     let mut led2 = gpio00.p00_6.into_push_pull_output();
-    let mut button1 = gpio00.p00_7.into_input();
+    let button1 = gpio00.p00_7.into_input();
 
     loop {
         let period = if button1.is_high() { 100_000 } else { 25_000 };
         led1.set_low();
-        led2.set_high();
+        led2.toggle();
         wait_nop(period);
         led1.set_high();
-        led2.set_low();
+        led2.toggle();
         wait_nop(period);
     }
 }
