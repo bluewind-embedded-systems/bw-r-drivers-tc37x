@@ -673,13 +673,13 @@ pub struct PortId(usize);
 
 /// Convert pin state to the raw register value PCLx and PSx
 #[inline(always)]
-pub(crate) const fn to_pcl_ps_bits(pin_index: usize, pin_state: &PinState) -> u32 {
+pub(crate) const fn to_pcl_ps_bits(pin: PinId, pin_state: &PinState) -> u32 {
     let state_bits = match pin_state {
         PinState::High => 1,
         PinState::Low => 1 << 16,
     };
 
-    state_bits << pin_index
+    state_bits << pin.0
 }
 
 #[inline(always)]
@@ -688,7 +688,7 @@ pub(crate) fn set_output_pin_state(
     pin: PinId,
     state: PinState,
 ) {
-    let state = to_pcl_ps_bits(pin.0, &state);
+    let state = to_pcl_ps_bits(pin, &state);
     unsafe {
         port.omr().init(|mut r| r.set_raw(state));
     }
