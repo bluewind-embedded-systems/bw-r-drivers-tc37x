@@ -56,6 +56,10 @@ impl Report {
             .0
             .push_front(ReadFifoEntry { addr, len, val })
     }
+
+    pub fn all_reads_are_consumed(&self) -> bool {
+        self.shared_data.lock().unwrap().read_fifo.0.is_empty()
+    }
 }
 
 impl Reporter {

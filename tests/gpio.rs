@@ -72,5 +72,6 @@ fn test_input_pin() {
     let is_high = pin.is_high();
     assert!(is_high);
 
+    assert!(report.all_reads_are_consumed());
     insta::assert_display_snapshot!(report.get_log());
 }
