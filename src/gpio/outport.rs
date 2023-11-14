@@ -1,3 +1,6 @@
+// TODO (alepez) Remove this warning suppression
+#![allow(unused)]
+
 use super::*;
 
 /// Convert tuple or array of pins to output port

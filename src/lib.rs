@@ -1,11 +1,6 @@
 #![cfg_attr(target_arch = "tricore", no_std)]
 #![deny(unsafe_op_in_unsafe_fn)]
 
-// TODO Remove asap
-#![allow(unused)]
-// TODO Remove asap
-#![allow(clippy::extra_unused_type_parameters)]
-
 #[cfg(target_arch = "tricore")]
 mod runtime;
 

@@ -1,3 +1,6 @@
+// TODO (alepez) Remove this warning suppression
+#![allow(unused)]
+
 // TODO Must be translated to TC37x
 // mod f4;
 // pub use f4::*;
