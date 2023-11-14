@@ -705,7 +705,9 @@ pub(crate) fn set_output_pin_state(
 pub(crate) fn toggle_output_pin_state(port: &crate::pac::port_00::Port00, pin: PinId) {
     // Instead of setting PCLx and PSx (where x is the pin number)
     // we directly set the bits in OMR register.
-    const TOGGLE: u32 = ((1 << 16) | 1);
+    const PCLX: u32 = 1;
+    const PSX: u32 = 1;
+    const TOGGLE: u32 = ((PCLX << 16) | PSX);
     let toggle = TOGGLE << pin.0;
     unsafe {
         port.omr().init(|mut r| r.set_raw(toggle));
