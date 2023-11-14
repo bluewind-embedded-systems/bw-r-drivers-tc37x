@@ -1,0 +1,7 @@
+---
+source: tests/gpio.rs
+expression: report.get_log()
+---
+r    0xF003A024 04
+r    0xF003A024 04
+

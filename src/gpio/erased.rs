@@ -153,14 +153,33 @@ where
     /// Is the input pin high?
     #[inline(always)]
     pub fn is_high(&self) -> bool {
-        !self.is_low()
+        let port = unsafe { self.block() };
+        unsafe {
+            match self.pin {
+                0 => port.r#in().read().p0().get(),
+                1 => port.r#in().read().p1().get(),
+                2 => port.r#in().read().p2().get(),
+                3 => port.r#in().read().p3().get(),
+                4 => port.r#in().read().p4().get(),
+                5 => port.r#in().read().p5().get(),
+                6 => port.r#in().read().p6().get(),
+                7 => port.r#in().read().p7().get(),
+                8 => port.r#in().read().p8().get(),
+                9 => port.r#in().read().p9().get(),
+                10 => port.r#in().read().p10().get(),
+                11 => port.r#in().read().p11().get(),
+                12 => port.r#in().read().p12().get(),
+                13 => port.r#in().read().p13().get(),
+                14 => port.r#in().read().p14().get(),
+                15 => port.r#in().read().p15().get(),
+                _ => unreachable!(),
+            }
+        }
     }
 
     /// Is the input pin low?
     #[inline(always)]
     pub fn is_low(&self) -> bool {
-        // TODO (alepez)
-        // self.block().idr.read().bits() & (1 << self.pin_id()) == 0
-        todo!()
+        !self.is_high()
     }
 }

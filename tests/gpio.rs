@@ -103,3 +103,43 @@ fn test_output_pin_type_erasure_port_and_number() {
 
     insta::assert_display_snapshot!(report.get_log());
 }
+
+#[test]
+fn test_input_pin_type_erasure_number() {
+    let report = tracing::log::Report::new();
+
+    let port = PORT_00.split();
+    let pin = port.p00_7.into_input();
+    let pin = pin.erase_number();
+
+    report.expect_read(0xF003A024, 4, 0b00000000000000000000000000000000);
+    let is_high = pin.is_high();
+    assert!(!is_high);
+
+    report.expect_read(0xF003A024, 4, 0b00000000000000000000000010000000);
+    let is_high = pin.is_high();
+    assert!(is_high);
+
+    assert!(report.all_reads_are_consumed());
+    insta::assert_display_snapshot!(report.get_log());
+}
+
+#[test]
+fn test_input_pin_type_erasure_port_and_number() {
+    let report = tracing::log::Report::new();
+
+    let port = PORT_00.split();
+    let pin = port.p00_7.into_input();
+    let pin = pin.erase();
+
+    report.expect_read(0xF003A024, 4, 0b00000000000000000000000000000000);
+    let is_high = pin.is_high();
+    assert!(!is_high);
+
+    report.expect_read(0xF003A024, 4, 0b00000000000000000000000010000000);
+    let is_high = pin.is_high();
+    assert!(is_high);
+
+    assert!(report.all_reads_are_consumed());
+    insta::assert_display_snapshot!(report.get_log());
+}
