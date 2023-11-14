@@ -62,13 +62,13 @@ fn test_input_pin() {
     let report = tracing::log::Report::new();
 
     let port = PORT_00.split();
-    let pin = port.p00_0.into_input();
+    let pin = port.p00_7.into_input();
 
     report.expect_read(0xF003A024, 4, 0b00000000000000000000000000000000);
     let is_high = pin.is_high();
     assert!(!is_high);
 
-    report.expect_read(0xF003A024, 4, 0b00000000000000000000000000000001);
+    report.expect_read(0xF003A024, 4, 0b00000000000000000000000010000000);
     let is_high = pin.is_high();
     assert!(is_high);
 
