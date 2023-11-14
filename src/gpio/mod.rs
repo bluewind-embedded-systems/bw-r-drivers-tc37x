@@ -466,7 +466,7 @@ impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE> {
         unsafe {
             (*Gpio::<P>::ptr())
                 .omr()
-                .init(|mut r| r.set_raw((state << N).into()));
+                .init(|mut r| r.set_raw(state << N));
         };
     }
     #[inline(always)]
@@ -647,6 +647,8 @@ impl<const P: usize> Gpio<P> {
         // - all PORT register blocks have the same layout
         unsafe {
             // TODO (annabo) load automatically from pac file `port_##.rs`
+            // TODO (alepez) this does not seem to be useless
+            #[allow(clippy::useless_transmute)]
             match P {
                 0 => core::mem::transmute(&crate::pac::PORT_00),
                 1 => core::mem::transmute(&crate::pac::PORT_01),

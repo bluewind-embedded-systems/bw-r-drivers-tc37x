@@ -29,6 +29,12 @@ pub struct Report {
     _guard: TraceGuard,
 }
 
+impl Default for Report {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Report {
     pub fn new() -> Self {
         let data = Arc::new(Mutex::new(SharedData::default()));
@@ -113,7 +119,7 @@ pub struct Log(Vec<ReportEntry>);
 
 impl Display for Log {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        Ok(for entry in &self.0 {
+        for entry in &self.0 {
             match entry {
                 ReportEntry::Read(x) => {
                     write!(f, "r    0x{:08X} {:02}", x.addr, x.len);
@@ -129,6 +135,8 @@ impl Display for Log {
             }
 
             f.write_char('\n');
-        })
+        }
+
+        Ok(())
     }
 }

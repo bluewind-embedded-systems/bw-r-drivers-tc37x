@@ -5,6 +5,12 @@ struct Reporter;
 
 pub struct Report(TraceGuard);
 
+impl Default for Report {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Report {
     pub fn new() -> Self {
         let reporter = Reporter;
