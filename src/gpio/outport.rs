@@ -11,11 +11,11 @@ pub trait OutPort {
 
 macro_rules! out_port {
     ( $name:ident => $n:literal, ( $($i:tt),+ ), ( $($N:ident),+ )) => {
-        pub struct $name<const P: usize $(, const $N: u8)+> (
+        pub struct $name<const P: usize $(, const $N: usize)+> (
             $(pub Pin<P, $N, Output<PushPull>>,)+
         );
 
-        impl<const P: usize $(, const $N: u8)+> OutPort for ($(Pin<P, $N, Output<PushPull>>),+) {
+        impl<const P: usize $(, const $N: usize)+> OutPort for ($(Pin<P, $N, Output<PushPull>>),+) {
             type Target = $name<P $(, $N)+>;
             fn outport(self) -> Self::Target {
                 $name($(self.$i),+)
@@ -23,7 +23,7 @@ macro_rules! out_port {
         }
 
         /// Wrapper for tuple of `Pin`s
-        impl<const P: usize $(, const $N: u8)+> $name<P $(, $N)+> {
+        impl<const P: usize $(, const $N: usize)+> $name<P $(, $N)+> {
             const fn mask() -> u32 {
                 0 $( | (1 << { $N }))+
             }
@@ -87,14 +87,14 @@ impl<const P: usize, const SIZE: usize> OutPortArray<P, SIZE> {
     fn mask(&self) -> u32 {
         let mut msk = 0;
         for pin in self.0.iter() {
-            msk |= 1 << pin.i;
+            msk |= 1 << pin.i.0;
         }
         msk
     }
     fn value_for_write_bsrr(&self, val: u32) -> u32 {
         let mut msk = 0;
         for (idx, pin) in self.0.iter().enumerate() {
-            let n = pin.i;
+            let n = pin.i.0;
             msk |= 1 << (if val & (1 << idx) != 0 { n } else { n + 16 });
         }
         msk

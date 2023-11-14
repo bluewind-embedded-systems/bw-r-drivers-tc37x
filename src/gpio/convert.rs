@@ -1,13 +1,13 @@
 use super::*;
 
-impl<const P: usize, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
+impl<const P: usize, const N: usize, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
     /// Turns pin alternate configuration pin into open drain
     pub fn set_open_drain(self) -> Pin<P, N, Alternate<A, OpenDrain>> {
         self.into_mode()
     }
 }
 
-impl<const P: usize, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
+impl<const P: usize, const N: usize, MODE: PinMode> Pin<P, N, MODE> {
     /// Configures the pin to operate alternate mode
     pub fn into_alternate<const A: u8>(self) -> Pin<P, N, Alternate<A, PushPull>>
     where
@@ -108,12 +108,12 @@ impl<const P: usize, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
 }
 
 #[inline(always)]
-fn change_pin_mode_port_pin<MODE: PinMode>(port: &crate::pac::port_00::Port00, pin: u8) {
+fn change_pin_mode_port_pin<MODE: PinMode>(port: &crate::pac::port_00::Port00, pin: PinId) {
     use crate::pac::*;
     let mode = MODE::MODE >> 3;
 
     unsafe {
-        match pin {
+        match pin.0 {
             0 => port.iocr0().modify_atomic(|r| r.pc0().set(mode)),
             1 => port.iocr0().modify_atomic(|r| r.pc1().set(mode)),
             2 => port.iocr0().modify_atomic(|r| r.pc2().set(mode)),
@@ -136,9 +136,9 @@ fn change_pin_mode_port_pin<MODE: PinMode>(port: &crate::pac::port_00::Port00, p
 }
 
 #[inline(always)]
-fn change_pin_mode<const P: usize, const N: u8, M: PinMode>() {
+fn change_pin_mode<const P: usize, const N: usize, M: PinMode>() {
     // SAFETY: All Port instances have the same layout as Port00
-    change_pin_mode_port_pin::<M>(&unsafe { *Gpio::<P>::ptr() }, N)
+    change_pin_mode_port_pin::<M>(&unsafe { *Gpio::<P>::ptr() }, PinId(N))
 }
 
 use super::ErasedPin;
@@ -173,7 +173,7 @@ impl<const P: usize, MODE: PinMode> PartiallyErasedPin<P, MODE> {
     }
 }
 
-impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE>
+impl<const P: usize, const N: usize, MODE> Pin<P, N, MODE>
 where
     MODE: PinMode,
 {
@@ -259,11 +259,13 @@ where
 }
 
 /// Wrapper around a pin that transitions the pin to mode ORIG when dropped
-struct ResetMode<const P: usize, const N: u8, CURRENT: PinMode, ORIG: PinMode> {
+struct ResetMode<const P: usize, const N: usize, CURRENT: PinMode, ORIG: PinMode> {
     pub pin: Pin<P, N, CURRENT>,
     _mode: PhantomData<ORIG>,
 }
-impl<const P: usize, const N: u8, CURRENT: PinMode, ORIG: PinMode> ResetMode<P, N, CURRENT, ORIG> {
+impl<const P: usize, const N: usize, CURRENT: PinMode, ORIG: PinMode>
+    ResetMode<P, N, CURRENT, ORIG>
+{
     fn new() -> Self {
         Self {
             pin: Pin::new(),
@@ -271,7 +273,7 @@ impl<const P: usize, const N: u8, CURRENT: PinMode, ORIG: PinMode> ResetMode<P, 
         }
     }
 }
-impl<const P: usize, const N: u8, CURRENT: PinMode, ORIG: PinMode> Drop
+impl<const P: usize, const N: usize, CURRENT: PinMode, ORIG: PinMode> Drop
     for ResetMode<P, N, CURRENT, ORIG>
 {
     fn drop(&mut self) {

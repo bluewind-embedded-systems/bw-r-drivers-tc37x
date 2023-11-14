@@ -7,9 +7,9 @@ use super::*;
 /// `MODE` is one of the pin modes (see [Modes](crate::gpio#modes) section).
 pub struct ErasedPin<MODE> {
     // Pin index
-    pin: u8,
+    pin: PinId,
     // Port id
-    port: usize,
+    port: PortId,
     _mode: PhantomData<MODE>,
 }
 
@@ -17,8 +17,8 @@ impl<MODE> fmt::Debug for ErasedPin<MODE> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_fmt(format_args!(
             "P({}{})<{}>",
-            self.port_id(),
-            self.pin_id(),
+            self.port_id().0,
+            self.pin_id().0,
             crate::stripped_type_name::<MODE>()
         ))
     }
@@ -41,17 +41,17 @@ impl<MODE> PinExt for ErasedPin<MODE> {
     type Mode = MODE;
 
     #[inline(always)]
-    fn pin_id(&self) -> u8 {
+    fn pin_id(&self) -> PinId {
         self.pin
     }
     #[inline(always)]
-    fn port_id(&self) -> usize {
+    fn port_id(&self) -> PortId {
         self.port
     }
 }
 
 impl<MODE> ErasedPin<MODE> {
-    pub(crate) fn new(port: usize, pin: u8) -> Self {
+    pub(crate) fn new(port: PortId, pin: PinId) -> Self {
         Self {
             port,
             pin,
@@ -60,9 +60,9 @@ impl<MODE> ErasedPin<MODE> {
     }
 
     /// Convert type erased pin to `Pin` with fixed type
-    pub fn restore<const P: usize, const N: u8>(self) -> Pin<P, N, MODE> {
-        assert_eq!(self.port_id(), P);
-        assert_eq!(self.pin_id(), N);
+    pub fn restore<const P: usize, const N: usize>(self) -> Pin<P, N, MODE> {
+        assert_eq!(self.port_id().0, P);
+        assert_eq!(self.pin_id().0, N);
         Pin::new()
     }
 
@@ -82,7 +82,7 @@ impl<MODE> ErasedPin<MODE> {
 
         const PORT_REGISTER_OFFSET: usize = 0x100;
 
-        let offset = PORT_REGISTER_OFFSET * self.port_id() as usize;
+        let offset = PORT_REGISTER_OFFSET * self.port_id().0 as usize;
         let block_ptr = unsafe { (&PORT_00 as *const Port00).add(offset) };
 
         unsafe { &*block_ptr }
@@ -122,7 +122,7 @@ impl<MODE> ErasedPin<Output<MODE>> {
         unsafe {
             self.block()
                 .omr()
-                .init(|mut r| r.set_raw(state << self.pin));
+                .init(|mut r| r.set_raw(state << self.pin.0));
         };
     }
 
@@ -155,7 +155,7 @@ where
     pub fn is_high(&self) -> bool {
         let port = unsafe { self.block() };
         unsafe {
-            match self.pin {
+            match self.pin.0 {
                 0 => port.r#in().read().p0().get(),
                 1 => port.r#in().read().p1().get(),
                 2 => port.r#in().read().p2().get(),

@@ -7,12 +7,13 @@ pub use PartiallyErasedPin as PEPin;
 /// - `MODE` is one of the pin modes (see [Modes](crate::gpio#modes) section).
 /// - `P` is port name: `A` for GPIOA, `B` for GPIOB, etc.
 pub struct PartiallyErasedPin<const P: usize, MODE> {
-    pub(crate) i: u8,
+    // TODO (alepez) rename to pin_id
+    pub(crate) i: PinId,
     _mode: PhantomData<MODE>,
 }
 
 impl<const P: usize, MODE> PartiallyErasedPin<P, MODE> {
-    pub(crate) fn new(i: u8) -> Self {
+    pub(crate) fn new(i: PinId) -> Self {
         Self {
             i,
             _mode: PhantomData,
@@ -20,8 +21,8 @@ impl<const P: usize, MODE> PartiallyErasedPin<P, MODE> {
     }
 
     /// Convert partially type erased pin to `Pin` with fixed type
-    pub fn restore<const N: u8>(self) -> Pin<P, N, MODE> {
-        assert_eq!(self.i, N);
+    pub fn restore<const N: usize>(self) -> Pin<P, N, MODE> {
+        assert_eq!(self.i.0, N);
         Pin::new()
     }
 }
@@ -31,7 +32,7 @@ impl<const P: usize, MODE> fmt::Debug for PartiallyErasedPin<P, MODE> {
         formatter.write_fmt(format_args!(
             "P{}({})<{}>",
             P,
-            self.i,
+            self.i.0,
             crate::stripped_type_name::<MODE>()
         ))
     }
@@ -54,12 +55,12 @@ impl<const P: usize, MODE> PinExt for PartiallyErasedPin<P, MODE> {
     type Mode = MODE;
 
     #[inline(always)]
-    fn pin_id(&self) -> u8 {
+    fn pin_id(&self) -> PinId {
         self.i
     }
     #[inline(always)]
-    fn port_id(&self) -> usize {
-        P
+    fn port_id(&self) -> PortId {
+        PortId(P)
     }
 }
 
@@ -96,7 +97,7 @@ impl<const P: usize, MODE> PartiallyErasedPin<P, Output<MODE>> {
         unsafe {
             (*Gpio::<P>::ptr())
                 .omr()
-                .init(|mut r| r.set_raw(state << self.i));
+                .init(|mut r| r.set_raw(state << self.i.0));
         };
     }
 
@@ -135,7 +136,7 @@ where
     pub fn is_high(&self) -> bool {
         let port = &(unsafe { *Gpio::<P>::ptr() });
         unsafe {
-            match self.i {
+            match self.i.0 {
                 0 => port.r#in().read().p0().get(),
                 1 => port.r#in().read().p1().get(),
                 2 => port.r#in().read().p2().get(),
@@ -169,6 +170,6 @@ impl<const P: usize, MODE> From<PartiallyErasedPin<P, MODE>> for ErasedPin<MODE>
     ///
     /// Note that [`From`] is the reciprocal of [`Into`].
     fn from(p: PartiallyErasedPin<P, MODE>) -> Self {
-        ErasedPin::new(P, p.i)
+        ErasedPin::new(PortId(P), p.i)
     }
 }
