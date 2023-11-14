@@ -158,7 +158,7 @@ impl<MODE: PinMode> ErasedPin<MODE> {
     /// Converts pin into specified mode
     pub fn into_mode<M: PinMode>(mut self) -> ErasedPin<M> {
         self.mode::<M>();
-        ErasedPin::from_pin_port(self.into_pin_port())
+        ErasedPin::new(self.port_id(), self.pin_id())
     }
 }
 

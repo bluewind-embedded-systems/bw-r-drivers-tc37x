@@ -6,8 +6,10 @@ use super::*;
 ///
 /// `MODE` is one of the pin modes (see [Modes](crate::gpio#modes) section).
 pub struct ErasedPin<MODE> {
-    // Bits 0-3: Pin, Bits 4-7: Port
-    pin_port: u8,
+    // Pin index
+    pin: u8,
+    // Port id
+    port: usize,
     _mode: PhantomData<MODE>,
 }
 
@@ -40,34 +42,26 @@ impl<MODE> PinExt for ErasedPin<MODE> {
 
     #[inline(always)]
     fn pin_id(&self) -> u8 {
-        self.pin_port & 0x0f
+        self.pin
     }
     #[inline(always)]
-    fn port_id(&self) -> u8 {
-        self.pin_port >> 4
+    fn port_id(&self) -> usize {
+        self.port
     }
 }
 
 impl<MODE> ErasedPin<MODE> {
-    pub(crate) fn from_pin_port(pin_port: u8) -> Self {
+    pub(crate) fn new(port: usize, pin: u8) -> Self {
         Self {
-            pin_port,
-            _mode: PhantomData,
-        }
-    }
-    pub(crate) fn into_pin_port(self) -> u8 {
-        self.pin_port
-    }
-    pub(crate) fn new(port: u8, pin: u8) -> Self {
-        Self {
-            pin_port: port << 4 | pin,
+            port,
+            pin,
             _mode: PhantomData,
         }
     }
 
     /// Convert type erased pin to `Pin` with fixed type
     pub fn restore<const P: usize, const N: u8>(self) -> Pin<P, N, MODE> {
-        assert_eq!(self.port_id(), P as u8 - b'A');
+        assert_eq!(self.port_id(), P);
         assert_eq!(self.pin_id(), N);
         Pin::new()
     }
@@ -99,21 +93,13 @@ impl<MODE> ErasedPin<Output<MODE>> {
     /// Drives the pin high
     #[inline(always)]
     pub fn set_high(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        // TODO (alepez)
-        // unsafe { self.block().bsrr.write(|w| w.bits(1 << self.pin_id())) };
+        self.set_state(PinState::High)
     }
 
     /// Drives the pin low
     #[inline(always)]
     pub fn set_low(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        // TODO (alepez)
-        // unsafe {
-        //     self.block()
-        //         .bsrr
-        //         .write(|w| w.bits(1 << (self.pin_id() + 16)))
-        // };
+        self.set_state(PinState::Low)
     }
 
     /// Is the pin in drive high or low mode?
@@ -129,10 +115,15 @@ impl<MODE> ErasedPin<Output<MODE>> {
     /// Drives the pin high or low depending on the provided value
     #[inline(always)]
     pub fn set_state(&mut self, state: PinState) {
-        match state {
-            PinState::Low => self.set_low(),
-            PinState::High => self.set_high(),
-        }
+        let state: u32 = match state {
+            PinState::High => 1,
+            PinState::Low => 1 << 16,
+        };
+        unsafe {
+            self.block()
+                .omr()
+                .init(|mut r| r.set_raw(state << self.pin));
+        };
     }
 
     /// Is the pin in drive high mode?

@@ -58,8 +58,8 @@ impl<const P: usize, MODE> PinExt for PartiallyErasedPin<P, MODE> {
         self.i
     }
     #[inline(always)]
-    fn port_id(&self) -> u8 {
-        P as u8 - b'A'
+    fn port_id(&self) -> usize {
+        P
     }
 }
 
@@ -151,6 +151,6 @@ impl<const P: usize, MODE> From<PartiallyErasedPin<P, MODE>> for ErasedPin<MODE>
     ///
     /// Note that [`From`] is the reciprocal of [`Into`].
     fn from(p: PartiallyErasedPin<P, MODE>) -> Self {
-        ErasedPin::new(P as u8 - b'A', p.i)
+        ErasedPin::new(P, p.i)
     }
 }

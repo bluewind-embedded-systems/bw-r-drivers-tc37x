@@ -114,7 +114,7 @@ pub trait PinExt {
     /// Pin number
     fn pin_id(&self) -> u8;
     /// Port number starting from 0
-    fn port_id(&self) -> u8;
+    fn port_id(&self) -> usize;
 }
 
 /// Some alternate mode (type state)
@@ -307,8 +307,8 @@ impl<const P: usize, const N: u8, MODE> PinExt for Pin<P, N, MODE> {
         N
     }
     #[inline(always)]
-    fn port_id(&self) -> u8 {
-        P as u8 - b'A'
+    fn port_id(&self) -> usize {
+        P
     }
 }
 
@@ -432,7 +432,7 @@ impl<const P: usize, const N: u8, MODE> Pin<P, N, MODE> {
     /// This is useful when you want to collect the pins into an array where you
     /// need all the elements to have the same type
     pub fn erase(self) -> ErasedPin<MODE> {
-        ErasedPin::new(P as u8 - b'A', N)
+        ErasedPin::new(P, N)
     }
 }
 
