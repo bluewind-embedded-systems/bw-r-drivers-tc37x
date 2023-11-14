@@ -296,7 +296,7 @@ impl<const P: usize, const N: u8, CURRENT: PinMode, ORIG: PinMode> Drop
 ///
 /// It can not be implemented by outside types.
 pub trait PinMode: crate::Sealed {
-    // TODO (alepez) check if MODE=0 is correct. I guess it should be the default value on the register.
+    // TODO (alepez) check if MODE=FF is correct. I guess it should be the default value on the register.
     const MODE: u8 = 0xFF;
 }
 
