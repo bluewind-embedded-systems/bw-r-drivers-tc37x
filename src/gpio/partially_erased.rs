@@ -67,21 +67,13 @@ impl<const P: usize, MODE> PartiallyErasedPin<P, Output<MODE>> {
     /// Drives the pin high
     #[inline(always)]
     pub fn set_high(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        // TODO (alepez)
-        // unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << self.i)) }
+        self.set_state(PinState::High)
     }
 
     /// Drives the pin low
     #[inline(always)]
     pub fn set_low(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        // TODO (alepez)
-        // unsafe {
-        //     (*Gpio::<P>::ptr())
-        //         .bsrr
-        //         .write(|w| w.bits(1 << (self.i + 16)))
-        // }
+        self.set_state(PinState::Low)
     }
 
     /// Is the pin in drive high or low mode?
@@ -97,10 +89,15 @@ impl<const P: usize, MODE> PartiallyErasedPin<P, Output<MODE>> {
     /// Drives the pin high or low depending on the provided value
     #[inline(always)]
     pub fn set_state(&mut self, state: PinState) {
-        match state {
-            PinState::Low => self.set_low(),
-            PinState::High => self.set_high(),
-        }
+        let state: u32 = match state {
+            PinState::High => 1,
+            PinState::Low => 1 << 16,
+        };
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .omr()
+                .init(|mut r| r.set_raw(state << self.i));
+        };
     }
 
     /// Is the pin in drive high mode?

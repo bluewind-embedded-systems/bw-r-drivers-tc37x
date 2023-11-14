@@ -75,3 +75,17 @@ fn test_input_pin() {
     assert!(report.all_reads_are_consumed());
     insta::assert_display_snapshot!(report.get_log());
 }
+
+#[test]
+fn test_output_pin_type_erasure_number() {
+    let report = tracing::log::Report::new();
+
+    let gpio00 = PORT_00.split();
+    let mut output = gpio00.p00_5.into_push_pull_output();
+    let mut output = output.erase_number();
+
+    output.set_high();
+    output.set_low();
+
+    insta::assert_display_snapshot!(report.get_log());
+}
