@@ -80,7 +80,7 @@ impl tc37x_pac::tracing::Reporter for Reporter {
         if entry.addr == addr && entry.len == len {
             entry.val
         } else {
-            panic!("Unexpected read at address {} with len {}", addr, len)
+            panic!("Unexpected read at address 0x{:08X} and len {}", addr, len)
         }
     }
 
