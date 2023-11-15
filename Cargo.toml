@@ -27,9 +27,12 @@ features = []
 path = "../tc37x-pac"
 features = [
     "scu",
+    "smu",
     "src",
     "cpu0",
     "smu",
+    "can0", 
+    "can1",
     "port_00",
     "port_01",
     "port_02",
@@ -69,6 +72,8 @@ rt = ["dep:tc37x-rt", "dep:critical-section"]
 panic_handler = []
 disable_watchdogs = []
 tracing = ["dep:insta"]
+
+
 
 [[example]]
 name = "blinky"
