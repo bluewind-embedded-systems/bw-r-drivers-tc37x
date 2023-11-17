@@ -35,12 +35,6 @@ pub enum MessageIdLenght {
 //     pub lenght: MessageIdLenght,
 // }
 
-#[derive(PartialEq, Clone, Copy, Debug)]
-pub enum FrameMode {
-    Standard,
-    FdLong,
-    FdLongAndFast,
-}
 pub struct TmpType(u8);
 
 pub struct CanFrame {
@@ -50,6 +44,8 @@ pub struct CanFrame {
     pub from: TmpType, // ReadFrom,
     pub frame_mode: TmpType, // FrameMode,
 }
+
+pub struct CanNodeCfg {}
 
 
 impl Frame for CanFrame{

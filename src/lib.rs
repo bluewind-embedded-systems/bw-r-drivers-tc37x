@@ -10,6 +10,7 @@ pub mod tracing;
 pub mod gpio;
 pub mod scu; 
 pub mod can; 
+pub mod cpu; 
 
 pub use tc37x_pac as pac;
 
