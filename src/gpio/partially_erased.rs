@@ -79,8 +79,8 @@ impl<const P: usize, MODE> PartiallyErasedPin<P, Output<MODE>> {
 
     /// Is the pin in drive high or low mode?
     #[inline(always)]
-    pub fn get_state(&self) -> PinState {
-        if self.is_set_low() {
+    fn _get_state(&self) -> PinState {
+        if self._is_set_low() {
             PinState::Low
         } else {
             PinState::High
@@ -96,13 +96,34 @@ impl<const P: usize, MODE> PartiallyErasedPin<P, Output<MODE>> {
 
     /// Is the pin in drive high mode?
     #[inline(always)]
-    pub fn is_set_high(&self) -> bool {
-        !self.is_set_low()
+    pub(crate) fn _is_set_high(&self) -> bool {
+        let port = &(unsafe { *Gpio::<P>::ptr() });
+        unsafe {
+            match self.i.0 {
+                0 => port.out().read().p0().get(),
+                1 => port.out().read().p1().get(),
+                2 => port.out().read().p2().get(),
+                3 => port.out().read().p3().get(),
+                4 => port.out().read().p4().get(),
+                5 => port.out().read().p5().get(),
+                6 => port.out().read().p6().get(),
+                7 => port.out().read().p7().get(),
+                8 => port.out().read().p8().get(),
+                9 => port.out().read().p9().get(),
+                10 => port.out().read().p10().get(),
+                11 => port.out().read().p11().get(),
+                12 => port.out().read().p12().get(),
+                13 => port.out().read().p13().get(),
+                14 => port.out().read().p14().get(),
+                15 => port.out().read().p15().get(),
+                _ => unreachable!(),
+            }
+        }
     }
 
     /// Is the pin in drive low mode?
     #[inline(always)]
-    pub fn is_set_low(&self) -> bool {
+    pub(crate) fn _is_set_low(&self) -> bool {
         // NOTE(unsafe) atomic read with no side effects
         // TODO (alepez)
         // unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << self.i) == 0 }

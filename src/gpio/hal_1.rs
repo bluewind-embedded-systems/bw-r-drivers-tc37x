@@ -84,12 +84,12 @@ impl<MODE> OutputPin for ErasedPin<Output<MODE>> {
 impl<MODE> StatefulOutputPin for ErasedPin<Output<MODE>> {
     #[inline(always)]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_set_high())
+        Ok(self._is_set_high())
     }
 
     #[inline(always)]
     fn is_set_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_set_low())
+        Ok(self._is_set_low())
     }
 }
 
@@ -138,12 +138,12 @@ impl<const P: usize, MODE> OutputPin for PartiallyErasedPin<P, Output<MODE>> {
 impl<const P: usize, MODE> StatefulOutputPin for PartiallyErasedPin<P, Output<MODE>> {
     #[inline(always)]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_set_high())
+        Ok(self._is_set_high())
     }
 
     #[inline(always)]
     fn is_set_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_set_low())
+        Ok(self._is_set_low())
     }
 }
 

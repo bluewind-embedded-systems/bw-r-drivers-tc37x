@@ -188,7 +188,7 @@ fn toggle_stateful_output_pin_stateful() {
     let report = tracing::log::Report::new();
 
     let gpio00 = PORT_00.split();
-    let mut output = gpio00.p00_5.into_push_pull_output();
+    let output = gpio00.p00_5.into_push_pull_output();
 
     report.expect_read(0xF003A000, 4, 0b00000000000000000000000000100000);
 
@@ -204,15 +204,12 @@ fn toggle_stateful_output_pin_type_erasure_number() {
 
     let gpio00 = PORT_00.split();
     let output = gpio00.p00_5.into_push_pull_output();
-    let mut output = output.erase_number();
+    let output = output.erase_number();
 
-    output.toggle();
+    report.expect_read(0xF003A000, 4, 0b00000000000000000000000000100000);
 
-    // TODO
-    // report.expect_read(0xF003A000, 4, 0b00000000000000000000000000000000);
-    //
-    // let is_high = output.is_set_high();
-    // assert!(is_high.unwrap());
+    let is_high = output.is_set_high();
+    assert!(is_high.unwrap());
 
     insta::assert_display_snapshot!(report.get_log());
 }
@@ -223,15 +220,12 @@ fn toggle_stateful_output_pin_type_erasure_port_and_number() {
 
     let gpio00 = PORT_00.split();
     let output = gpio00.p00_5.into_push_pull_output();
-    let mut output = output.erase();
+    let output = output.erase();
 
-    output.toggle();
+    report.expect_read(0xF003A000, 4, 0b00000000000000000000000000100000);
 
-    // TODO
-    // report.expect_read(0xF003A000, 4, 0b00000000000000000000000000000000);
-    //
-    // let is_high = output.is_set_high();
-    // assert!(is_high.unwrap());
+    let is_high = output.is_set_high();
+    assert!(is_high.unwrap());
 
     insta::assert_display_snapshot!(report.get_log());
 }

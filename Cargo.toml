@@ -60,7 +60,7 @@ version = "1.34.0"
 features = ["ron"]
 
 [features]
-default = []
+default = ["tracing"]
 example = ["rt", "panic_handler", "log", "disable_watchdogs"]
 log = ["dep:defmt", "dep:defmt-rtt"]
 rt = ["dep:tc37x-rt", "dep:critical-section"]
