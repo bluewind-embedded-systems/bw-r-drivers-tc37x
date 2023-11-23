@@ -476,27 +476,7 @@ impl<const P: usize, const N: usize, MODE> Pin<P, N, MODE> {
     #[inline(always)]
     fn _is_high(&self) -> bool {
         let port = &(unsafe { *Gpio::<P>::ptr() });
-        unsafe {
-            match N {
-                0 => port.r#in().read().p0().get(),
-                1 => port.r#in().read().p1().get(),
-                2 => port.r#in().read().p2().get(),
-                3 => port.r#in().read().p3().get(),
-                4 => port.r#in().read().p4().get(),
-                5 => port.r#in().read().p5().get(),
-                6 => port.r#in().read().p6().get(),
-                7 => port.r#in().read().p7().get(),
-                8 => port.r#in().read().p8().get(),
-                9 => port.r#in().read().p9().get(),
-                10 => port.r#in().read().p10().get(),
-                11 => port.r#in().read().p11().get(),
-                12 => port.r#in().read().p12().get(),
-                13 => port.r#in().read().p13().get(),
-                14 => port.r#in().read().p14().get(),
-                15 => port.r#in().read().p15().get(),
-                _ => unreachable!(),
-            }
-        }
+        pin_out_is_high(port, PinId(N))
     }
 
     #[inline(always)]
@@ -729,5 +709,30 @@ pub(crate) fn pin_toggle_state(port: &crate::pac::port_00::Port00, pin: PinId) {
     let raw = pcl_ps_bits(1, 1, pin.0);
     unsafe {
         port.omr().init(|mut r| r.set_raw(raw));
+    }
+}
+
+#[inline(always)]
+pub(crate) fn pin_out_is_high(port: &crate::pac::port_00::Port00, pin: PinId) -> bool {
+    unsafe {
+        match pin.0 {
+            0 => port.r#in().read().p0().get(),
+            1 => port.r#in().read().p1().get(),
+            2 => port.r#in().read().p2().get(),
+            3 => port.r#in().read().p3().get(),
+            4 => port.r#in().read().p4().get(),
+            5 => port.r#in().read().p5().get(),
+            6 => port.r#in().read().p6().get(),
+            7 => port.r#in().read().p7().get(),
+            8 => port.r#in().read().p8().get(),
+            9 => port.r#in().read().p9().get(),
+            10 => port.r#in().read().p10().get(),
+            11 => port.r#in().read().p11().get(),
+            12 => port.r#in().read().p12().get(),
+            13 => port.r#in().read().p13().get(),
+            14 => port.r#in().read().p14().get(),
+            15 => port.r#in().read().p15().get(),
+            _ => unreachable!(),
+        }
     }
 }
