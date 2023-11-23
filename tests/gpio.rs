@@ -1,8 +1,7 @@
-use embedded_hal::digital::OutputPin;
 use tc37x_pac::PORT_00;
 use tc37x_pac::PORT_01;
 
-use tc37x_hal::gpio::{ErasedPin, GpioExt, Output, PushPull};
+use tc37x_hal::gpio::{Alternate, ErasedPin, GpioExt, Pin};
 use tc37x_hal::tracing;
 use tracing::log::Report;
 
@@ -240,4 +239,27 @@ fn type_erasure_with_into() {
     let output = port.p00_5.into_push_pull_output();
     let output = output.erase();
     let _output: ErasedPin<_> = output.into();
+}
+
+#[test]
+fn alternate_function() {
+    fn use_pin(_: impl Into<Pin<0, 5, Alternate<1>>>) {}
+
+    let port = PORT_00.split();
+    let pin = port.p00_5.into_alternate::<1>();
+    use_pin(pin);
+}
+
+#[test]
+fn alternate_function_2() {
+    fn use_pin<const P: u8, const N: u8, T>(pin: T)
+    where
+        T: Into<Pin<P, N, Alternate<1, tc37x_hal::gpio::PushPull>>>,
+    {
+        let _: Pin<P, N, Alternate<1, tc37x_hal::gpio::PushPull>> = pin.into();
+    }
+
+    let port = PORT_00.split();
+    let pin = port.p00_5;
+    // FIXME use_pin(pin);
 }
