@@ -1,3 +1,4 @@
+use super::PortIndex;
 use core::convert::Infallible;
 
 use super::{
@@ -9,11 +10,11 @@ use embedded_hal::digital::{
 };
 
 // Implementations for `Pin`
-impl<const P: usize, const N: usize, MODE> ErrorType for Pin<P, N, MODE> {
+impl<const P: PortIndex, const N: usize, MODE> ErrorType for Pin<P, N, MODE> {
     type Error = Infallible;
 }
 
-impl<const P: usize, const N: usize, MODE> OutputPin for Pin<P, N, Output<MODE>> {
+impl<const P: PortIndex, const N: usize, MODE> OutputPin for Pin<P, N, Output<MODE>> {
     #[inline(always)]
     fn set_high(&mut self) -> Result<(), Self::Error> {
         self.set_high();
@@ -27,7 +28,7 @@ impl<const P: usize, const N: usize, MODE> OutputPin for Pin<P, N, Output<MODE>>
     }
 }
 
-impl<const P: usize, const N: usize, MODE> StatefulOutputPin for Pin<P, N, Output<MODE>> {
+impl<const P: PortIndex, const N: usize, MODE> StatefulOutputPin for Pin<P, N, Output<MODE>> {
     #[inline(always)]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
         Ok(self._is_set_high())
@@ -39,7 +40,7 @@ impl<const P: usize, const N: usize, MODE> StatefulOutputPin for Pin<P, N, Outpu
     }
 }
 
-impl<const P: usize, const N: usize, MODE> ToggleableOutputPin for Pin<P, N, Output<MODE>> {
+impl<const P: PortIndex, const N: usize, MODE> ToggleableOutputPin for Pin<P, N, Output<MODE>> {
     #[inline(always)]
     fn toggle(&mut self) -> Result<(), Self::Error> {
         self.toggle();
@@ -47,7 +48,7 @@ impl<const P: usize, const N: usize, MODE> ToggleableOutputPin for Pin<P, N, Out
     }
 }
 
-impl<const P: usize, const N: usize, MODE> InputPin for Pin<P, N, MODE>
+impl<const P: PortIndex, const N: usize, MODE> InputPin for Pin<P, N, MODE>
 where
     MODE: marker::Readable,
 {
@@ -117,11 +118,11 @@ where
 }
 
 // Implementations for `PartiallyErasedPin`
-impl<const P: usize, MODE> ErrorType for PartiallyErasedPin<P, MODE> {
+impl<const P: PortIndex, MODE> ErrorType for PartiallyErasedPin<P, MODE> {
     type Error = Infallible;
 }
 
-impl<const P: usize, MODE> OutputPin for PartiallyErasedPin<P, Output<MODE>> {
+impl<const P: PortIndex, MODE> OutputPin for PartiallyErasedPin<P, Output<MODE>> {
     #[inline(always)]
     fn set_high(&mut self) -> Result<(), Self::Error> {
         self.set_high();
@@ -135,7 +136,7 @@ impl<const P: usize, MODE> OutputPin for PartiallyErasedPin<P, Output<MODE>> {
     }
 }
 
-impl<const P: usize, MODE> StatefulOutputPin for PartiallyErasedPin<P, Output<MODE>> {
+impl<const P: PortIndex, MODE> StatefulOutputPin for PartiallyErasedPin<P, Output<MODE>> {
     #[inline(always)]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
         Ok(self._is_set_high())
@@ -147,7 +148,7 @@ impl<const P: usize, MODE> StatefulOutputPin for PartiallyErasedPin<P, Output<MO
     }
 }
 
-impl<const P: usize, MODE> ToggleableOutputPin for PartiallyErasedPin<P, Output<MODE>> {
+impl<const P: PortIndex, MODE> ToggleableOutputPin for PartiallyErasedPin<P, Output<MODE>> {
     #[inline(always)]
     fn toggle(&mut self) -> Result<(), Self::Error> {
         self.toggle();
@@ -155,7 +156,7 @@ impl<const P: usize, MODE> ToggleableOutputPin for PartiallyErasedPin<P, Output<
     }
 }
 
-impl<const P: usize, MODE> InputPin for PartiallyErasedPin<P, MODE>
+impl<const P: PortIndex, MODE> InputPin for PartiallyErasedPin<P, MODE>
 where
     MODE: marker::Readable,
 {
@@ -171,11 +172,11 @@ where
 }
 
 // Implementations for `DynamicPin
-impl<const P: usize, const N: usize> ErrorType for DynamicPin<P, N> {
+impl<const P: PortIndex, const N: usize> ErrorType for DynamicPin<P, N> {
     type Error = PinModeError;
 }
 
-impl<const P: usize, const N: usize> OutputPin for DynamicPin<P, N> {
+impl<const P: PortIndex, const N: usize> OutputPin for DynamicPin<P, N> {
     fn set_high(&mut self) -> Result<(), Self::Error> {
         self.set_high()
     }
@@ -184,7 +185,7 @@ impl<const P: usize, const N: usize> OutputPin for DynamicPin<P, N> {
     }
 }
 
-impl<const P: usize, const N: usize> InputPin for DynamicPin<P, N> {
+impl<const P: PortIndex, const N: usize> InputPin for DynamicPin<P, N> {
     fn is_high(&self) -> Result<bool, Self::Error> {
         self.is_high()
     }
