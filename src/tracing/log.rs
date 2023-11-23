@@ -48,7 +48,7 @@ impl Report {
         }
     }
 
-    pub fn get_log(&self) -> Log {
+    pub fn take_log(&self) -> Log {
         let mut g = self.shared_data.lock().unwrap();
         let len = g.log.0.len();
         Log(g.log.0.drain(0..len).collect())

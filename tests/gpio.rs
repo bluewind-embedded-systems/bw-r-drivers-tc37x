@@ -16,7 +16,7 @@ fn test_pin_set_high_and_low() {
     output.set_high();
     output.set_low();
 
-    insta::assert_display_snapshot!(report.get_log());
+    insta::assert_display_snapshot!(report.take_log());
 }
 
 #[test]
@@ -30,7 +30,7 @@ fn test_pin_set_two_pins_same_port_high() {
     p00_5.set_high();
     p00_6.set_high();
 
-    insta::assert_display_snapshot!(report.get_log());
+    insta::assert_display_snapshot!(report.take_log());
 }
 
 #[test]
@@ -45,7 +45,7 @@ fn test_pin_set_two_pins_on_two_ports_high() {
     p00_5.set_high();
     p01_7.set_high();
 
-    insta::assert_display_snapshot!(report.get_log());
+    insta::assert_display_snapshot!(report.take_log());
 }
 
 #[test]
@@ -56,7 +56,7 @@ fn avoid_side_effects_when_mode_does_not_change() {
     let pin = port.p00_5.into_push_pull_output();
     let _pin = pin.into_push_pull_output();
 
-    insta::assert_display_snapshot!(report.get_log());
+    insta::assert_display_snapshot!(report.take_log());
 }
 
 #[test]
@@ -75,7 +75,7 @@ fn test_input_pin() {
     assert!(is_high);
 
     assert!(report.all_reads_are_consumed());
-    insta::assert_display_snapshot!(report.get_log());
+    insta::assert_display_snapshot!(report.take_log());
 }
 
 #[test]
@@ -89,7 +89,7 @@ fn test_output_pin_type_erasure_number() {
     output.set_high();
     output.set_low();
 
-    insta::assert_display_snapshot!(report.get_log());
+    insta::assert_display_snapshot!(report.take_log());
 }
 
 #[test]
@@ -103,7 +103,7 @@ fn test_output_pin_type_erasure_port_and_number() {
     output.set_high();
     output.set_low();
 
-    insta::assert_display_snapshot!(report.get_log());
+    insta::assert_display_snapshot!(report.take_log());
 }
 
 #[test]
@@ -123,7 +123,7 @@ fn test_input_pin_type_erasure_number() {
     assert!(is_high);
 
     assert!(report.all_reads_are_consumed());
-    insta::assert_display_snapshot!(report.get_log());
+    insta::assert_display_snapshot!(report.take_log());
 }
 
 #[test]
@@ -143,7 +143,7 @@ fn test_input_pin_type_erasure_port_and_number() {
     assert!(is_high);
 
     assert!(report.all_reads_are_consumed());
-    insta::assert_display_snapshot!(report.get_log());
+    insta::assert_display_snapshot!(report.take_log());
 }
 
 #[test]
@@ -155,7 +155,7 @@ fn toggle_output_pin() {
 
     output.toggle();
 
-    insta::assert_display_snapshot!(report.get_log());
+    insta::assert_display_snapshot!(report.take_log());
 }
 
 #[test]
@@ -168,7 +168,7 @@ fn toggle_output_pin_type_erasure_number() {
 
     output.toggle();
 
-    insta::assert_display_snapshot!(report.get_log());
+    insta::assert_display_snapshot!(report.take_log());
 }
 
 #[test]
@@ -181,7 +181,7 @@ fn toggle_output_pin_type_erasure_port_and_number() {
 
     output.toggle();
 
-    insta::assert_display_snapshot!(report.get_log());
+    insta::assert_display_snapshot!(report.take_log());
 }
 
 // Set the pin high by using StatefulOutputPin interface
@@ -200,7 +200,7 @@ fn toggle_stateful_output_pin_stateful() {
 
     assert!(stateful_output_pin_is_set_high(output));
 
-    insta::assert_display_snapshot!(report.get_log());
+    insta::assert_display_snapshot!(report.take_log());
 }
 
 #[test]
@@ -215,7 +215,7 @@ fn toggle_stateful_output_pin_type_erasure_number() {
 
     assert!(stateful_output_pin_is_set_high(output));
 
-    insta::assert_display_snapshot!(report.get_log());
+    insta::assert_display_snapshot!(report.take_log());
 }
 
 #[test]
@@ -230,5 +230,5 @@ fn toggle_stateful_output_pin_type_erasure_port_and_number() {
 
     assert!(stateful_output_pin_is_set_high(output));
 
-    insta::assert_display_snapshot!(report.get_log());
+    insta::assert_display_snapshot!(report.take_log());
 }
