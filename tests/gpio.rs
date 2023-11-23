@@ -1,7 +1,8 @@
+use embedded_hal::digital::OutputPin;
 use tc37x_pac::PORT_00;
 use tc37x_pac::PORT_01;
 
-use tc37x_hal::gpio::GpioExt;
+use tc37x_hal::gpio::{ErasedPin, GpioExt, Output, PushPull};
 use tc37x_hal::tracing;
 use tracing::log::Report;
 
@@ -231,4 +232,12 @@ fn toggle_stateful_output_pin_type_erasure_port_and_number() {
     assert!(stateful_output_pin_is_set_high(output));
 
     insta::assert_display_snapshot!(report.take_log());
+}
+
+#[test]
+fn type_erasure_with_into() {
+    let port = PORT_00.split();
+    let output = port.p00_5.into_push_pull_output();
+    let output = output.erase();
+    let _output: ErasedPin<_> = output.into();
 }
