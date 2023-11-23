@@ -116,7 +116,7 @@ impl<MODE> ErasedPin<Output<MODE>> {
     #[inline(always)]
     pub fn set_state(&mut self, state: PinState) {
         let port = unsafe { self.block() };
-        output_pin_set_state(port, self.pin, state);
+        pin_set_state(port, self.pin, state);
     }
 
     /// Is the pin in drive high mode?
@@ -157,7 +157,7 @@ impl<MODE> ErasedPin<Output<MODE>> {
     #[inline(always)]
     pub fn toggle(&mut self) {
         let port = unsafe { self.block() };
-        toggle_output_pin_state(port, self.pin)
+        pin_toggle_state(port, self.pin)
     }
 }
 

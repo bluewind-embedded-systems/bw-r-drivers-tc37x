@@ -462,7 +462,7 @@ impl<const P: usize, const N: usize, MODE> Pin<P, N, MODE> {
     #[inline(always)]
     fn _set_state(&mut self, state: PinState) {
         let port = &unsafe { (*Gpio::<P>::ptr()) };
-        output_pin_set_state(port, PinId(N), state);
+        pin_set_state(port, PinId(N), state);
     }
     #[inline(always)]
     fn _set_high(&mut self) {
@@ -528,7 +528,7 @@ impl<const P: usize, const N: usize, MODE> Pin<P, N, MODE> {
     #[inline(always)]
     fn _toggle(&mut self) {
         let port = &unsafe { (*Gpio::<P>::ptr()) };
-        toggle_output_pin_state(port, PinId(N));
+        pin_toggle_state(port, PinId(N));
     }
 }
 
@@ -713,11 +713,7 @@ pub(crate) const fn to_pcl_ps_bits(pin_state: PinState) -> u32 {
 
 /// Change the output pin state
 #[inline(always)]
-pub(crate) fn output_pin_set_state(
-    port: &crate::pac::port_00::Port00,
-    pin: PinId,
-    state: PinState,
-) {
+pub(crate) fn pin_set_state(port: &crate::pac::port_00::Port00, pin: PinId, state: PinState) {
     // Instead of setting PCLx and PSx (where x is the pin number)
     // we directly set the bits in OMR register.
     let state = to_pcl_ps_bits(state) << pin.0;
@@ -728,7 +724,7 @@ pub(crate) fn output_pin_set_state(
 
 /// Change the output pin state
 #[inline(always)]
-pub(crate) fn toggle_output_pin_state(port: &crate::pac::port_00::Port00, pin: PinId) {
+pub(crate) fn pin_toggle_state(port: &crate::pac::port_00::Port00, pin: PinId) {
     // Instead of setting PCLx and PSx (where x is the pin number)
     // we directly set the bits in OMR register.
     const PCLX: u32 = 1;

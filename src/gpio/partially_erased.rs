@@ -91,7 +91,7 @@ impl<const P: usize, MODE> PartiallyErasedPin<P, Output<MODE>> {
     #[inline(always)]
     pub fn set_state(&mut self, state: PinState) {
         let port = &unsafe { (*Gpio::<P>::ptr()) };
-        output_pin_set_state(port, self.i, state);
+        pin_set_state(port, self.i, state);
     }
 
     /// Is the pin in drive high mode?
@@ -134,7 +134,7 @@ impl<const P: usize, MODE> PartiallyErasedPin<P, Output<MODE>> {
     #[inline(always)]
     pub fn toggle(&mut self) {
         let port = &unsafe { (*Gpio::<P>::ptr()) };
-        toggle_output_pin_state(port, self.i)
+        pin_toggle_state(port, self.i)
     }
 }
 
