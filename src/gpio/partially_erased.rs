@@ -21,7 +21,7 @@ impl<const P: PortIndex, MODE> PartiallyErasedPin<P, MODE> {
     }
 
     /// Convert partially type erased pin to `Pin` with fixed type
-    pub fn restore<const N: usize>(self) -> Pin<P, N, MODE> {
+    pub fn restore<const N: PinIndex>(self) -> Pin<P, N, MODE> {
         assert_eq!(self.pin.0, N);
         Pin::new()
     }

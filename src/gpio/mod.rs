@@ -272,17 +272,17 @@ af!(
 /// - `MODE` is one of the pin modes (see [Modes](crate::gpio#modes) section).
 /// - `P` is port id
 /// - `N` is pin number: from `0` to `15`.
-pub struct Pin<const P: PortIndex, const N: usize, MODE = DefaultMode> {
+pub struct Pin<const P: PortIndex, const N: PinIndex, MODE = DefaultMode> {
     _mode: PhantomData<MODE>,
 }
 
-impl<const P: PortIndex, const N: usize, MODE> Pin<P, N, MODE> {
+impl<const P: PortIndex, const N: PinIndex, MODE> Pin<P, N, MODE> {
     const fn new() -> Self {
         Self { _mode: PhantomData }
     }
 }
 
-impl<const P: PortIndex, const N: usize, MODE> fmt::Debug for Pin<P, N, MODE> {
+impl<const P: PortIndex, const N: PinIndex, MODE> fmt::Debug for Pin<P, N, MODE> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_fmt(format_args!(
             "P{}{}<{}>",
@@ -294,13 +294,13 @@ impl<const P: PortIndex, const N: usize, MODE> fmt::Debug for Pin<P, N, MODE> {
 }
 
 #[cfg(feature = "defmt")]
-impl<const P: PortIndex, const N: usize, MODE> defmt::Format for Pin<P, N, MODE> {
+impl<const P: PortIndex, const N: PinIndex, MODE> defmt::Format for Pin<P, N, MODE> {
     fn format(&self, f: defmt::Formatter) {
         defmt::write!(f, "P{}{}<{}>", P, N, crate::stripped_type_name::<MODE>());
     }
 }
 
-impl<const P: PortIndex, const N: usize, MODE> PinExt for Pin<P, N, MODE> {
+impl<const P: PortIndex, const N: PinIndex, MODE> PinExt for Pin<P, N, MODE> {
     type Mode = MODE;
 
     #[inline(always)]
@@ -335,7 +335,7 @@ pub trait PinPull: Sized {
     }
 }
 
-impl<const P: PortIndex, const N: usize, MODE> PinSpeed for Pin<P, N, MODE>
+impl<const P: PortIndex, const N: PinIndex, MODE> PinSpeed for Pin<P, N, MODE>
 where
     MODE: marker::OutputSpeed,
 {
@@ -345,7 +345,7 @@ where
     }
 }
 
-impl<const P: PortIndex, const N: usize, MODE> Pin<P, N, MODE>
+impl<const P: PortIndex, const N: PinIndex, MODE> Pin<P, N, MODE>
 where
     MODE: marker::OutputSpeed,
 {
@@ -368,7 +368,7 @@ where
     }
 }
 
-impl<const P: PortIndex, const N: usize, MODE> PinPull for Pin<P, N, MODE>
+impl<const P: PortIndex, const N: PinIndex, MODE> PinPull for Pin<P, N, MODE>
 where
     MODE: marker::Active,
 {
@@ -378,7 +378,7 @@ where
     }
 }
 
-impl<const P: PortIndex, const N: usize, MODE> Pin<P, N, MODE>
+impl<const P: PortIndex, const N: PinIndex, MODE> Pin<P, N, MODE>
 where
     MODE: marker::Active,
 {
@@ -419,7 +419,7 @@ where
     }
 }
 
-impl<const P: PortIndex, const N: usize, MODE> Pin<P, N, MODE> {
+impl<const P: PortIndex, const N: PinIndex, MODE> Pin<P, N, MODE> {
     /// Erases the pin number from the type
     ///
     /// This is useful when you want to collect the pins into an array where you
@@ -437,7 +437,9 @@ impl<const P: PortIndex, const N: usize, MODE> Pin<P, N, MODE> {
     }
 }
 
-impl<const P: PortIndex, const N: usize, MODE> From<Pin<P, N, MODE>> for PartiallyErasedPin<P, MODE> {
+impl<const P: PortIndex, const N: PinIndex, MODE> From<Pin<P, N, MODE>>
+    for PartiallyErasedPin<P, MODE>
+{
     /// Pin-to-partially erased pin conversion using the [`From`] trait.
     ///
     /// Note that [`From`] is the reciprocal of [`Into`].
@@ -446,7 +448,7 @@ impl<const P: PortIndex, const N: usize, MODE> From<Pin<P, N, MODE>> for Partial
     }
 }
 
-impl<const P: PortIndex, const N: usize, MODE> From<Pin<P, N, MODE>> for ErasedPin<MODE> {
+impl<const P: PortIndex, const N: PinIndex, MODE> From<Pin<P, N, MODE>> for ErasedPin<MODE> {
     /// Pin-to-erased pin conversion using the [`From`] trait.
     ///
     /// Note that [`From`] is the reciprocal of [`Into`].
@@ -455,7 +457,7 @@ impl<const P: PortIndex, const N: usize, MODE> From<Pin<P, N, MODE>> for ErasedP
     }
 }
 
-impl<const P: PortIndex, const N: usize, MODE> Pin<P, N, MODE> {
+impl<const P: PortIndex, const N: PinIndex, MODE> Pin<P, N, MODE> {
     /// Set the output of the pin regardless of its mode.
     /// Primarily used to set the output value of the pin
     /// before changing its mode to an output to avoid
@@ -493,7 +495,7 @@ impl<const P: PortIndex, const N: usize, MODE> Pin<P, N, MODE> {
     }
 }
 
-impl<const P: PortIndex, const N: usize, MODE> Pin<P, N, Output<MODE>> {
+impl<const P: PortIndex, const N: PinIndex, MODE> Pin<P, N, Output<MODE>> {
     /// Drives the pin high
     #[inline(always)]
     pub fn set_high(&mut self) {
@@ -537,7 +539,7 @@ pub trait ReadPin {
     fn is_low(&self) -> bool;
 }
 
-impl<const P: PortIndex, const N: usize, MODE> ReadPin for Pin<P, N, MODE>
+impl<const P: PortIndex, const N: PinIndex, MODE> ReadPin for Pin<P, N, MODE>
 where
     MODE: marker::Readable,
 {
@@ -547,7 +549,7 @@ where
     }
 }
 
-impl<const P: PortIndex, const N: usize, MODE> Pin<P, N, MODE>
+impl<const P: PortIndex, const N: PinIndex, MODE> Pin<P, N, MODE>
 where
     MODE: marker::Readable,
 {
@@ -746,3 +748,4 @@ pub(crate) fn pin_output_is_high(port: &AnyPort, pin: PinId) -> bool {
 type AnyPort = crate::pac::port_00::Port00;
 
 pub(crate) type PortIndex = usize;
+pub(crate) type PinIndex = usize;

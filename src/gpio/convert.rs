@@ -1,13 +1,13 @@
 use super::*;
 
-impl<const P: PortIndex, const N: usize, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
+impl<const P: PortIndex, const N: PinIndex, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
     /// Turns pin alternate configuration pin into open drain
     pub fn set_open_drain(self) -> Pin<P, N, Alternate<A, OpenDrain>> {
         self.into_mode()
     }
 }
 
-impl<const P: PortIndex, const N: usize, MODE: PinMode> Pin<P, N, MODE> {
+impl<const P: PortIndex, const N: PinIndex, MODE: PinMode> Pin<P, N, MODE> {
     /// Configures the pin to operate alternate mode
     pub fn into_alternate<const A: u8>(self) -> Pin<P, N, Alternate<A, PushPull>>
     where
@@ -136,7 +136,7 @@ fn change_pin_mode_port_pin<MODE: PinMode>(port: &AnyPort, pin: PinId) {
 }
 
 #[inline(always)]
-fn change_pin_mode<const P: PortIndex, const N: usize, M: PinMode>() {
+fn change_pin_mode<const P: PortIndex, const N: PinIndex, M: PinMode>() {
     // SAFETY: All Port instances have the same layout as Port00
     change_pin_mode_port_pin::<M>(&unsafe { *Gpio::<P>::ptr() }, PinId(N))
 }
@@ -173,7 +173,7 @@ impl<const P: PortIndex, MODE: PinMode> PartiallyErasedPin<P, MODE> {
     }
 }
 
-impl<const P: PortIndex, const N: usize, MODE> Pin<P, N, MODE>
+impl<const P: PortIndex, const N: PinIndex, MODE> Pin<P, N, MODE>
 where
     MODE: PinMode,
 {
@@ -259,11 +259,11 @@ where
 }
 
 /// Wrapper around a pin that transitions the pin to mode ORIG when dropped
-struct ResetMode<const P: PortIndex, const N: usize, CURRENT: PinMode, ORIG: PinMode> {
+struct ResetMode<const P: PortIndex, const N: PinIndex, CURRENT: PinMode, ORIG: PinMode> {
     pub pin: Pin<P, N, CURRENT>,
     _mode: PhantomData<ORIG>,
 }
-impl<const P: PortIndex, const N: usize, CURRENT: PinMode, ORIG: PinMode>
+impl<const P: PortIndex, const N: PinIndex, CURRENT: PinMode, ORIG: PinMode>
     ResetMode<P, N, CURRENT, ORIG>
 {
     fn new() -> Self {
@@ -273,7 +273,7 @@ impl<const P: PortIndex, const N: usize, CURRENT: PinMode, ORIG: PinMode>
         }
     }
 }
-impl<const P: PortIndex, const N: usize, CURRENT: PinMode, ORIG: PinMode> Drop
+impl<const P: PortIndex, const N: PinIndex, CURRENT: PinMode, ORIG: PinMode> Drop
     for ResetMode<P, N, CURRENT, ORIG>
 {
     fn drop(&mut self) {

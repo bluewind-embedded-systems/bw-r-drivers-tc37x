@@ -5,7 +5,7 @@ use embedded_hal::digital::ErrorKind;
 ///
 /// - `P` is port name: `A` for GPIOA, `B` for GPIOB, etc.
 /// - `N` is pin number: from `0` to `15`.
-pub struct DynamicPin<const P: PortIndex, const N: usize> {
+pub struct DynamicPin<const P: PortIndex, const N: PinIndex> {
     /// Current pin mode
     pub(crate) mode: Dynamic,
 }
@@ -63,7 +63,7 @@ struct Unknown;
 impl crate::Sealed for Unknown {}
 impl PinMode for Unknown {}
 
-impl<const P: PortIndex, const N: usize> DynamicPin<P, N> {
+impl<const P: PortIndex, const N: PinIndex> DynamicPin<P, N> {
     pub(super) const fn new(mode: Dynamic) -> Self {
         Self { mode }
     }
