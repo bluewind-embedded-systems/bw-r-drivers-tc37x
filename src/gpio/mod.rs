@@ -84,7 +84,7 @@ mod erased;
 // TODO (alepez) pub use exti::ExtiPin;
 mod dynamic;
 
-mod hal_1;
+mod hal;
 pub mod outport;
 
 /// A filler pin type
