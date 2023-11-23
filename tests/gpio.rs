@@ -9,8 +9,8 @@ use tc37x_hal::tracing;
 fn test_pin_set_high_and_low() {
     let report = tracing::log::Report::new();
 
-    let gpio00 = PORT_00.split();
-    let mut output = gpio00.p00_5.into_push_pull_output();
+    let port = PORT_00.split();
+    let mut output = port.p00_5.into_push_pull_output();
 
     output.set_high();
     output.set_low();
@@ -22,9 +22,9 @@ fn test_pin_set_high_and_low() {
 fn test_pin_set_two_pins_same_port_high() {
     let report = tracing::log::Report::new();
 
-    let gpio00 = PORT_00.split();
-    let mut p00_5 = gpio00.p00_5.into_push_pull_output();
-    let mut p00_6 = gpio00.p00_6.into_push_pull_output();
+    let port = PORT_00.split();
+    let mut p00_5 = port.p00_5.into_push_pull_output();
+    let mut p00_6 = port.p00_6.into_push_pull_output();
 
     p00_5.set_high();
     p00_6.set_high();
@@ -36,9 +36,9 @@ fn test_pin_set_two_pins_same_port_high() {
 fn test_pin_set_two_pins_on_two_ports_high() {
     let report = tracing::log::Report::new();
 
-    let gpio00 = PORT_00.split();
+    let port = PORT_00.split();
     let gpio01 = PORT_01.split();
-    let mut p00_5 = gpio00.p00_5.into_push_pull_output();
+    let mut p00_5 = port.p00_5.into_push_pull_output();
     let mut p01_7 = gpio01.p01_7.into_push_pull_output();
 
     p00_5.set_high();
@@ -81,8 +81,8 @@ fn test_input_pin() {
 fn test_output_pin_type_erasure_number() {
     let report = tracing::log::Report::new();
 
-    let gpio00 = PORT_00.split();
-    let output = gpio00.p00_5.into_push_pull_output();
+    let port = PORT_00.split();
+    let output = port.p00_5.into_push_pull_output();
     let mut output = output.erase_number();
 
     output.set_high();
@@ -95,8 +95,8 @@ fn test_output_pin_type_erasure_number() {
 fn test_output_pin_type_erasure_port_and_number() {
     let report = tracing::log::Report::new();
 
-    let gpio00 = PORT_00.split();
-    let output = gpio00.p00_5.into_push_pull_output();
+    let port = PORT_00.split();
+    let output = port.p00_5.into_push_pull_output();
     let mut output = output.erase();
 
     output.set_high();
@@ -149,8 +149,8 @@ fn test_input_pin_type_erasure_port_and_number() {
 fn toggle_output_pin() {
     let report = tracing::log::Report::new();
 
-    let gpio00 = PORT_00.split();
-    let mut output = gpio00.p00_5.into_push_pull_output();
+    let port = PORT_00.split();
+    let mut output = port.p00_5.into_push_pull_output();
 
     output.toggle();
 
@@ -161,8 +161,8 @@ fn toggle_output_pin() {
 fn toggle_output_pin_type_erasure_number() {
     let report = tracing::log::Report::new();
 
-    let gpio00 = PORT_00.split();
-    let output = gpio00.p00_5.into_push_pull_output();
+    let port = PORT_00.split();
+    let output = port.p00_5.into_push_pull_output();
     let mut output = output.erase_number();
 
     output.toggle();
@@ -174,8 +174,8 @@ fn toggle_output_pin_type_erasure_number() {
 fn toggle_output_pin_type_erasure_port_and_number() {
     let report = tracing::log::Report::new();
 
-    let gpio00 = PORT_00.split();
-    let output = gpio00.p00_5.into_push_pull_output();
+    let port = PORT_00.split();
+    let output = port.p00_5.into_push_pull_output();
     let mut output = output.erase();
 
     output.toggle();
@@ -192,8 +192,8 @@ fn stateful_output_pin_is_set_high(pin: impl StatefulOutputPin) -> bool {
 fn toggle_stateful_output_pin_stateful() {
     let report = tracing::log::Report::new();
 
-    let gpio00 = PORT_00.split();
-    let output = gpio00.p00_5.into_push_pull_output();
+    let port = PORT_00.split();
+    let output = port.p00_5.into_push_pull_output();
 
     report.expect_read(0xF003A000, 4, 0b00000000000000000000000000100000);
 
@@ -206,8 +206,8 @@ fn toggle_stateful_output_pin_stateful() {
 fn toggle_stateful_output_pin_type_erasure_number() {
     let report = tracing::log::Report::new();
 
-    let gpio00 = PORT_00.split();
-    let output = gpio00.p00_5.into_push_pull_output();
+    let port = PORT_00.split();
+    let output = port.p00_5.into_push_pull_output();
     let output = output.erase_number();
 
     report.expect_read(0xF003A000, 4, 0b00000000000000000000000000100000);
@@ -221,8 +221,8 @@ fn toggle_stateful_output_pin_type_erasure_number() {
 fn toggle_stateful_output_pin_type_erasure_port_and_number() {
     let report = tracing::log::Report::new();
 
-    let gpio00 = PORT_00.split();
-    let output = gpio00.p00_5.into_push_pull_output();
+    let port = PORT_00.split();
+    let output = port.p00_5.into_push_pull_output();
     let output = output.erase();
 
     report.expect_read(0xF003A000, 4, 0b00000000000000000000000000100000);
