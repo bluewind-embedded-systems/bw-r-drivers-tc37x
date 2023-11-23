@@ -169,7 +169,7 @@ where
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         let port = unsafe { self.block() };
-        pin_out_is_high(port, self.pin)
+        pin_input_is_high(port, self.pin)
     }
 
     /// Is the input pin low?

@@ -146,7 +146,7 @@ where
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         let port = &(unsafe { *Gpio::<P>::ptr() });
-        pin_out_is_high(port, self.i)
+        pin_input_is_high(port, self.i)
     }
 
     /// Is the input pin low?

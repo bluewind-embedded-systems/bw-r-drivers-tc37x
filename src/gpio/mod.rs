@@ -476,7 +476,7 @@ impl<const P: usize, const N: usize, MODE> Pin<P, N, MODE> {
     #[inline(always)]
     fn _is_high(&self) -> bool {
         let port = &(unsafe { *Gpio::<P>::ptr() });
-        pin_out_is_high(port, PinId(N))
+        pin_input_is_high(port, PinId(N))
     }
 
     #[inline(always)]
@@ -713,7 +713,7 @@ pub(crate) fn pin_toggle_state(port: &crate::pac::port_00::Port00, pin: PinId) {
 }
 
 #[inline(always)]
-pub(crate) fn pin_out_is_high(port: &crate::pac::port_00::Port00, pin: PinId) -> bool {
+pub(crate) fn pin_input_is_high(port: &crate::pac::port_00::Port00, pin: PinId) -> bool {
     unsafe {
         match pin.0 {
             0 => port.r#in().read().p0().get(),
