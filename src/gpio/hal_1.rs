@@ -27,8 +27,6 @@ impl<const P: usize, const N: usize, MODE> OutputPin for Pin<P, N, Output<MODE>>
     }
 }
 
-// TODO (alepez) StatefulOutputPin was implemented in stm32. It let the user know the state of output pin
-//   tc37x output register are read only, so it's only possible by remembering the state.
 impl<const P: usize, const N: usize, MODE> StatefulOutputPin for Pin<P, N, Output<MODE>> {
     #[inline(always)]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
