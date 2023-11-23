@@ -706,8 +706,18 @@ pub struct PortId(usize);
 #[inline(always)]
 pub(crate) const fn to_pcl_ps_bits(pin_state: PinState) -> u32 {
     match pin_state {
-        PinState::High => 1,
-        PinState::Low => 1 << 16,
+        PinState::High => {
+            const PCLX: u32 = 0;
+            const PSX: u32 = 1;
+            const HIGH: u32 = ((PCLX << 16) | PSX);
+            HIGH
+        }
+        PinState::Low => {
+            const PCLX: u32 = 1;
+            const PSX: u32 = 0;
+            const LOW: u32 = ((PCLX << 16) | PSX);
+            LOW
+        }
     }
 }
 
