@@ -62,6 +62,7 @@
 
 use core::fmt;
 use core::marker::PhantomData;
+use std::ops::Deref;
 
 pub use embedded_hal::digital::PinState;
 use tc37x_pac::RegisterValue;
@@ -622,7 +623,7 @@ pub use self::tc37x::*;
 struct Gpio<const P: usize>;
 
 impl<const P: usize> Gpio<P> {
-    const fn ptr() -> *const crate::pac::port_00::Port00 {
+    const fn ptr() -> *const AnyPort {
         // TODO (alepez) add ports
         // TODO (alepez) check if the assumptions are correct
         // The logic relies on the following assumptions:
@@ -669,7 +670,7 @@ const fn pcl_ps_bits(pclx: u32, psx: u32, pin: usize) -> u32 {
 
 /// Change the output pin state
 #[inline(always)]
-pub(crate) fn pin_set_state(port: &crate::pac::port_00::Port00, pin: PinId, state: PinState) {
+pub(crate) fn pin_set_state(port: &AnyPort, pin: PinId, state: PinState) {
     // Instead of setting PCLx and PSx (where x is the pin number)
     // we directly set the bits in OMR register.
     let raw = match state {
@@ -683,7 +684,7 @@ pub(crate) fn pin_set_state(port: &crate::pac::port_00::Port00, pin: PinId, stat
 
 /// Change the output pin state
 #[inline(always)]
-pub(crate) fn pin_toggle_state(port: &crate::pac::port_00::Port00, pin: PinId) {
+pub(crate) fn pin_toggle_state(port: &AnyPort, pin: PinId) {
     // Instead of setting PCLx and PSx (where x is the pin number)
     // we directly set the bits in OMR register.
     let raw = pcl_ps_bits(1, 1, pin.0);
@@ -693,7 +694,7 @@ pub(crate) fn pin_toggle_state(port: &crate::pac::port_00::Port00, pin: PinId) {
 }
 
 #[inline(always)]
-pub(crate) fn pin_input_is_high(port: &crate::pac::port_00::Port00, pin: PinId) -> bool {
+pub(crate) fn pin_input_is_high(port: &AnyPort, pin: PinId) -> bool {
     unsafe {
         match pin.0 {
             0 => port.r#in().read().p0().get(),
@@ -718,7 +719,7 @@ pub(crate) fn pin_input_is_high(port: &crate::pac::port_00::Port00, pin: PinId) 
 }
 
 #[inline(always)]
-pub(crate) fn pin_output_is_high(port: &crate::pac::port_00::Port00, pin: PinId) -> bool {
+pub(crate) fn pin_output_is_high(port: &AnyPort, pin: PinId) -> bool {
     unsafe {
         match pin.0 {
             0 => port.out().read().p0().get(),
@@ -741,3 +742,5 @@ pub(crate) fn pin_output_is_high(port: &crate::pac::port_00::Port00, pin: PinId)
         }
     }
 }
+
+type AnyPort = crate::pac::port_00::Port00;

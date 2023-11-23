@@ -67,7 +67,7 @@ impl<MODE> ErasedPin<MODE> {
     }
 
     #[inline]
-    pub(crate) unsafe fn block(&self) -> &crate::pac::port_00::Port00 {
+    pub(crate) unsafe fn block(&self) -> &AnyPort {
         // This function uses pointer arithmetic instead of branching to be more efficient
         //
         // The logic relies on the following assumptions:

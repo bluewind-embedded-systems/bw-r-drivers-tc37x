@@ -108,7 +108,7 @@ impl<const P: usize, const N: usize, MODE: PinMode> Pin<P, N, MODE> {
 }
 
 #[inline(always)]
-fn change_pin_mode_port_pin<MODE: PinMode>(port: &crate::pac::port_00::Port00, pin: PinId) {
+fn change_pin_mode_port_pin<MODE: PinMode>(port: &AnyPort, pin: PinId) {
     use crate::pac::*;
     let mode = MODE::MODE >> 3;
 
