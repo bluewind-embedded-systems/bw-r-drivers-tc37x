@@ -1,4 +1,3 @@
-use embedded_hal::digital::StatefulOutputPin;
 use tc37x_pac::PORT_00;
 use tc37x_pac::PORT_01;
 
@@ -185,7 +184,8 @@ fn toggle_output_pin_type_erasure_port_and_number() {
 }
 
 // Set the pin high by using StatefulOutputPin interface
-fn stateful_output_pin_is_set_high(pin: impl StatefulOutputPin) -> bool {
+// This is needed to ensure the StatefulOutputPin trait is implemented
+fn stateful_output_pin_is_set_high(pin: impl embedded_hal::digital::StatefulOutputPin) -> bool {
     pin.is_set_high().unwrap()
 }
 
