@@ -462,7 +462,7 @@ impl<const P: usize, const N: usize, MODE> Pin<P, N, MODE> {
     #[inline(always)]
     fn _set_state(&mut self, state: PinState) {
         let port = &unsafe { (*Gpio::<P>::ptr()) };
-        set_output_pin_state(port, PinId(N), state);
+        output_pin_set_state(port, PinId(N), state);
     }
     #[inline(always)]
     fn _set_high(&mut self) {
@@ -713,7 +713,7 @@ pub(crate) const fn to_pcl_ps_bits(pin_state: PinState) -> u32 {
 
 /// Change the output pin state
 #[inline(always)]
-pub(crate) fn set_output_pin_state(
+pub(crate) fn output_pin_set_state(
     port: &crate::pac::port_00::Port00,
     pin: PinId,
     state: PinState,
