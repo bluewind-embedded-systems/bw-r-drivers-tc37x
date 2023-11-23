@@ -7,6 +7,7 @@
 tc37x_rt::entry!(main);
 
 use core::arch::asm;
+use embedded_hal::digital::StatefulOutputPin;
 use tc37x_hal::gpio::GpioExt;
 use tc37x_hal::pac;
 
@@ -29,11 +30,28 @@ fn main() -> ! {
 
     loop {
         let period = if button1.is_high() { 100_000 } else { 25_000 };
+
+        // Test set_low
         led1.set_low();
+
+        // Test toggle
         led2.toggle();
+
         wait_nop(period);
+
+        // Test high
         led1.set_high();
-        led2.toggle();
+
+        // Test is_set_high
+        if led1.is_set_high().unwrap_or_default() {
+            led2.set_low();
+        }
+
+        // Test is_set_low
+        if led1.is_set_low().unwrap_or_default() {
+            led2.set_high();
+        }
+
         wait_nop(period);
     }
 }
