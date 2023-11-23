@@ -703,22 +703,8 @@ pub struct PinId(usize);
 pub struct PortId(usize);
 
 /// Convert pin state to the raw register value PCLx and PSx
-#[inline(always)]
-pub(crate) const fn to_pcl_ps_bits(pin_state: PinState) -> u32 {
-    match pin_state {
-        PinState::High => {
-            const PCLX: u32 = 0;
-            const PSX: u32 = 1;
-            const HIGH: u32 = ((PCLX << 16) | PSX);
-            HIGH
-        }
-        PinState::Low => {
-            const PCLX: u32 = 1;
-            const PSX: u32 = 0;
-            const LOW: u32 = ((PCLX << 16) | PSX);
-            LOW
-        }
-    }
+const fn pcl_ps_bits(pclx: u32, psx: u32, pin: usize) -> u32 {
+    ((pclx << 16) | psx) << pin
 }
 
 /// Change the output pin state
@@ -726,9 +712,12 @@ pub(crate) const fn to_pcl_ps_bits(pin_state: PinState) -> u32 {
 pub(crate) fn pin_set_state(port: &crate::pac::port_00::Port00, pin: PinId, state: PinState) {
     // Instead of setting PCLx and PSx (where x is the pin number)
     // we directly set the bits in OMR register.
-    let state = to_pcl_ps_bits(state) << pin.0;
+    let raw = match state {
+        PinState::High => pcl_ps_bits(0, 1, pin.0),
+        PinState::Low => pcl_ps_bits(1, 0, pin.0),
+    };
     unsafe {
-        port.omr().init(|mut r| r.set_raw(state));
+        port.omr().init(|mut r| r.set_raw(raw));
     }
 }
 
@@ -737,11 +726,8 @@ pub(crate) fn pin_set_state(port: &crate::pac::port_00::Port00, pin: PinId, stat
 pub(crate) fn pin_toggle_state(port: &crate::pac::port_00::Port00, pin: PinId) {
     // Instead of setting PCLx and PSx (where x is the pin number)
     // we directly set the bits in OMR register.
-    const PCLX: u32 = 1;
-    const PSX: u32 = 1;
-    const TOGGLE: u32 = ((PCLX << 16) | PSX);
-    let toggle = TOGGLE << pin.0;
+    let raw = pcl_ps_bits(1, 1, pin.0);
     unsafe {
-        port.omr().init(|mut r| r.set_raw(toggle));
+        port.omr().init(|mut r| r.set_raw(raw));
     }
 }
