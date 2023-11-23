@@ -169,7 +169,7 @@ impl<const P: usize, MODE: PinMode> PartiallyErasedPin<P, MODE> {
     /// Converts pin into specified mode
     pub fn into_mode<M: PinMode>(mut self) -> PartiallyErasedPin<P, M> {
         self.mode::<M>();
-        PartiallyErasedPin::new(self.i)
+        PartiallyErasedPin::new(self.pin)
     }
 }
 

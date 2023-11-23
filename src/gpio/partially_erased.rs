@@ -8,21 +8,21 @@ pub use PartiallyErasedPin as PEPin;
 /// - `P` is port name: `A` for GPIOA, `B` for GPIOB, etc.
 pub struct PartiallyErasedPin<const P: usize, MODE> {
     // TODO (alepez) rename to pin_id
-    pub(crate) i: PinId,
+    pub(crate) pin: PinId,
     _mode: PhantomData<MODE>,
 }
 
 impl<const P: usize, MODE> PartiallyErasedPin<P, MODE> {
     pub(crate) fn new(i: PinId) -> Self {
         Self {
-            i,
+            pin: i,
             _mode: PhantomData,
         }
     }
 
     /// Convert partially type erased pin to `Pin` with fixed type
     pub fn restore<const N: usize>(self) -> Pin<P, N, MODE> {
-        assert_eq!(self.i.0, N);
+        assert_eq!(self.pin.0, N);
         Pin::new()
     }
 }
@@ -32,7 +32,7 @@ impl<const P: usize, MODE> fmt::Debug for PartiallyErasedPin<P, MODE> {
         formatter.write_fmt(format_args!(
             "P{}({})<{}>",
             P,
-            self.i.0,
+            self.pin.0,
             crate::stripped_type_name::<MODE>()
         ))
     }
@@ -45,7 +45,7 @@ impl<const P: usize, MODE> defmt::Format for PartiallyErasedPin<P, MODE> {
             f,
             "P{}({})<{}>",
             P,
-            self.i,
+            self.pin,
             crate::stripped_type_name::<MODE>()
         );
     }
@@ -56,7 +56,7 @@ impl<const P: usize, MODE> PinExt for PartiallyErasedPin<P, MODE> {
 
     #[inline(always)]
     fn pin_id(&self) -> PinId {
-        self.i
+        self.pin
     }
     #[inline(always)]
     fn port_id(&self) -> PortId {
@@ -91,14 +91,14 @@ impl<const P: usize, MODE> PartiallyErasedPin<P, Output<MODE>> {
     #[inline(always)]
     pub fn set_state(&mut self, state: PinState) {
         let port = &unsafe { (*Gpio::<P>::ptr()) };
-        pin_set_state(port, self.i, state);
+        pin_set_state(port, self.pin, state);
     }
 
     /// Is the pin in drive high mode?
     #[inline(always)]
     pub(crate) fn _is_set_high(&self) -> bool {
         let port = &(unsafe { *Gpio::<P>::ptr() });
-        pin_output_is_high(port, self.i)
+        pin_output_is_high(port, self.pin)
     }
 
     /// Is the pin in drive low mode?
@@ -114,7 +114,7 @@ impl<const P: usize, MODE> PartiallyErasedPin<P, Output<MODE>> {
     #[inline(always)]
     pub fn toggle(&mut self) {
         let port = &unsafe { (*Gpio::<P>::ptr()) };
-        pin_toggle_state(port, self.i)
+        pin_toggle_state(port, self.pin)
     }
 }
 
@@ -126,7 +126,7 @@ where
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         let port = &(unsafe { *Gpio::<P>::ptr() });
-        pin_input_is_high(port, self.i)
+        pin_input_is_high(port, self.pin)
     }
 
     /// Is the input pin low?
@@ -141,6 +141,6 @@ impl<const P: usize, MODE> From<PartiallyErasedPin<P, MODE>> for ErasedPin<MODE>
     ///
     /// Note that [`From`] is the reciprocal of [`Into`].
     fn from(p: PartiallyErasedPin<P, MODE>) -> Self {
-        ErasedPin::new(PortId(P), p.i)
+        ErasedPin::new(PortId(P), p.pin)
     }
 }

@@ -87,14 +87,14 @@ impl<const P: usize, const SIZE: usize> OutPortArray<P, SIZE> {
     fn mask(&self) -> u32 {
         let mut msk = 0;
         for pin in self.0.iter() {
-            msk |= 1 << pin.i.0;
+            msk |= 1 << pin.pin.0;
         }
         msk
     }
     fn value_for_write_bsrr(&self, val: u32) -> u32 {
         let mut msk = 0;
         for (idx, pin) in self.0.iter().enumerate() {
-            let n = pin.i.0;
+            let n = pin.pin.0;
             msk |= 1 << (if val & (1 << idx) != 0 { n } else { n + 16 });
         }
         msk
