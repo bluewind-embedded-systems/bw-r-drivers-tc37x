@@ -183,6 +183,11 @@ fn toggle_output_pin_type_erasure_port_and_number() {
     insta::assert_display_snapshot!(report.get_log());
 }
 
+// Set the pin high by using StatefulOutputPin interface
+fn stateful_output_pin_is_set_high(pin: impl StatefulOutputPin) -> bool {
+    pin.is_set_high().unwrap()
+}
+
 #[test]
 fn toggle_stateful_output_pin_stateful() {
     let report = tracing::log::Report::new();
@@ -192,8 +197,7 @@ fn toggle_stateful_output_pin_stateful() {
 
     report.expect_read(0xF003A000, 4, 0b00000000000000000000000000100000);
 
-    let is_high = output.is_set_high();
-    assert!(is_high.unwrap());
+    assert!(stateful_output_pin_is_set_high(output));
 
     insta::assert_display_snapshot!(report.get_log());
 }
@@ -208,8 +212,7 @@ fn toggle_stateful_output_pin_type_erasure_number() {
 
     report.expect_read(0xF003A000, 4, 0b00000000000000000000000000100000);
 
-    let is_high = output.is_set_high();
-    assert!(is_high.unwrap());
+    assert!(stateful_output_pin_is_set_high(output));
 
     insta::assert_display_snapshot!(report.get_log());
 }
@@ -224,8 +227,7 @@ fn toggle_stateful_output_pin_type_erasure_port_and_number() {
 
     report.expect_read(0xF003A000, 4, 0b00000000000000000000000000100000);
 
-    let is_high = output.is_set_high();
-    assert!(is_high.unwrap());
+    assert!(stateful_output_pin_is_set_high(output));
 
     insta::assert_display_snapshot!(report.get_log());
 }
