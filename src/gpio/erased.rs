@@ -82,7 +82,9 @@ impl<MODE> ErasedPin<MODE> {
 
         const PORT_REGISTER_OFFSET: usize = 0x100;
 
-        let offset = PORT_REGISTER_OFFSET * self.port_id().0 as usize;
+        #[allow(clippy::useless_conversion)]
+        let port_index: usize = self.port_id().0.into();
+        let offset = PORT_REGISTER_OFFSET * port_index;
         let block_ptr = unsafe { (&PORT_00 as *const Port00).add(offset) };
 
         unsafe { &*block_ptr }
