@@ -659,11 +659,14 @@ impl<const P: PortIndex> Gpio<P> {
     }
 }
 
-#[derive(Copy, Clone)]
-pub struct PinId(usize);
+pub(crate) type PortIndex = u8;
+pub(crate) type PinIndex = u8;
 
 #[derive(Copy, Clone)]
-pub struct PortId(usize);
+pub struct PinId(PinIndex);
+
+#[derive(Copy, Clone)]
+pub struct PortId(PortIndex);
 
 /// Convert pin state to the raw register value PCLx and PSx
 const fn pcl_ps_bits(pclx: u32, psx: u32, pin: usize) -> u32 {
@@ -676,8 +679,8 @@ pub(crate) fn pin_set_state(port: &AnyPort, pin: PinId, state: PinState) {
     // Instead of setting PCLx and PSx (where x is the pin number)
     // we directly set the bits in OMR register.
     let raw = match state {
-        PinState::High => pcl_ps_bits(0, 1, pin.0),
-        PinState::Low => pcl_ps_bits(1, 0, pin.0),
+        PinState::High => pcl_ps_bits(0, 1, pin.0.into()),
+        PinState::Low => pcl_ps_bits(1, 0, pin.0.into()),
     };
     unsafe {
         port.omr().init(|mut r| r.set_raw(raw));
@@ -689,7 +692,7 @@ pub(crate) fn pin_set_state(port: &AnyPort, pin: PinId, state: PinState) {
 pub(crate) fn pin_toggle_state(port: &AnyPort, pin: PinId) {
     // Instead of setting PCLx and PSx (where x is the pin number)
     // we directly set the bits in OMR register.
-    let raw = pcl_ps_bits(1, 1, pin.0);
+    let raw = pcl_ps_bits(1, 1, pin.0.into());
     unsafe {
         port.omr().init(|mut r| r.set_raw(raw));
     }
@@ -746,6 +749,3 @@ pub(crate) fn pin_output_is_high(port: &AnyPort, pin: PinId) -> bool {
 }
 
 type AnyPort = crate::pac::port_00::Port00;
-
-pub(crate) type PortIndex = usize;
-pub(crate) type PinIndex = usize;

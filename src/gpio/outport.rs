@@ -11,11 +11,11 @@ pub trait OutPort {
 
 macro_rules! out_port {
     ( $name:ident => $n:literal, ( $($i:tt),+ ), ( $($N:ident),+ )) => {
-        pub struct $name<const P: PortIndex $(, const $N: usize)+> (
+        pub struct $name<const P: PortIndex $(, const $N: PinIndex)+> (
             $(pub Pin<P, $N, Output<PushPull>>,)+
         );
 
-        impl<const P: PortIndex $(, const $N: usize)+> OutPort for ($(Pin<P, $N, Output<PushPull>>),+) {
+        impl<const P: PortIndex $(, const $N: PinIndex)+> OutPort for ($(Pin<P, $N, Output<PushPull>>),+) {
             type Target = $name<P $(, $N)+>;
             fn outport(self) -> Self::Target {
                 $name($(self.$i),+)
@@ -23,7 +23,7 @@ macro_rules! out_port {
         }
 
         /// Wrapper for tuple of `Pin`s
-        impl<const P: PortIndex $(, const $N: usize)+> $name<P $(, $N)+> {
+        impl<const P: PortIndex $(, const $N: PinIndex)+> $name<P $(, $N)+> {
             const fn mask() -> u32 {
                 0 $( | (1 << { $N }))+
             }
@@ -74,7 +74,9 @@ out_port!(OutPort7 => 7, (0, 1, 2, 3, 4, 5, 6), (N0, N1, N2, N3, N4, N5, N6));
 out_port!(OutPort8 => 8, (0, 1, 2, 3, 4, 5, 6, 7), (N0, N1, N2, N3, N4, N5, N6, N7));
 
 /// Wrapper for array of `PartiallyErasedPin`s
-pub struct OutPortArray<const P: PortIndex, const SIZE: usize>(pub [PEPin<P, Output<PushPull>>; SIZE]);
+pub struct OutPortArray<const P: PortIndex, const SIZE: usize>(
+    pub [PEPin<P, Output<PushPull>>; SIZE],
+);
 
 impl<const P: PortIndex, const SIZE: usize> OutPort for [PEPin<P, Output<PushPull>>; SIZE] {
     type Target = OutPortArray<P, SIZE>;
