@@ -1,7 +1,7 @@
-use tc37x_pac::{CAN0, PORT_00, PORT_20};
 use tc37x_pac::PORT_01;
+use tc37x_pac::{PORT_00, PORT_20};
 
-use tc37x_hal::gpio::{alt, Alternate, ErasedPin, GpioExt, Pin};
+use tc37x_hal::gpio::{ErasedPin, GpioExt};
 use tc37x_hal::tracing;
 use tracing::log::Report;
 
@@ -243,33 +243,29 @@ fn type_erasure_with_into() {
 
 #[test]
 fn pin_can_type_match_with_peripheral() {
-    use self::mock_can::Can;
+    use self::mock_can::*;
 
     let port = PORT_20.split();
     let rx = port.p20_7;
     let tx = port.p20_8;
 
-    let _can = Can::<tc37x_pac::can0::Can0>::new(CAN0, (tx, rx));
+    let _can = Can::<tc37x_pac::can0::Can0>::new(tx, rx);
 }
 
 mod mock_can {
-    use super::*;
+    use tc37x_hal::gpio::*;
 
-    pub struct Can<CAN: Instance> {
-        can: CAN,
-        pins: (CAN::Tx, CAN::Rx),
+    pub struct Can<CAN: alt::CanCommon> {
+        _tx_pin: CAN::Tx,
+        _rx_pin: CAN::Rx,
     }
 
-    impl<CAN: Instance> Can<CAN> {
-        /// Creates a CAN interface.
-        pub fn new(can: CAN, pins: (impl Into<CAN::Tx>, impl Into<CAN::Rx>)) -> Self {
-            let pins = (pins.0.into(), pins.1.into());
-
-            Can { can, pins }
+    impl<CAN: alt::CanCommon> Can<CAN> {
+        pub fn new(tx_pin: impl Into<CAN::Tx>, rx_pin: impl Into<CAN::Rx>) -> Self {
+            Can {
+                _tx_pin: tx_pin.into(),
+                _rx_pin: rx_pin.into(),
+            }
         }
     }
-
-    impl Instance for tc37x_pac::can0::Can0 {}
-
-    pub trait Instance: alt::CanCommon {}
 }
