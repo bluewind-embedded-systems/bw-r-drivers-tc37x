@@ -70,7 +70,6 @@ use tc37x_pac::RegisterValue;
 pub use convert::PinMode;
 pub use dynamic::{Dynamic, DynamicPin};
 pub use erased::{EPin, ErasedPin};
-// TODO (alepez) Added because it was previously imported by use f4::*
 pub use partially_erased::{PEPin, PartiallyErasedPin};
 pub use Input as DefaultMode;
 
@@ -353,7 +352,7 @@ where
     pub fn set_speed(&mut self, speed: Speed) {
         let offset = 2 * { N };
 
-        // TODO (alepez)
+        // TODO (alepez) Implement set speed
         // unsafe {
         //     (*Gpio::<P>::ptr())
         //         .ospeedr
@@ -386,7 +385,7 @@ where
     pub fn set_internal_resistor(&mut self, resistor: Pull) {
         let offset = 2 * { N };
         let value = resistor as u32;
-        // TODO (alepez)
+        // TODO (alepez) Implement set_internal_resistor
         // unsafe {
         //     (*Gpio::<P>::ptr())
         //         .pupdr
@@ -626,14 +625,13 @@ struct Gpio<const P: PortIndex>;
 
 impl<const P: PortIndex> Gpio<P> {
     const fn ptr() -> *const AnyPort {
-        // TODO (alepez) add ports
         // TODO (alepez) check if the assumptions are correct
         // The logic relies on the following assumptions:
         // - PORT_00 register are available on all chips
         // - all PORT register blocks have the same layout
         unsafe {
             // TODO (annabo) load automatically from pac file `port_##.rs`
-            // TODO (alepez) this does not seem to be useless
+            // TODO (alepez) Check why clippy says this transmute is useless.
             #[allow(clippy::useless_transmute)]
             match P {
                 0 => core::mem::transmute(&crate::pac::PORT_00),

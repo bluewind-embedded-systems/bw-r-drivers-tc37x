@@ -7,7 +7,6 @@ pub use PartiallyErasedPin as PEPin;
 /// - `MODE` is one of the pin modes (see [Modes](crate::gpio#modes) section).
 /// - `P` is port name: `A` for GPIOA, `B` for GPIOB, etc.
 pub struct PartiallyErasedPin<const P: PortIndex, MODE> {
-    // TODO (alepez) rename to pin_id
     pub(crate) pin: PinId,
     _mode: PhantomData<MODE>,
 }
@@ -104,10 +103,7 @@ impl<const P: PortIndex, MODE> PartiallyErasedPin<P, Output<MODE>> {
     /// Is the pin in drive low mode?
     #[inline(always)]
     pub(crate) fn _is_set_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        // TODO (alepez)
-        // unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << self.i) == 0 }
-        todo!()
+        !self._is_set_high()
     }
 
     /// Toggle pin output

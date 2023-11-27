@@ -131,8 +131,7 @@ impl<MODE> ErasedPin<Output<MODE>> {
     /// Is the pin in drive low mode?
     #[inline(always)]
     pub(crate) fn _is_set_low(&self) -> bool {
-        // TODO (alepez) there's no way to read the output state from registers
-        todo!()
+        !self._is_set_high()
     }
 
     /// Toggle pin output
