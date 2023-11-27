@@ -391,6 +391,7 @@ where
         //         .pupdr
         //         .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (value << offset)));
         // }
+        todo!()
     }
 
     /// Set the internal pull-up and pull-down resistor
