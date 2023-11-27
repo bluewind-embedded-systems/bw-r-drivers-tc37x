@@ -131,7 +131,7 @@ pub struct Input;
 #[derive(Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Pull {
-    /// Floating
+    /// No pull (floating)
     None = 0,
     /// Pulled up
     Up = 1,
