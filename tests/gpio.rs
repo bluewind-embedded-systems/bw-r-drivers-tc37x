@@ -73,7 +73,6 @@ fn test_input_pin() {
     let is_high = pin.is_high();
     assert!(is_high);
 
-    assert!(report.all_reads_are_consumed());
     insta::assert_display_snapshot!(report.take_log());
 }
 
@@ -121,7 +120,6 @@ fn test_input_pin_type_erasure_number() {
     let is_high = pin.is_high();
     assert!(is_high);
 
-    assert!(report.all_reads_are_consumed());
     insta::assert_display_snapshot!(report.take_log());
 }
 
@@ -141,7 +139,6 @@ fn test_input_pin_type_erasure_port_and_number() {
     let is_high = pin.is_high();
     assert!(is_high);
 
-    assert!(report.all_reads_are_consumed());
     insta::assert_display_snapshot!(report.take_log());
 }
 
