@@ -77,6 +77,17 @@ fn test_input_pin() {
 }
 
 #[test]
+fn test_input_pin_pull_up() {
+    let report = Report::new();
+
+    let port = PORT_00.split();
+    let _pin = port.p00_7.into_pull_up_input();
+
+    // TODO Review report. Not sure about PCx
+    insta::assert_display_snapshot!(report.take_log());
+}
+
+#[test]
 fn test_output_pin_type_erasure_number() {
     let report = Report::new();
 

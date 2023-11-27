@@ -383,15 +383,35 @@ where
 {
     /// Set the internal pull-up and pull-down resistor
     pub fn set_internal_resistor(&mut self, resistor: Pull) {
-        let offset = 2 * { N };
-        let value = resistor as u32;
-        // TODO (alepez) Implement set_internal_resistor
-        // unsafe {
-        //     (*Gpio::<P>::ptr())
-        //         .pupdr
-        //         .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (value << offset)));
-        // }
-        todo!()
+        let mode = match resistor {
+            Pull::None => 0b00,
+            Pull::Up => 0b10,
+            Pull::Down => 0b01,
+        };
+
+        unsafe {
+            let port = (*Gpio::<P>::ptr());
+
+            match N {
+                0 => port.iocr0().modify_atomic(|r| r.pc0().set(mode)),
+                1 => port.iocr0().modify_atomic(|r| r.pc1().set(mode)),
+                2 => port.iocr0().modify_atomic(|r| r.pc2().set(mode)),
+                3 => port.iocr0().modify_atomic(|r| r.pc3().set(mode)),
+                4 => port.iocr4().modify_atomic(|r| r.pc4().set(mode)),
+                5 => port.iocr4().modify_atomic(|r| r.pc5().set(mode)),
+                6 => port.iocr4().modify_atomic(|r| r.pc6().set(mode)),
+                7 => port.iocr4().modify_atomic(|r| r.pc7().set(mode)),
+                8 => port.iocr8().modify_atomic(|r| r.pc8().set(mode)),
+                9 => port.iocr8().modify_atomic(|r| r.pc9().set(mode)),
+                10 => port.iocr8().modify_atomic(|r| r.pc10().set(mode)),
+                11 => port.iocr8().modify_atomic(|r| r.pc11().set(mode)),
+                12 => port.iocr12().modify_atomic(|r| r.pc12().set(mode)),
+                13 => port.iocr12().modify_atomic(|r| r.pc13().set(mode)),
+                14 => port.iocr12().modify_atomic(|r| r.pc14().set(mode)),
+                15 => port.iocr12().modify_atomic(|r| r.pc15().set(mode)),
+                _ => unimplemented!(),
+            }
+        }
     }
 
     /// Set the internal pull-up and pull-down resistor
