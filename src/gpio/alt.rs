@@ -1,9 +1,8 @@
 // TODO (alepez) Remove this warning suppression
 #![allow(unused)]
 
-// TODO Must be translated to TC37x
-// mod f4;
-// pub use f4::*;
+mod tc37x;
+pub use tc37x::*;
 
 macro_rules! extipin {
     ($( $(#[$attr:meta])* $PX:ident,)*) => {
@@ -127,10 +126,10 @@ macro_rules! pin {
                 }
             }
 
-            #[allow(unreachable_patterns)]
-            impl $crate::gpio::ExtiPin for $name {
-                extipin! { $( $(#[$attr])* $PX, )* }
-            }
+            // #[allow(unreachable_patterns)]
+            // impl $crate::gpio::ExtiPin for $name {
+            //     extipin! { $( $(#[$attr])* $PX, )* }
+            // }
 
             $(
                 impl From<$NoPin<$Otype>> for $name {
@@ -237,10 +236,10 @@ macro_rules! pin {
                 }
             }
 
-            #[allow(unreachable_patterns)]
-            impl<Otype> $crate::gpio::ExtiPin for $name<Otype> {
-                extipin! { $( $(#[$attr])* $PX, )* }
-            }
+            // #[allow(unreachable_patterns)]
+            // impl<Otype> $crate::gpio::ExtiPin for $name<Otype> {
+            //     extipin! { $( $(#[$attr])* $PX, )* }
+            // }
 
             $(
                 impl<Otype> From<$NoPin<Otype>> for $name<Otype> {
@@ -293,144 +292,7 @@ macro_rules! pin {
 use pin;
 
 // CAN pins
-#[cfg(feature = "can1")]
 pub trait CanCommon {
     type Rx;
     type Tx;
-}
-
-// DFSDM pins
-#[cfg(feature = "dfsdm")]
-pub trait DfsdmBasic {
-    type Ckin0;
-    type Ckin1;
-    type Ckout;
-    type Datin0;
-    type Datin1;
-}
-#[cfg(feature = "dfsdm")]
-pub trait DfsdmGeneral: DfsdmBasic {
-    type Ckin2;
-    type Ckin3;
-    type Datin2;
-    type Datin3;
-}
-#[cfg(feature = "dfsdm")]
-pub trait DfsdmAdvanced: DfsdmGeneral {
-    type Ckin4;
-    type Ckin5;
-    type Ckin6;
-    type Ckin7;
-    type Datin4;
-    type Datin5;
-    type Datin6;
-    type Datin7;
-}
-
-// Serial pins
-pub trait SerialAsync {
-    /// Receive
-    type Rx<Otype>;
-    /// Transmit
-    type Tx<Otype>;
-}
-/// Synchronous mode
-pub trait SerialSync {
-    type Ck;
-}
-/// Hardware flow control (RS232)
-pub trait SerialRs232 {
-    /// Receive
-    type Cts;
-    /// Transmit
-    type Rts;
-}
-
-// I2C pins
-pub trait I2cCommon {
-    type Scl;
-    type Sda;
-    type Smba;
-}
-
-// I2S pins
-// TODO (alepez)
-// pub trait I2sCommon {
-//     type Ck: crate::gpio::PinSpeed;
-//     type Sd;
-//     type Ws: crate::gpio::ReadPin + crate::gpio::ExtiPin;
-// }
-// pub trait I2sMaster {
-//     type Mck;
-// }
-// pub trait I2sExtPin {
-//     type ExtSd;
-// }
-
-// QuadSPI pins
-
-#[cfg(feature = "quadspi")]
-pub trait QuadSpiBanks {
-    type Bank1;
-    type Bank2;
-}
-#[cfg(feature = "quadspi")]
-pub trait QuadSpiBank {
-    type Io0: crate::gpio::PinSpeed;
-    type Io1: crate::gpio::PinSpeed;
-    type Io2: crate::gpio::PinSpeed;
-    type Io3: crate::gpio::PinSpeed;
-    type Ncs: crate::gpio::PinSpeed;
-}
-
-// SAI pins
-
-#[cfg(feature = "sai1")]
-pub trait SaiChannels {
-    type A;
-    type B;
-}
-#[cfg(feature = "sai1")]
-pub trait SaiChannel {
-    type Fs;
-    type Mclk;
-    type Sck;
-    type Sd;
-}
-
-// SPDIFRX pins
-
-#[cfg(feature = "spdifrx")]
-pub trait SPdifIn<const C: u8> {
-    type In;
-}
-
-// SPI pins
-pub trait SpiCommon {
-    type Miso;
-    type Mosi;
-    type Nss;
-    type Sck;
-}
-
-// Timer pins
-
-/// Input capture / Output compare channel `C`
-pub trait TimCPin<const C: u8> {
-    type Ch<Otype>;
-}
-
-/// Complementary output channel `C`
-pub trait TimNCPin<const C: u8> {
-    type ChN<Otype>;
-}
-
-/// Break input
-pub trait TimBkin {
-    type Bkin;
-}
-
-/// External trigger timer input
-pub trait TimEtr {
-    type Etr;
 }

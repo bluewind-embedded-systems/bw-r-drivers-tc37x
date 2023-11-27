@@ -47,6 +47,8 @@ features = [
     "port_33",
     "port_34",
     "port_40",
+    "can0",
+    "can1",
 ]
 
 [dependencies.critical-section]
