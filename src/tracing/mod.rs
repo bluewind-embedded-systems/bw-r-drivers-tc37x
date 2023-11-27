@@ -23,6 +23,7 @@ pub enum ReportEntry {
 pub struct ReadEntry {
     addr: usize,
     len: usize,
+    val: u64,
 }
 
 #[derive(Debug, PartialEq, Eq)]

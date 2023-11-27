@@ -78,8 +78,6 @@ impl Reporter {
 
 impl tc37x_pac::tracing::Reporter for Reporter {
     fn read_volatile(&self, addr: usize, len: usize) -> u64 {
-        self.push(ReportEntry::Read(ReadEntry { addr, len }));
-
         let entry = self
             .shared_data()
             .read_fifo
@@ -88,7 +86,9 @@ impl tc37x_pac::tracing::Reporter for Reporter {
             .expect("Unexpected read");
 
         if entry.addr == addr && entry.len == len {
-            entry.val
+            let val = entry.val;
+            self.push(ReportEntry::Read(ReadEntry { addr, len, val }));
+            val
         } else {
             panic!("Unexpected read at address 0x{:08X} and len {}", addr, len)
         }
@@ -122,7 +122,7 @@ impl Display for Log {
         for entry in &self.0 {
             match entry {
                 ReportEntry::Read(x) => {
-                    write!(f, "r    0x{:08X} {:02}", x.addr, x.len);
+                    write!(f, "r    0x{:08X} {:02} 0x{:08X}", x.addr, x.len, x.val);
                 }
                 ReportEntry::Write(x) => {
                     write!(f, "w    0x{:08X} {:02} 0x{:08X}", x.addr, x.len, x.val);
