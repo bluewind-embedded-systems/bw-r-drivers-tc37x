@@ -2,7 +2,7 @@ use crate::tracing::{LoadModifyStoreEntry, ReadEntry, ReportEntry, WriteEntry};
 use std::any::Any;
 use std::collections::{HashMap, VecDeque};
 use std::fmt::{Debug, Display, Formatter, Write};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 use tc37x_pac::tracing::TraceGuard;
 
 struct ReadFifoEntry {
@@ -49,28 +49,34 @@ impl Report {
     }
 
     pub fn take_log(&self) -> Log {
-        let mut g = self.shared_data.lock().unwrap();
+        let mut g = self.shared_data();
         let len = g.log.0.len();
         Log(g.log.0.drain(0..len).collect())
     }
 
     pub fn expect_read(&self, addr: usize, len: usize, val: u64) {
-        self.shared_data
-            .lock()
-            .unwrap()
+        self.shared_data()
             .read_fifo
             .0
             .push_front(ReadFifoEntry { addr, len, val })
     }
 
     pub fn all_reads_are_consumed(&self) -> bool {
-        self.shared_data.lock().unwrap().read_fifo.0.is_empty()
+        self.shared_data().read_fifo.0.is_empty()
+    }
+
+    fn shared_data(&self) -> MutexGuard<SharedData> {
+        self.shared_data.lock().unwrap()
     }
 }
 
 impl Reporter {
     fn push(&self, report: ReportEntry) {
-        self.shared_data.lock().unwrap().log.0.push(report);
+        self.shared_data().log.0.push(report);
+    }
+
+    fn shared_data(&self) -> MutexGuard<SharedData> {
+        self.shared_data.lock().unwrap()
     }
 }
 
@@ -79,9 +85,7 @@ impl tc37x_pac::tracing::Reporter for Reporter {
         self.push(ReportEntry::Read(ReadEntry { addr, len }));
 
         let entry = self
-            .shared_data
-            .lock()
-            .unwrap()
+            .shared_data()
             .read_fifo
             .0
             .pop_front()
@@ -108,7 +112,7 @@ impl tc37x_pac::tracing::Reporter for Reporter {
 
 impl Drop for Reporter {
     fn drop(&mut self) {
-        if !self.shared_data.lock().unwrap().read_fifo.0.is_empty() {
+        if !self.shared_data().read_fifo.0.is_empty() {
             panic!("More read where expected");
         }
     }
