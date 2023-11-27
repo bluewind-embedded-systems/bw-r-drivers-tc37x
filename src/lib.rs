@@ -11,6 +11,7 @@ pub mod gpio;
 pub mod scu; 
 pub mod can; 
 pub mod cpu; 
+pub mod ssw;
 
 pub use tc37x_pac as pac;
 

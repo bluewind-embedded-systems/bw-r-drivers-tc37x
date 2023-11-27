@@ -1,6 +1,7 @@
 use core::default;
 use pac::scu::Wdtcpu0Con0;
 use pac::scu::Wdtcpu1Con0;
+use pac::scu::Wdtcpu2Con0;
 use tc37x_pac as pac;
 use crate::cpu::asm::read_cpu_core_id;
 
@@ -25,14 +26,9 @@ pub fn get_safety_watchdog_password() -> u16 {
 }
 
 
-
-
-
 #[inline]
 pub fn clear_cpu_endinit_inline(password: u16) {
-
 }
-
 
 #[inline]
 pub fn set_cpu_endinit_inline(password: u16) {
@@ -149,7 +145,6 @@ pub fn set_cpu_endinit_inline_cpu1(password: u16) {
 
 }
 
-
 #[inline]
 pub fn set_cpu_endinit_inline_cpu2(password: u16) {
     let con0 = unsafe { get_wdt_con0_cpu2() };
@@ -200,11 +195,9 @@ pub fn clear_safety_endinit_inline_cpu0(password: u16) {
     while unsafe { con0.read() }.endinit().get() {}
 }
 
-
-
 #[inline]
 pub fn set_safety_endinit_inline(password: u16) {
-     let con0 = pac::SCU.wdtscon0();
+    let con0 = pac::SCU.wdtscon0();
 
     if unsafe { con0.read() }.lck().get() {
          unsafe { con0.modify(|r| r.endinit().set(true).lck().set(false).pw().set(password)) };
@@ -222,11 +215,10 @@ mod tests {
     #[test]
     pub fn test_get_wdt_con0() {
         use core::mem::transmute;
+        let pwd = unsafe{ get_cpu_watchdog_password()}; 
+        //println!("{:x}", pwd); 
 
-        assert_eq!(
-            unsafe { get_cpu_watchdog_password() },
-            0 
-        );
+        assert_eq!(pwd, 0x3F );
       
     }
 }
