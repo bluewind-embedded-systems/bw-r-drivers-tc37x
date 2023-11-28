@@ -84,8 +84,8 @@ mod erased;
 // TODO (alepez) pub use exti::ExtiPin;
 mod dynamic;
 
-mod hal;
 pub mod group;
+mod hal;
 
 /// A filler pin type
 #[derive(Debug, Default)]

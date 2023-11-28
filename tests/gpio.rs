@@ -344,7 +344,7 @@ fn test_gpio_outport_array() {
 // implement bit banging.
 #[test]
 fn test_gpio_outport_tuple() {
-    use tc37x_hal::gpio::group::PinGroup3;
+    use tc37x_hal::gpio::group::PinGroup;
 
     let report = Report::new();
 
@@ -352,11 +352,12 @@ fn test_gpio_outport_tuple() {
 
     let port = PORT_00.split();
 
-    let mut group = PinGroup3(
+    let mut group = (
         port.p00_1.into_push_pull_output(),
         port.p00_6.into_push_pull_output(),
         port.p00_7.into_push_pull_output(),
-    );
+    )
+        .into_pin_group();
 
     report.comment("Set all pins high");
     group.set_high();

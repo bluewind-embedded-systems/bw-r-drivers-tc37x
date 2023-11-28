@@ -1,4 +1,4 @@
-use super::{PortIndex, PinIndex};
+use super::{PinIndex, PortIndex};
 use core::convert::Infallible;
 
 use super::{

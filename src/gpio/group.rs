@@ -6,7 +6,7 @@ use super::*;
 /// Convert tuple or array of pins to output port
 pub trait PinGroup {
     type Target;
-    fn outport(self) -> Self::Target;
+    fn into_pin_group(self) -> Self::Target;
 }
 
 macro_rules! pin_group {
@@ -17,7 +17,7 @@ macro_rules! pin_group {
 
         impl<const P: PortIndex $(, const $N: PinIndex)+> PinGroup for ($(Pin<P, $N, Output<PushPull>>),+) {
             type Target = $name<P $(, $N)+>;
-            fn outport(self) -> Self::Target {
+            fn into_pin_group(self) -> Self::Target {
                 $name($(self.$i),+)
             }
         }
@@ -84,7 +84,7 @@ pub struct PinArray<const P: PortIndex, const SIZE: usize>(pub [PEPin<P, Output<
 
 impl<const P: PortIndex, const SIZE: usize> PinGroup for [PEPin<P, Output<PushPull>>; SIZE] {
     type Target = PinArray<P, SIZE>;
-    fn outport(self) -> Self::Target {
+    fn into_pin_group(self) -> Self::Target {
         PinArray(self)
     }
 }
