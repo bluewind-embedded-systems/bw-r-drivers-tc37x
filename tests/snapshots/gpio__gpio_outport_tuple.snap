@@ -2,14 +2,17 @@
 source: tests/gpio.rs
 expression: report.take_log()
 ---
+# Configure pins
 w    0xF003A004 04 0x00020000
 ldms 0xF003A010 0x0000F800 0x00008000
 w    0xF003A004 04 0x00400000
 ldms 0xF003A014 0x00F80000 0x00800000
 w    0xF003A004 04 0x00800000
 ldms 0xF003A014 0xF8000000 0x80000000
+# Set all pins high
 w    0xF003A004 04 0x000000C2
 w    0xF003A004 04 0x000000C2
+# Set all pins low
 w    0xF003A004 04 0x00C20000
 w    0xF003A004 04 0x00C20000
 

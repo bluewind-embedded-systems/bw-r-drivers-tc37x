@@ -79,7 +79,7 @@ fn test_input_pin() {
 
 #[test]
 fn test_input_pin_pull_up() {
-    let report = Report::new();
+    let _report = Report::new();
 
     let port = PORT_00.split();
     let _pin = port.p00_7.into_pull_up_input();
@@ -347,6 +347,9 @@ fn test_gpio_outport_tuple() {
     use tc37x_hal::gpio::outport::OutPort3;
 
     let report = Report::new();
+
+    report.comment("Configure pins");
+
     let port = PORT_00.split();
 
     let mut group = OutPort3(
@@ -355,8 +358,11 @@ fn test_gpio_outport_tuple() {
         port.p00_7.into_push_pull_output(),
     );
 
+    report.comment("Set all pins high");
     group.set_high();
     group.set_state([PinState::High, PinState::High, PinState::High]);
+
+    report.comment("Set all pins low");
     group.set_low();
     group.set_state([PinState::Low, PinState::Low, PinState::Low]);
 

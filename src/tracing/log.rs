@@ -61,6 +61,10 @@ impl Report {
             .push_front(ReadFifoEntry { addr, len, val })
     }
 
+    pub fn comment(&self, s: impl Into<String>) {
+        self.shared_data().log.0.push(LogEntry::Comment(s.into()));
+    }
+
     fn shared_data(&self) -> MutexGuard<SharedData> {
         self.shared_data.lock().unwrap()
     }
@@ -139,7 +143,7 @@ impl Display for Log {
                     write!(f, "ldms 0x{:08X} 0x{:08X} 0x{:08X}", x.addr, mask, val);
                 }
                 LogEntry::Comment(s) => {
-                    write!(f, "// {s}");
+                    write!(f, "# {s}");
                 }
             }
 
