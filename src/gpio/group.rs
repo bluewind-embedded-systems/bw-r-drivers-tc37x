@@ -4,18 +4,18 @@
 use super::*;
 
 /// Convert tuple or array of pins to output port
-pub trait OutPort {
+pub trait PinGroup {
     type Target;
     fn outport(self) -> Self::Target;
 }
 
-macro_rules! out_port {
+macro_rules! pin_group {
     ( $name:ident => $n:literal, ( $($i:tt),+ ), ( $($N:ident),+ )) => {
         pub struct $name<const P: PortIndex $(, const $N: PinIndex)+> (
             $(pub Pin<P, $N, Output<PushPull>>,)+
         );
 
-        impl<const P: PortIndex $(, const $N: PinIndex)+> OutPort for ($(Pin<P, $N, Output<PushPull>>),+) {
+        impl<const P: PortIndex $(, const $N: PinIndex)+> PinGroup for ($(Pin<P, $N, Output<PushPull>>),+) {
             type Target = $name<P $(, $N)+>;
             fn outport(self) -> Self::Target {
                 $name($(self.$i),+)
@@ -71,27 +71,25 @@ macro_rules! out_port {
     }
 }
 
-out_port!(OutPort2 => 2, (0, 1), (N0, N1));
-out_port!(OutPort3 => 3, (0, 1, 2), (N0, N1, N2));
-out_port!(OutPort4 => 4, (0, 1, 2, 3), (N0, N1, N2, N3));
-out_port!(OutPort5 => 5, (0, 1, 2, 3, 4), (N0, N1, N2, N3, N4));
-out_port!(OutPort6 => 6, (0, 1, 2, 3, 4, 5), (N0, N1, N2, N3, N4, N5));
-out_port!(OutPort7 => 7, (0, 1, 2, 3, 4, 5, 6), (N0, N1, N2, N3, N4, N5, N6));
-out_port!(OutPort8 => 8, (0, 1, 2, 3, 4, 5, 6, 7), (N0, N1, N2, N3, N4, N5, N6, N7));
+pin_group!(PinGroup2 => 2, (0, 1), (N0, N1));
+pin_group!(PinGroup3 => 3, (0, 1, 2), (N0, N1, N2));
+pin_group!(PinGroup4 => 4, (0, 1, 2, 3), (N0, N1, N2, N3));
+pin_group!(PinGroup5 => 5, (0, 1, 2, 3, 4), (N0, N1, N2, N3, N4));
+pin_group!(PinGroup6 => 6, (0, 1, 2, 3, 4, 5), (N0, N1, N2, N3, N4, N5));
+pin_group!(PinGroup7 => 7, (0, 1, 2, 3, 4, 5, 6), (N0, N1, N2, N3, N4, N5, N6));
+pin_group!(PinGroup8 => 8, (0, 1, 2, 3, 4, 5, 6, 7), (N0, N1, N2, N3, N4, N5, N6, N7));
 
 /// Wrapper for array of `PartiallyErasedPin`s
-pub struct OutPortArray<const P: PortIndex, const SIZE: usize>(
-    pub [PEPin<P, Output<PushPull>>; SIZE],
-);
+pub struct PinArray<const P: PortIndex, const SIZE: usize>(pub [PEPin<P, Output<PushPull>>; SIZE]);
 
-impl<const P: PortIndex, const SIZE: usize> OutPort for [PEPin<P, Output<PushPull>>; SIZE] {
-    type Target = OutPortArray<P, SIZE>;
+impl<const P: PortIndex, const SIZE: usize> PinGroup for [PEPin<P, Output<PushPull>>; SIZE] {
+    type Target = PinArray<P, SIZE>;
     fn outport(self) -> Self::Target {
-        OutPortArray(self)
+        PinArray(self)
     }
 }
 
-impl<const P: PortIndex, const SIZE: usize> OutPortArray<P, SIZE> {
+impl<const P: PortIndex, const SIZE: usize> PinArray<P, SIZE> {
     fn mask(&self) -> u32 {
         let mut msk = 0;
         for pin in self.0.iter() {

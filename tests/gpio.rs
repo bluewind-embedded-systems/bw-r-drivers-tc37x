@@ -322,12 +322,12 @@ mod mock_can {
 // implement bit banging.
 #[test]
 fn test_gpio_outport_array() {
-    use tc37x_hal::gpio::outport::OutPortArray;
+    use tc37x_hal::gpio::group::PinArray;
 
     let report = Report::new();
     let port = PORT_00.split();
 
-    let mut group = OutPortArray([
+    let mut group = PinArray([
         port.p00_1.into_push_pull_output().erase_number(),
         port.p00_6.into_push_pull_output().erase_number(),
         port.p00_7.into_push_pull_output().erase_number(),
@@ -344,7 +344,7 @@ fn test_gpio_outport_array() {
 // implement bit banging.
 #[test]
 fn test_gpio_outport_tuple() {
-    use tc37x_hal::gpio::outport::OutPort3;
+    use tc37x_hal::gpio::group::PinGroup3;
 
     let report = Report::new();
 
@@ -352,7 +352,7 @@ fn test_gpio_outport_tuple() {
 
     let port = PORT_00.split();
 
-    let mut group = OutPort3(
+    let mut group = PinGroup3(
         port.p00_1.into_push_pull_output(),
         port.p00_6.into_push_pull_output(),
         port.p00_7.into_push_pull_output(),

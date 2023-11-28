@@ -85,7 +85,7 @@ mod erased;
 mod dynamic;
 
 mod hal;
-pub mod outport;
+pub mod group;
 
 /// A filler pin type
 #[derive(Debug, Default)]
