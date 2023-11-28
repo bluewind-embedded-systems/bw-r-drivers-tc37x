@@ -1,3 +1,4 @@
+use embedded_hal::digital::PinState;
 use tc37x_pac::PORT_01;
 use tc37x_pac::{PORT_00, PORT_20};
 
@@ -278,7 +279,6 @@ mod mock_can {
     }
 }
 
-
 // TODO Discussed during meeting 2023-11-24
 // User case is: I want to control many pins in the same port at once, e.g. to
 // implement bit banging.
@@ -317,3 +317,26 @@ mod mock_can {
 //     group.set_raw(0b1100010);
 //     group.set_values((true, true, true));
 // }
+
+// User case is: I want to control many pins in the same port at once, e.g. to
+// implement bit banging.
+#[test]
+fn test_gpio_syncronous_update_all_pins_same_mode() {
+    use tc37x_hal::gpio::outport::OutPortArray;
+
+    let report = Report::new();
+    let port = PORT_00.split();
+
+    let mut group = OutPortArray([
+        port.p00_1.into_push_pull_output().erase_number(),
+        port.p00_6.into_push_pull_output().erase_number(),
+        port.p00_7.into_push_pull_output().erase_number(),
+    ]);
+
+    group.set_high();
+    group.set_state([PinState::High,PinState::High,PinState::High,]);
+    group.set_low();
+    group.set_state([PinState::Low,PinState::Low,PinState::Low,]);
+
+    insta::assert_display_snapshot!(report.take_log());
+}

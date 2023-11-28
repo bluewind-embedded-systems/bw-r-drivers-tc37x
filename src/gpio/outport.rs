@@ -105,27 +105,60 @@ impl<const P: PortIndex, const SIZE: usize> OutPortArray<P, SIZE> {
     /// Set/reset pins according to `SIZE` lower bits
     #[inline(never)]
     pub fn write(&mut self, word: u32) {
-        // TODO (alepez)
-        // unsafe {
-        //     (*Gpio::<P>::ptr())
-        //         .bsrr
-        //         .write(|w| w.bits(self.value_for_write_bsrr(word)))
-        // }
+        let port = unsafe { (*Gpio::<P>::ptr()) };
+        let raw = word; // FIXME
+        unsafe {
+            port.omr().init(|mut r| r.set_raw(raw));
+        }
     }
 
     /// Set all pins to `PinState::High`
-    pub fn all_high(&mut self) {
-        // TODO (alepez)
-        // unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(self.mask())) }
+    pub fn set_high(&mut self) {
+        // TODO Needs optimization
+
+        let port = unsafe { (*Gpio::<P>::ptr()) };
+
+        let mut raw = 0;
+
+        for pin in self.0.iter() {
+            raw |= pcl_ps_bits(0, 1, pin.pin.0.into());
+        }
+
+        unsafe {
+            port.omr().init(|mut r| r.set_raw(raw));
+        }
     }
 
     /// Reset all pins to `PinState::Low`
-    pub fn all_low(&mut self) {
-        // TODO (alepez)
-        // unsafe {
-        //     (*Gpio::<P>::ptr())
-        //         .bsrr
-        //         .write(|w| w.bits(self.mask() << 16))
-        // }
+    pub fn set_low(&mut self) {
+        // TODO Needs optimization
+
+        let port = unsafe { (*Gpio::<P>::ptr()) };
+        let mut raw = 0;
+
+        for pin in self.0.iter() {
+            raw |= pcl_ps_bits(1, 0, pin.pin.0.into());
+        }
+
+        unsafe {
+            port.omr().init(|mut r| r.set_raw(raw));
+        }
+    }
+
+    /// Set all pins' state
+    pub fn set_state(&mut self, states: [PinState; SIZE]) {
+        // TODO Needs optimization
+
+        let port = unsafe { (*Gpio::<P>::ptr()) };
+        let mut raw = 0;
+
+        for (pin, &state) in self.0.iter().zip(states.iter()) {
+            let (pclx, psx) = pcl_ps_from_state(state);
+            raw |= pcl_ps_bits(pclx, psx, pin.pin.0.into());
+        }
+
+        unsafe {
+            port.omr().init(|mut r| r.set_raw(raw));
+        }
     }
 }
