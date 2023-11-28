@@ -340,6 +340,7 @@ fn test_gpio_outport_array() {
 
     insta::assert_display_snapshot!(report.take_log());
 }
+
 // User case is: I want to control many pins in the same port at once, e.g. to
 // implement bit banging.
 #[test]
