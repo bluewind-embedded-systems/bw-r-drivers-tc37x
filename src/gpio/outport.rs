@@ -43,23 +43,30 @@ macro_rules! out_port {
             }
 
             /// Set all pins to `PinState::High`
-            pub fn all_high(&mut self) {
-                // TODO (alepez)
-                // unsafe {
-                //     (*Gpio::<P>::ptr())
-                //         .bsrr
-                //         .write(|w| w.bits(Self::mask()))
-                // }
+            pub fn set_high(&mut self) {
+                let port = unsafe { (*Gpio::<P>::ptr()) };
+                let raw = Self::mask();
+                unsafe {
+                    port.omr().init(|mut r| r.set_raw(raw));
+                }
             }
 
             /// Reset all pins to `PinState::Low`
-            pub fn all_low(&mut self) {
-                // TODO (alepez)
-                // unsafe {
-                //     (*Gpio::<P>::ptr())
-                //         .bsrr
-                //         .write(|w| w.bits(Self::mask() << 16))
-                // }
+            pub fn set_low(&mut self) {
+                let port = unsafe { (*Gpio::<P>::ptr()) };
+                let raw = Self::mask() << 16;
+                unsafe {
+                    port.omr().init(|mut r| r.set_raw(raw));
+                }
+            }
+
+            /// Set all pins' state
+            pub fn set_state(&mut self, states: [PinState; $n]) {
+                let port = unsafe { (*Gpio::<P>::ptr()) };
+                let raw = 0 $( | (1 << (if states[$i] == PinState::High { $N } else { $N + 16 })))+;
+                unsafe {
+                    port.omr().init(|mut r| r.set_raw(raw));
+                }
             }
         }
     }
