@@ -34,12 +34,11 @@ macro_rules! out_port {
             #[doc=concat!("Set/reset pins according to `", $n, "` lower bits")]
             #[inline(never)]
             pub fn write(&mut self, word: u32) {
-                // TODO (alepez)
-                // unsafe {
-                //     (*Gpio::<P>::ptr())
-                //         .bsrr
-                //         .write(|w| w.bits(Self::value_for_write_bsrr(word)))
-                // }
+                let port = unsafe { (*Gpio::<P>::ptr()) };
+                let raw = Self::value_for_write_bsrr(word);
+                unsafe {
+                    port.omr().init(|mut r| r.set_raw(raw));
+                }
             }
 
             /// Set all pins to `PinState::High`
@@ -113,7 +112,7 @@ impl<const P: PortIndex, const SIZE: usize> OutPortArray<P, SIZE> {
     #[inline(never)]
     pub fn write(&mut self, word: u32) {
         let port = unsafe { (*Gpio::<P>::ptr()) };
-        let raw = word; // FIXME
+        let raw = self.value_for_write_bsrr(word);
         unsafe {
             port.omr().init(|mut r| r.set_raw(raw));
         }

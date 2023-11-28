@@ -360,14 +360,13 @@ fn test_gpio_outport_tuple() {
 
     report.comment("Set all pins high");
     group.set_high();
-    group.set_state([PinState::High, PinState::High, PinState::High]);
 
     report.comment("Set all pins low");
     group.set_low();
-    group.set_state([PinState::Low, PinState::Low, PinState::Low]);
 
     insta::assert_display_snapshot!(report.take_log());
 
+    // Make sure set_high is equivalent to set_state and write with all pins high
     {
         group.set_high();
         let set_high_log = report.take_log();
@@ -375,9 +374,14 @@ fn test_gpio_outport_tuple() {
         group.set_state([PinState::High, PinState::High, PinState::High]);
         let set_state_log = report.take_log();
 
+        group.write(0xFFFFFFFF);
+        let write_log = report.take_log();
+
         assert_eq!(set_high_log, set_state_log);
+        assert_eq!(set_high_log, write_log);
     }
 
+    // Make sure set_low is equivalent to set_state and write with all pins low
     {
         group.set_low();
         let set_low_log = report.take_log();
@@ -385,6 +389,10 @@ fn test_gpio_outport_tuple() {
         group.set_state([PinState::Low, PinState::Low, PinState::Low]);
         let set_state_log = report.take_log();
 
+        group.write(0x00000000);
+        let write_log = report.take_log();
+
         assert_eq!(set_low_log, set_state_log);
+        assert_eq!(set_low_log, write_log);
     }
 }
