@@ -118,15 +118,8 @@ impl<const P: PortIndex, const SIZE: usize> PinArray<P, SIZE> {
 
     /// Set all pins to `PinState::High`
     pub fn set_high(&mut self) {
-        // TODO Needs optimization
-
         let port = unsafe { (*Gpio::<P>::ptr()) };
-
-        let mut raw = 0;
-
-        for pin in self.0.iter() {
-            raw |= pcl_ps_bits(0, 1, pin.pin.0.into());
-        }
+        let raw = self.mask();
 
         unsafe {
             port.omr().init(|mut r| r.set_raw(raw));
@@ -135,14 +128,8 @@ impl<const P: PortIndex, const SIZE: usize> PinArray<P, SIZE> {
 
     /// Reset all pins to `PinState::Low`
     pub fn set_low(&mut self) {
-        // TODO Needs optimization
-
         let port = unsafe { (*Gpio::<P>::ptr()) };
-        let mut raw = 0;
-
-        for pin in self.0.iter() {
-            raw |= pcl_ps_bits(1, 0, pin.pin.0.into());
-        }
+        let raw = self.mask() << 16;
 
         unsafe {
             port.omr().init(|mut r| r.set_raw(raw));
@@ -151,12 +138,10 @@ impl<const P: PortIndex, const SIZE: usize> PinArray<P, SIZE> {
 
     /// Set all pins' state
     pub fn set_state(&mut self, states: [PinState; SIZE]) {
-        // TODO Needs optimization
-
         let port = unsafe { (*Gpio::<P>::ptr()) };
         let mut raw = 0;
 
-        for (pin, &state) in self.0.iter().zip(states.iter()) {
+        for (pin, state) in self.0.iter().zip(states.into_iter()) {
             let (pclx, psx) = pcl_ps_from_state(state);
             raw |= pcl_ps_bits(pclx, psx, pin.pin.0.into());
         }
