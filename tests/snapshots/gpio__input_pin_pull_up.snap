@@ -1,6 +1,0 @@
----
-source: tests/gpio.rs
-expression: report.take_log()
----
-ldms 0xF003A014 0xF8000000 0x80000000
-

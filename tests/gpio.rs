@@ -321,7 +321,7 @@ mod mock_can {
 // User case is: I want to control many pins in the same port at once, e.g. to
 // implement bit banging.
 #[test]
-fn test_gpio_syncronous_update_all_pins_same_mode() {
+fn test_gpio_outport_array() {
     use tc37x_hal::gpio::outport::OutPortArray;
 
     let report = Report::new();
