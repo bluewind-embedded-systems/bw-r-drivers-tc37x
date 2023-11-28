@@ -114,7 +114,7 @@ impl Drop for Reporter {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug, PartialEq)]
 pub struct Log(Vec<ReportEntry>);
 
 impl Display for Log {
