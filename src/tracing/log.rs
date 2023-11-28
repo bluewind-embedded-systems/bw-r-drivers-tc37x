@@ -68,7 +68,7 @@ impl Report {
 
 impl Reporter {
     fn push(&self, report: ReportEntry) {
-        self.shared_data().log.0.push(report);
+        self.shared_data().log.0.push(LogEntry::ReportEntry(report));
     }
 
     fn shared_data(&self) -> MutexGuard<SharedData> {
@@ -115,22 +115,31 @@ impl Drop for Reporter {
 }
 
 #[derive(Default, Debug, PartialEq)]
-pub struct Log(Vec<ReportEntry>);
+pub struct Log(Vec<LogEntry>);
+
+#[derive(Debug, PartialEq)]
+enum LogEntry {
+    Comment(String),
+    ReportEntry(ReportEntry),
+}
 
 impl Display for Log {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for entry in &self.0 {
             match entry {
-                ReportEntry::Read(x) => {
+                LogEntry::ReportEntry(ReportEntry::Read(x)) => {
                     write!(f, "r    0x{:08X} {:02} 0x{:08X}", x.addr, x.len, x.val);
                 }
-                ReportEntry::Write(x) => {
+                LogEntry::ReportEntry(ReportEntry::Write(x)) => {
                     write!(f, "w    0x{:08X} {:02} 0x{:08X}", x.addr, x.len, x.val);
                 }
-                ReportEntry::LoadModifyStore(x) => {
+                LogEntry::ReportEntry(ReportEntry::LoadModifyStore(x)) => {
                     let mask = (x.val >> 32);
                     let val = (x.val & 0xFFFFFFFF);
                     write!(f, "ldms 0x{:08X} 0x{:08X} 0x{:08X}", x.addr, mask, val);
+                }
+                LogEntry::Comment(s) => {
+                    write!(f, "// {s}");
                 }
             }
 
