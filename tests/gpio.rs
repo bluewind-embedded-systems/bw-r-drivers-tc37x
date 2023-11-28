@@ -334,9 +334,9 @@ fn test_gpio_outport_array() {
     ]);
 
     group.set_high();
-    group.set_state([PinState::High,PinState::High,PinState::High,]);
+    group.set_state([PinState::High, PinState::High, PinState::High]);
     group.set_low();
-    group.set_state([PinState::Low,PinState::Low,PinState::Low,]);
+    group.set_state([PinState::Low, PinState::Low, PinState::Low]);
 
     insta::assert_display_snapshot!(report.take_log());
 }
@@ -356,9 +356,29 @@ fn test_gpio_outport_tuple() {
     );
 
     group.set_high();
-    group.set_state([PinState::High,PinState::High,PinState::High,]);
+    group.set_state([PinState::High, PinState::High, PinState::High]);
     group.set_low();
-    group.set_state([PinState::Low,PinState::Low,PinState::Low,]);
+    group.set_state([PinState::Low, PinState::Low, PinState::Low]);
 
     insta::assert_display_snapshot!(report.take_log());
+
+    {
+        group.set_high();
+        let set_high_log = report.take_log();
+
+        group.set_state([PinState::High, PinState::High, PinState::High]);
+        let set_state_log = report.take_log();
+
+        assert_eq!(set_high_log, set_state_log);
+    }
+
+    {
+        group.set_low();
+        let set_low_log = report.take_log();
+
+        group.set_state([PinState::Low, PinState::Low, PinState::Low]);
+        let set_state_log = report.take_log();
+
+        assert_eq!(set_low_log, set_state_log);
+    }
 }
