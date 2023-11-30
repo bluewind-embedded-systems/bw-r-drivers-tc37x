@@ -1,7 +1,7 @@
 use core::fmt;
 use tc37x_pac::{self as pac};
 use core::marker::PhantomData;
-//use embedded_hal::can::{Frame, Error, nb};
+use embedded_can::{Frame, Error, nb};
 use tc37x_pac::RegisterValue;
 mod can;
 

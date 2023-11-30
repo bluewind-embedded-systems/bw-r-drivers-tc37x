@@ -1,5 +1,5 @@
 // CanNode trait impl to be moved on a separate file (annabo)
-pub trait CanNode {
+pub trait CanModule {
     fn node_id(&self) -> u8;
     fn is_enabled(&self) -> bool;
     fn is_suspended(&self) -> bool;
@@ -14,10 +14,11 @@ use tc37x_pac::can0::Can0;
 use tc37x_pac::can1::Can1;
 use crate::scu; 
 
+#[cfg(feature = "log")]
 #[cfg(target_arch = "tricore")]
 use defmt::println; 
 
-impl CanNode for Can0 {
+impl CanModule for Can0 {
     fn node_id(&self) -> u8 {
         0
     }
@@ -101,12 +102,12 @@ impl CanNode for Can0 {
 //     }
 // }
 
-pub struct CanNodeHandler<T: CanNode> {
+pub struct CanModuleHandler<T: CanModule> {
     node_id: u8,
     node: T,
 }
 
-impl CanNodeHandler<Can0> {
+impl CanModuleHandler<Can0> {
     pub const fn new() -> Self {
         Self {
             node_id: 0,
