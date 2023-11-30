@@ -62,7 +62,7 @@
 
 use core::fmt;
 use core::marker::PhantomData;
-use std::ops::Deref;
+//use std::ops::Deref;
 
 pub use embedded_hal::digital::PinState;
 use tc37x_pac::RegisterValue;

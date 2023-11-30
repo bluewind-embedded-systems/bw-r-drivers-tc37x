@@ -14,6 +14,9 @@ use tc37x_pac::can0::Can0;
 use tc37x_pac::can1::Can1;
 use crate::scu; 
 
+#[cfg(target_arch = "tricore")]
+use defmt::println; 
+
 impl CanNode for Can0 {
     fn node_id(&self) -> u8 {
         0
@@ -28,6 +31,7 @@ impl CanNode for Can0 {
     }
     fn enable_module(&self) {
         let passw = scu::wdt::get_cpu_watchdog_password();
+        
         #[cfg(feature = "log")]
         println!("enable module watchdog passw: {:x}", passw);
 

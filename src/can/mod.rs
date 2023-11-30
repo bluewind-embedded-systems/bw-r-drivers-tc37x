@@ -1,7 +1,7 @@
 use core::fmt;
 use tc37x_pac::{self as pac};
 use core::marker::PhantomData;
-use embedded_hal::can::{Frame, Error, nb};
+//use embedded_hal::can::{Frame, Error, nb};
 use tc37x_pac::RegisterValue;
 mod can;
 
@@ -10,17 +10,17 @@ pub use can::*;
 
 
 
-pub use embedded_hal::can::Can; 
+//pub use embedded_hal::can::Can; 
 pub struct CanNode; 
 #[derive(Debug, Default)]
 struct CanError;
 struct Result; 
 
-impl Error for CanError{
-    fn kind(&self) -> embedded_hal::can::ErrorKind {
-        todo!()
-    }
-}
+// impl Error for CanError{
+//     fn kind(&self) -> embedded_hal::can::ErrorKind {
+//         todo!()
+//     }
+// }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum MessageIdLenght {
@@ -38,7 +38,7 @@ pub enum MessageIdLenght {
 pub struct TmpType(u8);
 
 pub struct CanFrame {
-    pub buffer_id: embedded_hal::can::Id, //RxBufferId,
+    //pub buffer_id: embedded_hal::can::Id, //RxBufferId,
     pub id: TmpType, //MessageId,
     pub data_lenght_code: TmpType, //DataLenghtCode,
     pub from: TmpType, // ReadFrom,
@@ -48,35 +48,35 @@ pub struct CanFrame {
 pub struct CanNodeCfg {}
 
 
-impl Frame for CanFrame{
-    fn new(id: impl Into<embedded_hal::can::Id>, data: &[u8]) -> Option<Self> {
-        todo!()
-    }
+//impl Frame for CanFrame{
+    // fn new(id: impl Into<embedded_hal::can::Id>, data: &[u8]) -> Option<Self> {
+    //     todo!()
+    // }
 
-    fn new_remote(id: impl Into<embedded_hal::can::Id>, dlc: usize) -> Option<Self> {
-        todo!()
-    }
+    // fn new_remote(id: impl Into<embedded_hal::can::Id>, dlc: usize) -> Option<Self> {
+    //     todo!()
+    // }
 
-    fn is_extended(&self) -> bool {
-        false
-    }
+    // fn is_extended(&self) -> bool {
+    //     false
+    // }
 
-    fn is_remote_frame(&self) -> bool {
-        todo!()
-    }
+    // fn is_remote_frame(&self) -> bool {
+    //     todo!()
+    // }
 
-    fn id(&self) -> embedded_hal::can::Id {
-        todo!()
-    }
+    // fn id(&self) -> embedded_hal::can::Id {
+    //     todo!()
+    // }
 
-    fn dlc(&self) -> usize {
-        todo!()
-    }
+    // fn dlc(&self) -> usize {
+    //     todo!()
+    // }
 
-    fn data(&self) -> &[u8] {
-        todo!()
-    }
-}
+    // fn data(&self) -> &[u8] {
+    //     todo!()
+    // }
+//}
 
 // impl Can for CanNode {
 
