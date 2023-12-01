@@ -1,55 +1,61 @@
 // CanNode trait impl to be moved on a separate file (annabo)
-pub trait CanModule {
+pub trait ACanModule {
     fn node_id(&self) -> u8;
     fn is_enabled(&self) -> bool;
     fn is_suspended(&self) -> bool;
 
-    fn enable_module(&self); 
+    fn enable_module(&self);
     fn disable_module(&self);
     fn reset_module(&self);
-    //fn set_clock_source(&self, clock_select: ClockSelect, clock_source: ClockSource); 
+    fn init_module(&self);
+    //fn set_clock_source(&self, clock_select: ClockSelect, clock_source: ClockSource);
 }
 
-use tc37x_pac::can0::Can0;
-use tc37x_pac::can1::Can1;
-use crate::scu; 
+pub struct CanModule0 {
+    inner: tc37x_pac::can0::Can0,
+}
+
+// TODO (annabo) use tc37x_pac::can1::Can1; impl CanModule for Can1
+use crate::scu;
 
 #[cfg(feature = "log")]
 #[cfg(target_arch = "tricore")]
-use defmt::println; 
+use defmt::println;
+use embedded_can::blocking::Can;
 
-impl CanModule for Can0 {
+impl ACanModule for CanModule0 {
     fn node_id(&self) -> u8 {
         0
     }
+
     #[inline]
     fn is_enabled(&self) -> bool {
-        !unsafe { tc37x_pac::CAN0.clc().read() }.diss().get()
+        !unsafe { self.inner.clc().read() }.diss().get()
     }
 
     fn is_suspended(&self) -> bool {
-        unsafe { tc37x_pac::CAN0.ocs().read() }.sussta().get()
+        unsafe { self.inner.ocs().read() }.sussta().get()
     }
+   
     fn enable_module(&self) {
         let passw = scu::wdt::get_cpu_watchdog_password();
-        
+
         #[cfg(feature = "log")]
         println!("enable module watchdog passw: {:x}", passw);
 
         scu::wdt::clear_cpu_endinit_inline(passw);
 
-        unsafe { tc37x_pac::CAN0.clc().modify_atomic(|r| r.disr().set(false)) };
+        unsafe { self.inner.clc().modify_atomic(|r| r.disr().set(false)) };
         while !self.is_enabled() {}
 
         scu::wdt::set_cpu_endinit_inline(passw);
     }
 
-
     fn disable_module(&self) {
         let passw = scu::wdt::get_cpu_watchdog_password();
 
         scu::wdt::clear_cpu_endinit_inline(passw);
-        unsafe { tc37x_pac::CAN0.clc().modify(|r| r.disr().set(true)) };
+        unsafe { self.inner.clc().modify(|r| r.disr().set(true)) };
 
         while self.is_enabled() {}
 
@@ -60,14 +66,14 @@ impl CanModule for Can0 {
         let passw = scu::wdt::get_cpu_watchdog_password();
 
         scu::wdt::clear_cpu_endinit_inline(passw);
-        unsafe { tc37x_pac::CAN0.krst0().modify(|r| r.rst().set(true)) };
-        unsafe { tc37x_pac::CAN0.krst1().modify(|r| r.rst().set(true)) };
+        unsafe { self.inner.krst0().modify(|r| r.rst().set(true)) };
+        unsafe { self.inner.krst1().modify(|r| r.rst().set(true)) };
         scu::wdt::set_cpu_endinit_inline(passw);
 
-        while !unsafe { tc37x_pac::CAN0.krst0().read() }.rststat().get() {}
+        while !unsafe { self.inner.krst0().read() }.rststat().get() {}
 
         scu::wdt::clear_cpu_endinit_inline(passw);
-        unsafe { tc37x_pac::CAN0.krstclr().init(|r| r.clr().set(true)) };
+        unsafe { self.inner.krstclr().init(|r| r.clr().set(true)) };
         scu::wdt::set_cpu_endinit_inline(passw);
     }
 
@@ -83,43 +89,21 @@ impl CanModule for Can0 {
     //     mcr = mcr.ccce().set(false).ci().set(false);
     //     unsafe { tc37x_pac::CAN0.mcr().write(mcr) };
     // }
-
-   
-}
-
-// TODO (annabo)
-// replace CAN0 with CAN1 on implementation above. TBD with macros
-// impl CanNode for Can1 {
-//     fn nodeId(&self) -> u8 {
-//         0
-//     }
-//     #[inline]
-//     fn is_enabled(&self) -> bool {
-//         !unsafe { tc37x_pac::CAN1.clc().read() }.diss().get()
-//     }
-//     fn is_suspended(&self) -> bool {
-//         unsafe { tc37x_pac::CAN1.ocs().read() }.sussta().get()
-//     }
-// }
-
-pub struct CanModuleHandler<T: CanModule> {
-    node_id: u8,
-    node: T,
-}
-
-impl CanModuleHandler<Can0> {
-    pub const fn new() -> Self {
-        Self {
-            node_id: 0,
-            node: tc37x_pac::CAN0,
-        }
-    }
-
-    pub fn init_module(&self) {
-        if !self.node.is_enabled() {
+    fn init_module(&self) {
+        if !self.is_enabled() {
             #[cfg(feature = "log")]
             defmt::debug!("module was disabled, enabling it");
-            self.node.enable_module();
+            self.enable_module();
         }
     }
+}
+
+impl CanModule0{
+
+    pub fn new() -> Self {
+        Self {
+            inner: tc37x_pac::CAN0,
+        }
+    }
+
 }
