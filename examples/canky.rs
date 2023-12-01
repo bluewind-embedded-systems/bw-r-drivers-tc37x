@@ -8,12 +8,12 @@ tc37x_rt::entry!(main);
 #[cfg(target_arch = "tricore")]
 use defmt::println;
 
-use core::arch::asm;
+
 use tc37x_hal::cpu::asm;
 use tc37x_hal::gpio::GpioExt;
 use tc37x_hal::pac;
 use tc37x_pac::RegisterValue;
-use tc37x_hal::ssw::init_software; 
+use tc37x_hal::ssw; 
 use tc37x_hal::can::{CanModule0, ACanModule};
 
 pub enum State {
@@ -59,8 +59,11 @@ fn main() -> ! {
     let _report = tc37x_hal::tracing::print::Report::new();
 
     println!("Start example: CanKy");
+
+    println!("Init software");
+    ssw::init_software();
+
     println!("Enable interrupts");
-    //ssw::init_software();
     tc37x_hal::cpu::asm::enable_interrupts();
 
     let gpio00 = pac::PORT_00.split();
@@ -82,6 +85,7 @@ fn main() -> ! {
     {
         println!("Can module NOT enabled! Something went wrong!")
     }
+    
     loop {
         led1.set_low();
         led2.set_high();
