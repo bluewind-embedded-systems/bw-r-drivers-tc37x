@@ -21,7 +21,7 @@ use crate::scu;
 #[cfg(feature = "log")]
 #[cfg(target_arch = "tricore")]
 use defmt::println;
-use embedded_can::blocking::Can;
+use embedded_can::nb::Can;
 
 impl ACanModule for CanModule0 {
     fn node_id(&self) -> u8 {
@@ -101,9 +101,13 @@ impl ACanModule for CanModule0 {
 impl CanModule0{
 
     pub fn new() -> Self {
-        Self {
+        let m = Self {
             inner: tc37x_pac::CAN0,
-        }
+        }; 
+        m.enable_module(); 
+        m
+        
+
     }
 
 }

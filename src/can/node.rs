@@ -1,3 +1,17 @@
+
+pub trait ACanNode{
+
+}
+
+pub struct Node<const N: u8, const M:u8>; 
+
+// impl ACanNode for Node<0, 0>{
+
+// }
+
+impl<const N: u8, const M:u8> ACanNode for Node<N,  M>{
+
+}
 // use tc37x_pac::{self as pac, CastTo};
 
 // #[repr(transparent)]

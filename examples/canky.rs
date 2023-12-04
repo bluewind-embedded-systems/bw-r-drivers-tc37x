@@ -8,6 +8,7 @@ tc37x_rt::entry!(main);
 #[cfg(target_arch = "tricore")]
 use defmt::println;
 
+use core::arch::asm;
 
 use tc37x_hal::cpu::asm;
 use tc37x_hal::gpio::GpioExt;
@@ -73,9 +74,23 @@ fn main() -> ! {
     let mut i = 0;
     
     println!("Create can module ... ");
-    let can_module = CanModule0::new(); 
+
+    // cannot create a module if already taken 
+    let can_module = CanModule0::new(); // get an enabled module
     println!("Can module init .. ");
     can_module.init_module(); 
+
+    //ottengo un nodo 
+    //let node: uninitializedNode = can_module.get_node(0); 
+    //let initedNode: InitedNode = node.init(config{configuration constructor})
+
+    // cannot take a node if already taken
+    // can_module.get_node(0);  
+    
+    // let msg_id =  0;
+    // let msg = Message::TxMessage::new(msg_id)
+    // node.send_message(msg); 
+
 
     if can_module.is_enabled()
     {
@@ -103,7 +118,7 @@ fn main() -> ! {
 
 fn wait_nop(cycle: u32) {
     for _ in 0..cycle {
-        unsafe { asm!("nop") };
+        unsafe { core::arch::asm!("nop") };
     }
 }
 
