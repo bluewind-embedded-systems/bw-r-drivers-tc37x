@@ -1,7 +1,9 @@
 use super::wdt; 
 use tc37x_pac::SCU;
 use tc37x_pac::scu;
-
+use tc37x_pac::hidden::RegValue;
+#[cfg(target_arch = "tricore")]
+use defmt::println;
 
 const SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT: usize = 0x3000;
 const OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT: usize = 0x493E0;
@@ -13,13 +15,25 @@ const PLL_KRDY_TIMEOUT_COUNT: usize = 0x6000;
 
 pub fn init() -> Result<(), ()> {
     let config = DEFAULT_CLOCK_CONFIG; 
-    configure_ccu_initial_step(&config)?;
+    match configure_ccu_initial_step(&config){
+        Err(()) => println!("configure_ccu_initial_step error"),
+        Ok(()) => println!("configure_ccu_initial_step ok"), 
+    }
+     //TODO (annabo)
+    match modulation_init(&config){
+        Err(()) => println!("modulation_init error"),
+        Ok(()) => println!("modulation_init ok"), 
+    }
 
-    modulation_init(&config);
+    match distribute_clock_inline(&config){
+        Err(()) => println!("distribute_clock_inline error"),
+        Ok(()) => println!("distribute_clock_inline ok"), 
+    }
 
-    distribute_clock_inline(&config)?;
-
-    throttle_sys_pll_clock_inline(&config)?;
+    match throttle_sys_pll_clock_inline(&config){
+        Err(()) => println!("throttle_sys_pll_clock_inline error "),
+        Ok(()) => println!("throttle_sys_pll_clock_inline ok"), 
+    }
 
     Ok(())
 }
@@ -38,16 +52,220 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()>
 
 pub fn modulation_init(config: &Config) -> Result<(), ()> 
 {
+    if let ModulationEn::Enabled = config.modulation.enable {
+        let rgain_p = calc_rgain_parameters(config.modulation.amp);
+
+        let endinit_sfty_pw = wdt::get_safety_watchdog_password();
+        wdt::clear_safety_endinit_inline(endinit_sfty_pw);
+
+        unsafe {
+            SCU.syspllcon2()
+                .modify(|r| r.modcfg().set((0x3 << 10) | rgain_p.rgain_hex))
+        };
+
+        unsafe { SCU.syspllcon0().modify(|r| r.moden().set(true)) };
+
+        wdt::set_safety_endinit_inline(endinit_sfty_pw);
+    }
     Ok(())
+}
+
+// TODO revise this struct (annabo)
+pub struct RGainValues {
+    pub rgain_nom: f32,
+    pub rgain_hex: u16,
+}
+
+fn calc_rgain_parameters(modamp: ModulationAmplitude) -> RGainValues {
+    const MA_PERCENT: [f32; 6] = [0.5, 1.0, 1.25, 1.5, 2.0, 2.5];
+
+    let mod_amp = MA_PERCENT[modamp as usize];
+    let fosc_hz = get_osc_frequency();
+    let syspllcon0 = unsafe { SCU.syspllcon0().read() };
+    let fdco_hz =
+        (fosc_hz * (syspllcon0.ndiv().get() as f32 + 1.0)) / (syspllcon0.pdiv().get() as f32 + 1.0);
+
+    let rgain_nom = 2.0 * (mod_amp / 100.0) * (fdco_hz / 3600000.0);
+    let rgain_hex = ((rgain_nom * 32.0) + 0.5) as u16;
+
+    RGainValues {
+        rgain_nom,
+        rgain_hex,
+    }
 }
 
 pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> 
 {
+    let endinit_sfty_pw = wdt::get_safety_watchdog_password();
+    wdt::clear_safety_endinit_inline(endinit_sfty_pw);
+
+
+    // CCUCON0 config
+    {
+        let mut cuccon0 = unsafe { SCU.ccucon0().read() };
+        *cuccon0.data_mut_ref() &= !(config.clock_distribution.ccucon0.mask);
+        *cuccon0.data_mut_ref() |= config.clock_distribution.ccucon0.mask & config.clock_distribution.ccucon0.value;
+
+        wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| {
+            unsafe { SCU.ccucon0().read() }.lck().get()
+        })?;
+
+        unsafe { SCU.ccucon0().write(cuccon0) };
+
+        wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>( || {
+            unsafe { SCU.ccucon0().read() }.lck().get()
+        })?;
+    }
+    // CCUCON1 config
+    {
+        let mut ccucon1 = unsafe { SCU.ccucon1().read() };
+        if ccucon1.clkselmcan().get() !=  0 /*ccucon1::Clkselmcan::CLKSELMCAN_STOPPED*/
+            || ccucon1.clkselmsc().get() != 1/*ccucon1::Clkselmsc::CLKSELMSC_STOPPED*/
+            || ccucon1.clkselqspi().get() != 2 /*ccucon1::Clkselqspi::CLKSELQSPI_STOPPED*/
+        {
+            *ccucon1.data_mut_ref() &= !config.clock_distribution.ccucon1.mask;
+            *ccucon1.data_mut_ref() |= config.clock_distribution.ccucon1.mask & config.clock_distribution.ccucon1.value;
+
+            ccucon1 = ccucon1
+                .clkselmcan()
+                .set(0/*ccucon1::Clkselmcan::CLKSELMCAN_STOPPED*/)
+                .clkselmsc()
+                .set(1/*ccucon1::Clkselmsc::CLKSELMSC_STOPPED*/)
+                .clkselqspi()
+                .set(2/*ccucon1::Clkselqspi::CLKSELQSPI_STOPPED*/);
+
+            wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| {
+                unsafe { SCU.ccucon1().read() }.lck().get()
+            })?;
+            unsafe { SCU.ccucon1().write(ccucon1) };
+            wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| {
+                unsafe { SCU.ccucon1().read() }.lck().get()
+            })?;
+        }
+
+        ccucon1 = unsafe { SCU.ccucon1().read() };
+        *ccucon1.data_mut_ref() &= !config.clock_distribution.ccucon1.mask;
+        *ccucon1.data_mut_ref() |= config.clock_distribution.ccucon1.mask & config.clock_distribution.ccucon1.value;
+
+        wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| {
+            unsafe { SCU.ccucon1().read() }.lck().get()
+        })?;
+        unsafe { SCU.ccucon1().write(ccucon1) };
+        wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>( || {
+            unsafe { SCU.ccucon1().read() }.lck().get()
+        })?;
+    }
+
+    // CCUCON2 config
+    {
+        let mut ccucon2 = unsafe { SCU.ccucon2().read() };
+        if ccucon2.clkselasclins().get() != 0/*scu::Ccucon2::Clkselasclins::CLKSELASCLINS_STOPPED*/ {
+            ccucon2 = unsafe { SCU.ccucon2().read() };
+            *ccucon2.data_mut_ref() &= !config.clock_distribution.ccucon2.mask;
+            *ccucon2.data_mut_ref() = config.clock_distribution.ccucon2.mask & config.clock_distribution.ccucon2.value;
+
+            ccucon2 = ccucon2
+                .clkselasclins()
+                .set(0/*scu::ccucon2::Clkselasclins::CLKSELASCLINS_STOPPED*/);
+
+            wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>( || {
+                unsafe { SCU.ccucon2().read() }.lck().get()
+            })?;
+
+            unsafe { SCU.ccucon2().write(ccucon2) };
+
+            wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>( || {
+                unsafe { SCU.ccucon2().read() }.lck().get()
+            })?;
+        }
+
+        ccucon2 = unsafe { SCU.ccucon2().read() };
+        *ccucon2.data_mut_ref() &= !config.clock_distribution.ccucon2.mask;
+        *ccucon2.data_mut_ref() |= config.clock_distribution.ccucon2.mask & config.clock_distribution.ccucon2.value;
+
+        wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>( || {
+            unsafe { SCU.ccucon2().read() }.lck().get()
+        })?;
+        unsafe { SCU.ccucon2().write(ccucon2) };
+        wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| {
+            unsafe { SCU.ccucon2().read() }.lck().get()
+        })?;
+    }
+
+    // CUCCON5 config
+    {
+        let mut ccucon5 = unsafe { SCU.ccucon5().read() };
+        *ccucon5.data_mut_ref() &= !config.clock_distribution.ccucon5.mask;
+        *ccucon5.data_mut_ref() |= config.clock_distribution.ccucon5.mask & config.clock_distribution.ccucon5.value;
+        ccucon5 = ccucon5.up().set(true);
+
+        wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| {
+            unsafe { SCU.ccucon5().read() }.lck().get()
+        })?;
+
+        unsafe { SCU.ccucon5().write(ccucon5) };
+
+        wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| {
+            unsafe { SCU.ccucon5().read() }.lck().get()
+        })?;
+    }
+
+    // CUCCON6 config
+    {
+        unsafe {
+            SCU.ccucon6().modify(|mut r| {
+                *r.data_mut_ref() &= !config.clock_distribution.ccucon6.mask;
+                *r.data_mut_ref() |= config.clock_distribution.ccucon6.mask & config.clock_distribution.ccucon6.value;
+                r
+            })
+        };
+    }
+
+    // CUCCON7 config
+    {
+        unsafe {
+            SCU.ccucon7().modify(|mut r| {
+                *r.data_mut_ref() &= !config.clock_distribution.ccucon7.mask;
+                *r.data_mut_ref() |= config.clock_distribution.ccucon7.mask & config.clock_distribution.ccucon7.value;
+                r
+            })
+        };
+    }
+
+    // CUCCON8 config
+    {
+        unsafe {
+            SCU.ccucon8().modify(|mut r| {
+                *r.data_mut_ref() &= !config.clock_distribution.ccucon8.mask;
+                *r.data_mut_ref() |= config.clock_distribution.ccucon8.mask & config.clock_distribution.ccucon8.value;
+                r
+            })
+        };
+    }
+
+    wdt::set_safety_endinit_inline(endinit_sfty_pw);
+    
     Ok(())
 }
 
 pub fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> 
 {
+    let endinit_sfty_pw = wdt::get_safety_watchdog_password();
+
+    for pll_step_count in 0..config.sys_pll_throttle.len() {
+        wdt::clear_safety_endinit_inline(endinit_sfty_pw);
+
+        wait_cond::<PLL_KRDY_TIMEOUT_COUNT>(|| {
+            !unsafe { SCU.syspllstat().read() }.k2rdy().get()
+        })?;
+
+        unsafe {
+            SCU.syspllcon1()
+                .modify(|r| r.k2div().set(config.sys_pll_throttle[pll_step_count].k2_step))
+        };
+
+        wdt::set_safety_endinit_inline(endinit_sfty_pw);
+    }
     Ok(())
 }
 

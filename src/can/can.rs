@@ -8,12 +8,33 @@ pub trait ACanModule {
     fn disable_module(&self);
     fn reset_module(&self);
     fn init_module(&self);
-    //fn set_clock_source(&self, clock_select: ClockSelect, clock_source: ClockSource);
+    fn set_clock_source(&self, clock_select: CanClockSelect, clock_source: CanClockSource);
 }
 
 pub struct CanModule0 {
     inner: tc37x_pac::can0::Can0,
 }
+
+#[repr(u8)]
+pub enum CanClockSource
+{
+    NoClock      = 0,  /* \brief No clock is switched on */
+    Asynchronous = 1,  /* \brief The Asynchronous clock source is switched on */
+    Synchronous  = 2,  /* \brief The Synchronous clock source is switched on */
+    Both         = 3   /* \brief Both clock sources are switched on */
+} 
+impl From<CanClockSource> for u8 {
+    fn from(value: CanClockSource) -> Self {
+        value as _
+    }
+}
+pub  enum CanClockSelect
+{
+    _0 = 0,     /* \brief clock selection 0  */
+    _1 = 1,     /* \brief clock selection 1  */
+    _2 = 2,     /* \brief clock selection 2  */
+    _3 = 3      /* \brief clock selection 3  */
+} 
 
 // TODO (annabo) use tc37x_pac::can1::Can1; impl CanModule for Can1
 use crate::scu;
@@ -77,18 +98,26 @@ impl ACanModule for CanModule0 {
         scu::wdt::set_cpu_endinit_inline(passw);
     }
 
-    // fn set_clock_source(&self, clock_select: ClockSelect, clock_source: ClockSource) {
-    //     let mut mcr = unsafe { tc37x_pac::CAN0.mcr().read() };
-    //     mcr = mcr.ccce().set(true).ci().set(true);
+    fn set_clock_source(&self, clock_select: CanClockSelect, clock_source: CanClockSource) {
+        
+        let mut mcr = unsafe {  self.inner.mcr().read() };
+        mcr = mcr.ccce().set(true).ci().set(true);
 
-    //     unsafe { tc37x_pac::CAN0.mcr().write(mcr) };
+        unsafe {  self.inner.mcr().write(mcr) };
 
-    //     mcr = mcr.clksel(clock_select.into()).set(clock_source.into());
-    //     unsafe { tc37x_pac::CAN0.mcr().write(mcr) };
+        match clock_select {
+            CanClockSelect::_0 =>  mcr.clksel0().set(clock_source.into()),
+            CanClockSelect::_1 =>  mcr.clksel1().set(clock_source.into()),
+            CanClockSelect::_2 =>  mcr.clksel2().set(clock_source.into()),
+            CanClockSelect::_3 =>  mcr.clksel3().set(clock_source.into()),
+        };
+       
+        unsafe { tc37x_pac::CAN0.mcr().write(mcr) };
 
-    //     mcr = mcr.ccce().set(false).ci().set(false);
-    //     unsafe { tc37x_pac::CAN0.mcr().write(mcr) };
-    // }
+        mcr = mcr.ccce().set(false).ci().set(false);
+        unsafe { self.inner.mcr().write(mcr) };
+    }
+
     fn init_module(&self) {
         if !self.is_enabled() {
             #[cfg(feature = "log")]

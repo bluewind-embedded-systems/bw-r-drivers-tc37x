@@ -61,8 +61,8 @@ fn main() -> ! {
 
     println!("Start example: CanKy");
 
-    println!("Init software");
-    ssw::init_software();
+    //println!("Init software");
+    //ssw::init_software();
 
     println!("Enable interrupts");
     tc37x_hal::cpu::asm::enable_interrupts();

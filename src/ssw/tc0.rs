@@ -1,24 +1,32 @@
 
+use core::result;
+
 use crate::scu::ccu;
 
 pub fn init_software() {
-    if !is_application_reset() {
-        #[cfg(feature = "log")]
-        defmt::debug!("power on reset");
-        //TODO (annabo)
-        ccu::init().unwrap();
-    } else {
-        #[cfg(feature = "log")]
-        defmt::debug!("application reset")
-    }
+    // if !is_application_reset() {
+    //     #[cfg(feature = "log")]
+    //     defmt::debug!("power on reset");
+       
+    //     match ccu::init(){
+    //         Err(()) => println!("CCU init ERROR."),
+    //         Ok(()) => {
+    //             println!("CCU init successful.")
+    //         },
+    //     }
+       
+    // } else {
+    //     #[cfg(feature = "log")]
+    //     defmt::debug!("application reset")
+    // }
 }
 
-use tc37x_pac::{RegisterValue, SCU};
+use tc37x_pac::{SCU, hidden::RegValue};
 
 #[inline]
 //TODO 
 pub fn is_application_reset() -> bool {
-    false //TODO
+    false
     // let v = unsafe { SCU.rststat().read() };
 
     // const APP_RESET_MSK: u32 = ((0x1) << (4))
