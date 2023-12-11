@@ -95,7 +95,6 @@ pub fn set_cpu_endinit_inline(password: u16) {
 
     unsafe { con0.write(data) };
 
-    #[cfg(tricore_arch = "tricore")]
     while !unsafe { con0.read() }.endinit().get() {}
 }
 

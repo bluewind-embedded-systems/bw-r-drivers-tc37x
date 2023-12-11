@@ -10,102 +10,11 @@ tc37x_rt::entry!(main);
 #[cfg(target_arch = "tricore")]
 use defmt::println;
 
-use embedded_can::{ExtendedId, Frame, Id};
+use embedded_can::{ExtendedId, Frame};
+use tc37x_hal::can::{CanModule, CanModuleConfig, CanNode, CanNodeConfig};
 use tc37x_hal::cpu::asm::enable_interrupts;
 use tc37x_hal::gpio::GpioExt;
-use tc37x_hal::{pac, scu, ssw};
-
-#[derive(Default)]
-struct CanModuleConfig {}
-
-struct CanModule {
-    inner: pac::can0::Can0,
-}
-
-impl CanModule {
-    pub const fn new(_index: usize) -> Self {
-        // TODO Use index
-        Self { inner: pac::CAN0 }
-    }
-
-    pub fn init(self, _config: CanModuleConfig) -> Result<CanModule, ()> {
-        if !self.is_enabled() {
-            self.enable_module();
-        }
-
-        Ok(self)
-    }
-
-    #[inline]
-    pub fn is_enabled(&self) -> bool {
-        !unsafe { self.inner.clc().read() }.diss().get()
-    }
-
-    pub fn enable_module(&self) {
-        let passw = scu::wdt::get_cpu_watchdog_password();
-
-        scu::wdt::clear_cpu_endinit_inline(passw);
-
-        unsafe { self.inner.clc().modify_atomic(|r| r.disr().set(false)) };
-        while !self.is_enabled() {}
-
-        scu::wdt::set_cpu_endinit_inline(passw);
-    }
-
-    pub fn get_node(&mut self, _node_id: usize) -> Result<CanNode, ()> {
-        // TODO
-        Ok(CanNode)
-    }
-}
-
-#[derive(Default)]
-struct CanNodeConfig {}
-
-struct CanNode;
-
-impl CanNode {
-    pub fn init(self, _config: CanNodeConfig) -> Result<CanNode, ()> {
-        // TODO
-        Ok(self)
-    }
-
-    pub fn transmit(&self, _frame: &FooFrame) -> Result<(), ()> {
-        // TODO
-        Ok(())
-    }
-}
-
-struct FooFrame;
-
-impl Frame for FooFrame {
-    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
-        Some(Self)
-    }
-
-    fn new_remote(id: impl Into<Id>, dlc: usize) -> Option<Self> {
-        todo!()
-    }
-
-    fn is_extended(&self) -> bool {
-        todo!()
-    }
-
-    fn is_remote_frame(&self) -> bool {
-        todo!()
-    }
-
-    fn id(&self) -> Id {
-        todo!()
-    }
-
-    fn dlc(&self) -> usize {
-        todo!()
-    }
-
-    fn data(&self) -> &[u8] {
-        todo!()
-    }
-}
+use tc37x_hal::{pac, ssw};
 
 fn setup_can() -> Result<CanNode, ()> {
     let can_module = CanModule::new(0);
@@ -136,7 +45,7 @@ fn main() -> ! {
 
     let can_id: ExtendedId = ExtendedId::new(0x0CFE6E00).unwrap();
     let mut data: [u8; 8] = [0; 8];
-    let test_frame = FooFrame::new(can_id, &data).unwrap();
+    let test_frame = Frame::new(can_id, &data).unwrap();
 
     let can = match setup_can() {
         Ok(can) => can,
