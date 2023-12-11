@@ -13,7 +13,7 @@ use defmt::println;
 use embedded_can::{ExtendedId, Frame, Id};
 use tc37x_hal::cpu::asm::enable_interrupts;
 use tc37x_hal::gpio::GpioExt;
-use tc37x_hal::pac;
+use tc37x_hal::{pac, ssw};
 
 #[derive(Default)]
 struct CanModuleConfig {}
@@ -28,7 +28,7 @@ impl CanModule {
 
     pub fn get_node(&mut self, _node_id: usize) -> Result<CanNode, ()> {
         // TODO
-        Err(())
+        Ok(CanNode)
     }
 }
 
@@ -53,7 +53,7 @@ struct FooFrame;
 
 impl Frame for FooFrame {
     fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
-        todo!()
+        Some(Self)
     }
 
     fn new_remote(id: impl Into<Id>, dlc: usize) -> Option<Self> {
@@ -100,6 +100,7 @@ fn main() -> ! {
     println!("Start example: can_send");
 
     println!("Enable interrupts");
+    ssw::init_software();
     enable_interrupts();
 
     let gpio00 = pac::PORT_00.split();
