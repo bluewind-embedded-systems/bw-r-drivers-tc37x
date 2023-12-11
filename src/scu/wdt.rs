@@ -21,8 +21,46 @@ pub fn get_safety_watchdog_password() -> u16 {
 }
 
 #[inline]
-pub fn clear_cpu_endinit_inline(_password: u16) {
-    // TODO
+unsafe fn get_wdt_con0(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con0, pac::RW> {
+    // unsafe cast to get the valid SCU WDT based on the core id
+    let off: *mut u8 = unsafe { core::mem::transmute(pac::SCU.wdtcpu0con0()) };
+    let off = unsafe { off.add(core::mem::size_of::<u32>() * 3 * core_id as usize) };
+    unsafe { core::mem::transmute(off) }
+}
+
+#[inline]
+pub fn clear_cpu_endinit_inline(password: u16) {
+    let core_id = read_cpu_core_id();
+    let con0 = unsafe { get_wdt_con0(core_id as _) };
+
+    if unsafe { con0.read() }.lck().get() {
+        let rel = unsafe { con0.read() }.rel().get();
+        let data = pac::scu::Wdtcpu0Con0::default()
+            .endinit()
+            .set(true)
+            .lck()
+            .set(false)
+            .pw()
+            .set(password)
+            .rel()
+            .set(rel);
+        unsafe { con0.write(data) };
+    }
+
+    let rel = unsafe { con0.read() }.rel().get();
+    let data = pac::scu::Wdtcpu0Con0::default()
+        .endinit()
+        .set(false)
+        .lck()
+        .set(true)
+        .pw()
+        .set(password)
+        .rel()
+        .set(rel);
+    unsafe { con0.write(data) };
+
+    #[cfg(tricore_arch = "tricore")]
+    while unsafe { con0.read() }.endinit().get() {}
 }
 
 #[inline]
