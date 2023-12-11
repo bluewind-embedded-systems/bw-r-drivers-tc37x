@@ -1,6 +1,7 @@
 use tc37x_pac::hidden::RegValue;
 use tc37x_pac::SCU;
 
+#[cfg(target_arch = "tricore")]
 #[inline]
 pub fn is_application_reset() -> bool {
     let v = unsafe { SCU.rststat().read() };
@@ -33,4 +34,10 @@ pub fn is_application_reset() -> bool {
     } else {
         false
     }
+}
+
+#[cfg(not(target_arch = "tricore"))]
+#[inline]
+pub fn is_application_reset() -> bool {
+    false
 }
