@@ -1,9 +1,9 @@
-use tc37x_pac::hidden::RegValue;
-use tc37x_pac::SCU;
-
 #[cfg(target_arch = "tricore")]
 #[inline]
 pub fn is_application_reset() -> bool {
+    use tc37x_pac::hidden::RegValue;
+    use tc37x_pac::SCU;
+
     let v = unsafe { SCU.rststat().read() };
 
     const APP_RESET_MSK: u32 = ((0x1) << (4))
