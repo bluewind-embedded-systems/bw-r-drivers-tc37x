@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && cd ../ && pwd )"
+
+main() {
+  cd "${ROOT_DIR}" || exit
+  ./tools/set_build_profile host
+  cargo build --example=canky --features=tracing
+}
+
+main
