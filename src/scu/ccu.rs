@@ -15,28 +15,18 @@ use tc37x_pac::SCU;
 const CCUCON_LCK_BIT_TIMEOUT_COUNT: usize = 0x1000;
 const PLL_KRDY_TIMEOUT_COUNT: usize = 0x6000;
 
-pub fn init() -> Result<(), ()> {
-    let config = DEFAULT_CLOCK_CONFIG;
-    match configure_ccu_initial_step(&config) {
-        Err(()) => println!("configure_ccu_initial_step error"),
-        Ok(()) => println!("configure_ccu_initial_step ok"),
-    }
-    //TODO (annabo)
-    match modulation_init(&config) {
-        Err(()) => println!("modulation_init error"),
-        Ok(()) => println!("modulation_init ok"),
-    }
+pub enum InitError {
+    ConfigureCCUInitialStep,
+    ModulationInit,
+    DistributeClockInline,
+    ThrottleSysPllClockInline,
+}
 
-    match distribute_clock_inline(&config) {
-        Err(()) => println!("distribute_clock_inline error"),
-        Ok(()) => println!("distribute_clock_inline ok"),
-    }
-
-    match throttle_sys_pll_clock_inline(&config) {
-        Err(()) => println!("throttle_sys_pll_clock_inline error "),
-        Ok(()) => println!("throttle_sys_pll_clock_inline ok"),
-    }
-
+pub fn init(config: &Config) -> Result<(), InitError> {
+    configure_ccu_initial_step(&config).map_err(|_| InitError::ConfigureCCUInitialStep)?;
+    modulation_init(&config).map_err(|_| InitError::ModulationInit)?;
+    distribute_clock_inline(&config).map_err(|_| InitError::DistributeClockInline)?;
+    throttle_sys_pll_clock_inline(&config).map_err(|_| InitError::ThrottleSysPllClockInline)?;
     Ok(())
 }
 
