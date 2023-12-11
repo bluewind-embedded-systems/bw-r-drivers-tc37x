@@ -53,7 +53,12 @@ const CPU_CORE_ID: u32 = 0xFE1C;
 #[inline]
 pub fn read_cpu_core_id() -> u32 {
     #[allow(unused_assignments)]
-    let value: u32 = 0;
+    let value: u32;
+
+    #[cfg(not(target_arch = "tricore"))]
+    {
+        value = 0;
+    }
 
     #[cfg(target_arch = "tricore")]
     unsafe {
