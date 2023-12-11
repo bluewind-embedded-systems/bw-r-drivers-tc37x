@@ -8,6 +8,7 @@ pub struct CanNodeConfig {
     pub clock_source: ClockSource,
 }
 
+#[derive(Copy, Clone, Debug)]
 pub struct NodeId(pub(crate) u8);
 
 impl NodeId {
@@ -28,10 +29,8 @@ impl CanNode {
     }
 
     pub fn init(self, config: CanNodeConfig) -> Result<CanNode, ()> {
-        let node_id = self.node_id;
-
         self.module
-            .set_clock_source(node_id.into(), config.clock_source);
+            .set_clock_source(self.node_id.into(), config.clock_source);
 
         wait_nop(10);
 
