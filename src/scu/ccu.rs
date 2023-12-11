@@ -1,13 +1,12 @@
 use super::wdt; 
 use tc37x_pac::SCU;
-use tc37x_pac::scu;
 use tc37x_pac::hidden::RegValue;
 #[cfg(target_arch = "tricore")]
 use defmt::println;
 
-const SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT: usize = 0x3000;
-const OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT: usize = 0x493E0;
-const PLL_LOCK_TIMEOUT_COUNT: usize = 0x3000;
+// const SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT: usize = 0x3000;
+// const OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT: usize = 0x493E0;
+// const PLL_LOCK_TIMEOUT_COUNT: usize = 0x3000;
 
 const CCUCON_LCK_BIT_TIMEOUT_COUNT: usize = 0x1000;
 const PLL_KRDY_TIMEOUT_COUNT: usize = 0x6000;
@@ -38,8 +37,9 @@ pub fn init() -> Result<(), ()> {
     Ok(())
 }
 
-pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> 
+pub fn configure_ccu_initial_step(_config: &Config) -> Result<(), ()>
 {
+    // TODO Use config
     let endinit_sfty_pw = wdt::get_safety_watchdog_password();
     wdt::clear_safety_endinit_inline(endinit_sfty_pw);
    

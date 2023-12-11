@@ -1,8 +1,3 @@
-
-use core::result;
-
-use crate::scu::ccu;
-
 pub fn init_software() {
     // if !is_application_reset() {
     //     #[cfg(feature = "log")]
@@ -20,8 +15,6 @@ pub fn init_software() {
     //     defmt::debug!("application reset")
     // }
 }
-
-use tc37x_pac::{SCU, hidden::RegValue};
 
 #[inline]
 //TODO 

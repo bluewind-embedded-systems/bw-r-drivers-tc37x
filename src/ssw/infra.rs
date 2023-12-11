@@ -1,9 +1,9 @@
-use tc37x_pac::{RegisterValue, SCU};
+use tc37x_pac::SCU;
 
 #[inline]
 pub fn is_application_reset() -> bool {
-    let v = unsafe { SCU.rststat().read() };
-    
+    // TODO
+    let _v = unsafe { SCU.rststat().read() };
 
     const APP_RESET_MSK: u32 = ((0x1) << (4))
         | ((0x1) << (7))

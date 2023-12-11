@@ -35,15 +35,12 @@ pub enum CanClockSelect {
     _3 = 3, /* \brief clock selection 3  */
 }
 
-use core::default;
-
 // TODO (annabo) use tc37x_pac::can1::Can1; impl CanModule for Can1
 use crate::scu;
 
 #[cfg(feature = "log")]
 #[cfg(target_arch = "tricore")]
 use defmt::println;
-use embedded_can::nb::Can;
 
 impl ACanModule for CanModule0 {
     fn node_id(&self) -> u8 {
@@ -130,7 +127,7 @@ impl ACanModule for CanModule0 {
         let value = unsafe { tc37x_pac::SCU.ccucon1().read().clkselmcan().get() };
         match value {
             0 => todo!(),
-            default => todo!(),
+            _ => todo!(),
         };
     }
 }
