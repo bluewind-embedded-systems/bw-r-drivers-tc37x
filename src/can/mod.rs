@@ -139,12 +139,10 @@ impl ACanModule for CanModule0 {
     }
 }
 
-impl CanModule0 {
-    pub fn new() -> Self {
-        let m = Self {
+impl Default for CanModule0 {
+    fn default() -> Self {
+        Self {
             inner: tc37x_pac::CAN0,
-        };
-        m.enable_module();
-        m
+        }
     }
 }

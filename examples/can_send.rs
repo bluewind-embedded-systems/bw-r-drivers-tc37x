@@ -1,5 +1,6 @@
 //! Simple CAN example.
 
+#![allow(unused_variables)]
 #![cfg_attr(target_arch = "tricore", no_main)]
 #![cfg_attr(target_arch = "tricore", no_std)]
 
@@ -9,12 +10,88 @@ tc37x_rt::entry!(main);
 #[cfg(target_arch = "tricore")]
 use defmt::println;
 
-use tc37x_hal::can::{ACanModule, CanModule0};
+use embedded_can::{ExtendedId, Frame, Id};
 use tc37x_hal::cpu::asm::enable_interrupts;
 use tc37x_hal::gpio::GpioExt;
 use tc37x_hal::pac;
-use tc37x_hal::ssw;
-use tc37x_pac::RegisterValue;
+
+#[derive(Default)]
+struct CanModuleConfig {}
+
+#[derive(Default)]
+struct CanModule;
+
+impl CanModule {
+    pub fn init(self, _config: CanModuleConfig) -> Result<CanModule, ()> {
+        Ok(self)
+    }
+
+    pub fn get_node(&mut self, _node_id: usize) -> Result<CanNode, ()> {
+        // TODO
+        Err(())
+    }
+}
+
+#[derive(Default)]
+struct CanNodeConfig {}
+
+struct CanNode;
+
+impl CanNode {
+    pub fn init(self, _config: CanNodeConfig) -> Result<CanNode, ()> {
+        // TODO
+        Ok(self)
+    }
+
+    pub fn transmit(&self, _frame: &FooFrame) -> Result<(), ()> {
+        // TODO
+        Ok(())
+    }
+}
+
+struct FooFrame;
+
+impl Frame for FooFrame {
+    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        todo!()
+    }
+
+    fn new_remote(id: impl Into<Id>, dlc: usize) -> Option<Self> {
+        todo!()
+    }
+
+    fn is_extended(&self) -> bool {
+        todo!()
+    }
+
+    fn is_remote_frame(&self) -> bool {
+        todo!()
+    }
+
+    fn id(&self) -> Id {
+        todo!()
+    }
+
+    fn dlc(&self) -> usize {
+        todo!()
+    }
+
+    fn data(&self) -> &[u8] {
+        todo!()
+    }
+}
+
+fn setup_can() -> Result<CanNode, ()> {
+    let can_module = CanModule::default();
+    let can_module_config = CanModuleConfig::default();
+    let mut can_module = can_module.init(can_module_config)?;
+
+    let can_node = can_module.get_node(0)?;
+    let can_node_config = CanNodeConfig::default();
+    let can_node = can_node.init(can_node_config)?;
+
+    Ok(can_node)
+}
 
 fn main() -> ! {
     #[cfg(not(target_arch = "tricore"))]
@@ -30,17 +107,15 @@ fn main() -> ! {
 
     println!("Create can module ... ");
 
-    let can_module = CanModule0::default();
-    let can_module_config = CanModuleConfig::default();
-    let can_module = can_module.init(can_module_config)?;
-
-    let can_node = can_module.get_node(0)?;
-    let can_node_config = CanNodeConfig::default();
-    let can_node = can_node.init(can_node_config)?;
-
+    let can_id: ExtendedId = ExtendedId::new(0x0CFE6E00).unwrap();
     let mut data: [u8; 8] = [0; 8];
+    let test_frame = FooFrame::new(can_id, &data).unwrap();
 
-    let can = can_node;
+    let can = match setup_can() {
+        Ok(can) => can,
+        Err(_) => loop {},
+    };
+
     let mut count = 0;
 
     loop {
@@ -51,8 +126,10 @@ fn main() -> ! {
         }
         data[0] = count;
 
-        let test_frame = Frame::new(0x0CFE6E00, data);
-        can.transmit(&test_frame);
+        if can.transmit(&test_frame).is_err() {
+            println!("Cannot send frame");
+        }
+
         led1.set_high();
         wait_nop(100000);
         led1.set_low();
