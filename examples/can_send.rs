@@ -13,17 +13,43 @@ use defmt::println;
 use embedded_can::{ExtendedId, Frame, Id};
 use tc37x_hal::cpu::asm::enable_interrupts;
 use tc37x_hal::gpio::GpioExt;
-use tc37x_hal::{pac, ssw};
+use tc37x_hal::{pac, scu, ssw};
 
 #[derive(Default)]
 struct CanModuleConfig {}
 
-#[derive(Default)]
-struct CanModule;
+struct CanModule {
+    inner: pac::can0::Can0,
+}
 
 impl CanModule {
+    pub const fn new(_index: usize) -> Self {
+        // TODO Use index
+        Self { inner: pac::CAN0 }
+    }
+
     pub fn init(self, _config: CanModuleConfig) -> Result<CanModule, ()> {
+        if !self.is_enabled() {
+            self.enable_module();
+        }
+
         Ok(self)
+    }
+
+    #[inline]
+    pub fn is_enabled(&self) -> bool {
+        !unsafe { self.inner.clc().read() }.diss().get()
+    }
+
+    pub fn enable_module(&self) {
+        let passw = scu::wdt::get_cpu_watchdog_password();
+
+        scu::wdt::clear_cpu_endinit_inline(passw);
+
+        unsafe { self.inner.clc().modify_atomic(|r| r.disr().set(false)) };
+        while !self.is_enabled() {}
+
+        scu::wdt::set_cpu_endinit_inline(passw);
     }
 
     pub fn get_node(&mut self, _node_id: usize) -> Result<CanNode, ()> {
@@ -82,7 +108,7 @@ impl Frame for FooFrame {
 }
 
 fn setup_can() -> Result<CanNode, ()> {
-    let can_module = CanModule::default();
+    let can_module = CanModule::new(0);
     let can_module_config = CanModuleConfig::default();
     let mut can_module = can_module.init(can_module_config)?;
 
