@@ -41,14 +41,13 @@ unsafe fn get_wdt_con0_cpu2() -> pac::Reg<pac::scu::Wdtcpu2Con0, pac::RW> {
 unsafe fn get_wdt_con0_cpu1() -> pac::Reg<pac::scu::Wdtcpu1Con0, pac::RW> {
     // unsafe cast to get the valid SCU WDT based on the core id
     let off: *mut u8 = unsafe { core::mem::transmute(pac::SCU.wdtcpu0con0()) };
-    let off = unsafe { off.add(core::mem::size_of::<u32>() * 3 * 1usize) };
+    let off = unsafe { off.add(core::mem::size_of::<u32>() * 3) };
     unsafe { core::mem::transmute(off) }
 }
 #[inline]
 unsafe fn get_wdt_con0_cpu0() -> pac::Reg<pac::scu::Wdtcpu0Con0, pac::RW> {
     // unsafe cast to get the valid SCU WDT based on the core id
     let off: *mut u8 = unsafe { core::mem::transmute(pac::SCU.wdtcpu0con0()) };
-    let off = unsafe { off.add(core::mem::size_of::<u32>() * 3 * 0usize) };
     unsafe { core::mem::transmute(off) }
 }
 
@@ -196,6 +195,7 @@ pub fn set_safety_endinit_inline(password: u16) {
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 

@@ -1,3 +1,5 @@
+#![allow(clippy::new_without_default)]
+
 // CanNode trait impl to be moved on a separate file (annabo)
 pub trait ACanModule {
     fn node_id(&self) -> u8;

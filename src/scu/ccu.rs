@@ -1,3 +1,7 @@
+#![allow(clippy::identity_op)]
+#![allow(clippy::eq_op)]
+#![allow(clippy::result_unit_err)]
+
 use super::wdt;
 #[cfg(target_arch = "tricore")]
 use defmt::println;
@@ -262,7 +266,7 @@ pub fn wait_cond<const C: usize>(cond: impl Fn() -> bool) -> Result<(), ()> {
     let mut timeout_cycle_count = C;
     while cond() {
         timeout_cycle_count -= 1;
-        if timeout_cycle_count <= 0 {
+        if timeout_cycle_count == 0 {
             return Err(());
         }
     }
