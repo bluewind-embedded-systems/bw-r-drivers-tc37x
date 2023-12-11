@@ -3,8 +3,6 @@
 #![allow(clippy::result_unit_err)]
 
 use super::wdt;
-#[cfg(target_arch = "tricore")]
-use defmt::println;
 use tc37x_pac::hidden::RegValue;
 use tc37x_pac::SCU;
 
