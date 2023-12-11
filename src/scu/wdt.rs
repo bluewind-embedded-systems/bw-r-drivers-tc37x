@@ -64,8 +64,39 @@ pub fn clear_cpu_endinit_inline(password: u16) {
 }
 
 #[inline]
-pub fn set_cpu_endinit_inline(_password: u16) {
-    // TODO
+pub fn set_cpu_endinit_inline(password: u16) {
+    let core_id = read_cpu_core_id();
+    let con0 = unsafe { get_wdt_con0(core_id as _) };
+
+    if unsafe { con0.read() }.lck().get() {
+        let rel = unsafe { con0.read() }.rel().get();
+        let data = pac::scu::Wdtcpu0Con0::default()
+            .endinit()
+            .set(true)
+            .lck()
+            .set(false)
+            .pw()
+            .set(password)
+            .rel()
+            .set(rel);
+        unsafe { con0.write(data) };
+    }
+
+    let rel = unsafe { con0.read() }.rel().get();
+    let data = pac::scu::Wdtcpu0Con0::default()
+        .endinit()
+        .set(true)
+        .lck()
+        .set(true)
+        .pw()
+        .set(password)
+        .rel()
+        .set(rel);
+
+    unsafe { con0.write(data) };
+
+    #[cfg(tricore_arch = "tricore")]
+    while !unsafe { con0.read() }.endinit().get() {}
 }
 
 #[inline]
