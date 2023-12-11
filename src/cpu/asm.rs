@@ -1,4 +1,4 @@
-/* From ILLD file: 
+/* From ILLD file:
 *  file IfxCpu.h
 *  brief CPU  basic functionality
 *  ingroup IfxLld_Cpu
@@ -16,7 +16,7 @@ pub fn enable_interrupts() {
 }
 
 // TODO (annabo) // to be tested
-/* ILLD FUNCTION 
+/* ILLD FUNCTION
  * IFX_INLINE boolean IfxCpu_disableInterrupts(void)
  * {
  *     boolean enabled;

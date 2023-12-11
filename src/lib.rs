@@ -7,10 +7,10 @@ mod runtime;
 #[cfg(not(target_arch = "tricore"))]
 pub mod tracing;
 
+pub mod can;
+pub mod cpu;
 pub mod gpio;
-pub mod scu; 
-pub mod can; 
-pub mod cpu; 
+pub mod scu;
 pub mod ssw;
 
 pub use tc37x_pac as pac;

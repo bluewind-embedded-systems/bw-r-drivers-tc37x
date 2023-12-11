@@ -2,14 +2,14 @@ pub fn init_software() {
     // if !is_application_reset() {
     //     #[cfg(feature = "log")]
     //     defmt::debug!("power on reset");
-       
+
     //     match ccu::init(){
     //         Err(()) => println!("CCU init ERROR."),
     //         Ok(()) => {
     //             println!("CCU init successful.")
     //         },
     //     }
-       
+
     // } else {
     //     #[cfg(feature = "log")]
     //     defmt::debug!("application reset")
@@ -17,7 +17,7 @@ pub fn init_software() {
 }
 
 #[inline]
-//TODO 
+//TODO
 pub fn is_application_reset() -> bool {
     false
     // let v = unsafe { SCU.rststat().read() };
