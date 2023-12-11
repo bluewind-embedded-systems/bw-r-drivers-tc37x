@@ -44,4 +44,42 @@ impl CanModule {
         let module = CanModule { inner: self.inner };
         Ok(CanNode::new(module, node_id))
     }
+
+    pub(crate) fn set_clock_source(&self, clock_select: ClockSelect, clock_source: ClockSource) {
+        let mcr = unsafe { self.inner.mcr().read() };
+
+        // Enable CCCE and CI
+        let mcr = mcr.ccce().set(true).ci().set(true);
+        unsafe { self.inner.mcr().write(mcr) };
+
+        // Select clock
+        let mcr = match clock_select.0 {
+            0 => mcr.clksel0().set(clock_source.into()),
+            1 => mcr.clksel1().set(clock_source.into()),
+            2 => mcr.clksel2().set(clock_source.into()),
+            3 => mcr.clksel3().set(clock_source.into()),
+            _ => unreachable!(),
+        };
+
+        unsafe { tc37x_pac::CAN0.mcr().write(mcr) };
+
+        // Disable CCCE and CI
+        let mcr = mcr.ccce().set(false).ci().set(false);
+        unsafe { self.inner.mcr().write(mcr) };
+    }
+}
+
+pub(crate) struct ClockSelect(u8);
+
+impl From<NodeId> for ClockSelect {
+    fn from(node_id: NodeId) -> Self {
+        Self(node_id.0)
+    }
+}
+
+pub enum ClockSource {
+    NoClock,
+    Asynchronous,
+    Synchronous,
+    Both,
 }

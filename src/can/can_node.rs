@@ -1,10 +1,14 @@
+use super::can_module::ClockSource;
 use super::frame::Frame;
 use super::CanModule;
+use crate::util::wait_nop;
 
 #[derive(Default)]
-pub struct CanNodeConfig {}
+pub struct CanNodeConfig {
+    pub clock_source: ClockSource,
+}
 
-pub struct NodeId(u8);
+pub struct NodeId(pub(crate) u8);
 
 impl NodeId {
     pub const fn new(n: u8) -> Self {
@@ -23,7 +27,14 @@ impl CanNode {
         Self { module, node_id }
     }
 
-    pub fn init(self, _config: CanNodeConfig) -> Result<CanNode, ()> {
+    pub fn init(self, config: CanNodeConfig) -> Result<CanNode, ()> {
+        let node_id = self.node_id;
+
+        self.module
+            .set_clock_source(node_id.into(), config.clock_source);
+
+        wait_nop(10);
+
         Ok(self)
     }
 
