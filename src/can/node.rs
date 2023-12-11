@@ -1,15 +1,44 @@
 
 pub trait ACanNode{
+    pub fn init(&self);
+    pub fn set_clock_source(&self);  
+    pub fn enable_configuration_change(&self);
+    pub fn get_module_frequency(&self) -> f32;
+    pub fn set_bit_timing(); 
+    pub fn set_tx_buffer();
+    pub fn set_rx_buffer(); 
+
 
 }
+struct ClockSrc; 
+struct Frame; 
+struct Filer; 
 
-pub struct Node<const N: u8, const M:u8>; 
-
+pub struct Node<const NODEID: u8, const M:u8> {
+    /**< \brief Specifies the pointer to the CAN registers */                                   /**< \brief Specifies the Node number of the MCan */
+    clockSource: ClockSrc, /* \brief Clock source */
+    frame: Frame,          /* \brief Structure for Frame Configuration */
+    baudRate:Boudrate,     /* \brief Structure for nominal baudrate */
+    // IfxCan_Can_FastBaudRate    fastBaudRate;                   /* \brief Structure for fast baudrate */
+    // IfxCan_Can_TxConfig        txConfig;                       /* \brief Structure for Tx handle Configuration */
+    filterConfig: Filter,                   /* \brief Structure for Acceptance filter configuration */
+    // IfxCan_Can_RxConfig        rxConfig;                       /* \brief Structure for Rx handle Configuration */
+    // IfxCan_MessageRAM          messageRAM;                     /* \brief Structure for Message RAM */
+    // IfxCan_Can_InterruptConfig interruptConfig;                /* \brief Structure for Interrupt configuration */
+    // IFX_CONST IfxCan_Can_Pins *pins;                           /* \brief structure for CAN pins */
+    loopback:bool,  /* \brief Internal Virtual CAN bus loopback mode enable / disable choice */
+    // boolean                    calculateBitTimingValues; 
 // impl ACanNode for Node<0, 0>{
+}
 
-// }
+impl<const NODEID: u8, const M:u8> ACanNode for Node<N,  M>{
+    fn init(&self) {}
+    fn set_clock_source(&self) {} 
+    fn enable_configuration_change(&self) {}
+    fn get_module_frequency(&self) -> f32 {
+       
+    }
 
-impl<const N: u8, const M:u8> ACanNode for Node<N,  M>{
 
 }
 // use tc37x_pac::{self as pac, CastTo};

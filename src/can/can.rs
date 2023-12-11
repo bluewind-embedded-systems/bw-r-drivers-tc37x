@@ -9,6 +9,7 @@ pub trait ACanModule {
     fn reset_module(&self);
     fn init_module(&self);
     fn set_clock_source(&self, clock_select: CanClockSelect, clock_source: CanClockSource);
+    fn get_module_frequency(&self) -> f32;
 }
 
 pub struct CanModule0 {
@@ -16,25 +17,25 @@ pub struct CanModule0 {
 }
 
 #[repr(u8)]
-pub enum CanClockSource
-{
-    NoClock      = 0,  /* \brief No clock is switched on */
-    Asynchronous = 1,  /* \brief The Asynchronous clock source is switched on */
-    Synchronous  = 2,  /* \brief The Synchronous clock source is switched on */
-    Both         = 3   /* \brief Both clock sources are switched on */
-} 
+pub enum CanClockSource {
+    NoClock = 0,      /* \brief No clock is switched on */
+    Asynchronous = 1, /* \brief The Asynchronous clock source is switched on */
+    Synchronous = 2,  /* \brief The Synchronous clock source is switched on */
+    Both = 3,         /* \brief Both clock sources are switched on */
+}
 impl From<CanClockSource> for u8 {
     fn from(value: CanClockSource) -> Self {
         value as _
     }
 }
-pub  enum CanClockSelect
-{
-    _0 = 0,     /* \brief clock selection 0  */
-    _1 = 1,     /* \brief clock selection 1  */
-    _2 = 2,     /* \brief clock selection 2  */
-    _3 = 3      /* \brief clock selection 3  */
-} 
+pub enum CanClockSelect {
+    _0 = 0, /* \brief clock selection 0  */
+    _1 = 1, /* \brief clock selection 1  */
+    _2 = 2, /* \brief clock selection 2  */
+    _3 = 3, /* \brief clock selection 3  */
+}
+
+use core::default;
 
 // TODO (annabo) use tc37x_pac::can1::Can1; impl CanModule for Can1
 use crate::scu;
@@ -57,7 +58,7 @@ impl ACanModule for CanModule0 {
     fn is_suspended(&self) -> bool {
         unsafe { self.inner.ocs().read() }.sussta().get()
     }
-   
+
     fn enable_module(&self) {
         let passw = scu::wdt::get_cpu_watchdog_password();
 
@@ -99,19 +100,18 @@ impl ACanModule for CanModule0 {
     }
 
     fn set_clock_source(&self, clock_select: CanClockSelect, clock_source: CanClockSource) {
-        
-        let mut mcr = unsafe {  self.inner.mcr().read() };
+        let mut mcr = unsafe { self.inner.mcr().read() };
         mcr = mcr.ccce().set(true).ci().set(true);
 
-        unsafe {  self.inner.mcr().write(mcr) };
+        unsafe { self.inner.mcr().write(mcr) };
 
         match clock_select {
-            CanClockSelect::_0 =>  mcr.clksel0().set(clock_source.into()),
-            CanClockSelect::_1 =>  mcr.clksel1().set(clock_source.into()),
-            CanClockSelect::_2 =>  mcr.clksel2().set(clock_source.into()),
-            CanClockSelect::_3 =>  mcr.clksel3().set(clock_source.into()),
+            CanClockSelect::_0 => mcr.clksel0().set(clock_source.into()),
+            CanClockSelect::_1 => mcr.clksel1().set(clock_source.into()),
+            CanClockSelect::_2 => mcr.clksel2().set(clock_source.into()),
+            CanClockSelect::_3 => mcr.clksel3().set(clock_source.into()),
         };
-       
+
         unsafe { tc37x_pac::CAN0.mcr().write(mcr) };
 
         mcr = mcr.ccce().set(false).ci().set(false);
@@ -125,18 +125,22 @@ impl ACanModule for CanModule0 {
             self.enable_module();
         }
     }
+
+    fn get_module_frequency(&self) -> f32 {
+        let value = unsafe { tc37x_pac::SCU.ccucon1().read().clkselmcan().get() };
+        match value {
+            0 => todo!(),
+            default => todo!(),
+        };
+    }
 }
 
-impl CanModule0{
-
+impl CanModule0 {
     pub fn new() -> Self {
         let m = Self {
             inner: tc37x_pac::CAN0,
-        }; 
-        m.enable_module(); 
+        };
+        m.enable_module();
         m
-        
-
     }
-
 }
