@@ -68,7 +68,7 @@ pub(super) fn get_best_baud_rate(
         best_tbaud = min_tbaud;
     }
 
-    (best_tbaud, best_brp)
+    (best_tbaud as _, best_brp as _)
 }
 
 pub(super) fn get_best_sample_point(
@@ -125,7 +125,7 @@ pub(super) fn get_best_sample_point(
     (best_tseg1, best_tseg2)
 }
 
-pub(super) fn get_best_sjw(best_tbaud: i32, best_tseg2: i32, sync_jump_width: u16) -> i32 {
+pub(super) fn get_best_sjw(best_tbaud: u32, best_tseg2: u32, sync_jump_width: u16) -> u32 {
     let mut best_sjw = 0;
     let mut best_error = 10000.0;
 
