@@ -499,8 +499,6 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
 };
 
 pub(crate) fn get_mcan_frequency() -> f32 {
-    use tc37x_pac::SCU;
-
     let ccucon1 = unsafe { SCU.ccucon1().read() };
 
     const CLKSELMCAN_STOPPED: u8 = 0;
@@ -523,8 +521,6 @@ pub(crate) fn get_mcan_frequency() -> f32 {
 }
 
 fn get_source_frequency(source: u32) -> f32 {
-    use tc37x_pac::SCU;
-
     const CLKSEL_BACKUP: u8 = 0;
     const CLKSEL_PLL: u8 = 1;
 
@@ -549,11 +545,9 @@ fn get_source_frequency(source: u32) -> f32 {
 }
 
 fn get_evr_frequency() -> f32 {
-    const EVR_OSC_FREQUENCY: f32 = 100000000.0;
-    EVR_OSC_FREQUENCY
+    EVR_OSC_FREQUENCY as f32
 }
 
 pub fn get_osc0_frequency() -> f32 {
-    const XTAL_FREQUENCY: u32 = 20000000;
     XTAL_FREQUENCY as f32
 }
