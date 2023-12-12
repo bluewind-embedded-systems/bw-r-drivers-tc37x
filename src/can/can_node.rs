@@ -111,7 +111,7 @@ impl CanNode {
         sync_jump_width: u16,
     ) {
         /* Set values into node */
-        let (best_tbaud, best_brp) = get_best_baudrate::<
+        let (best_tbaud, best_brp) = get_best_baud_rate::<
             NBTP_NBRP_MSK,
             NBTP_NTSEG1_MSK,
             NBTP_NTSEG2_MSK,

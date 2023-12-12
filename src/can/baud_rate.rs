@@ -4,7 +4,7 @@ pub(super) const NBTP_NBRP_MSK: usize = 0x1ff;
 pub(super) const NBTP_NTSEG1_MSK: usize = 0xff;
 pub(super) const NBTP_NTSEG2_MSK: usize = 0x7f;
 
-pub(super) fn get_best_baudrate<
+pub(super) fn get_best_baud_rate<
     const BRP_MSK: usize,
     const TSEG1_MSK: usize,
     const TSEG2_MSK: usize,
@@ -144,7 +144,7 @@ mod test {
     fn test_get_best_baudrate() {
         let module_freq = 80000000.0;
         let baudrate = 500000;
-        let (best_tbaud, best_brp) = get_best_baudrate::<
+        let (best_tbaud, best_brp) = get_best_baud_rate::<
             NBTP_NBRP_MSK,
             NBTP_NTSEG1_MSK,
             NBTP_NTSEG2_MSK,
