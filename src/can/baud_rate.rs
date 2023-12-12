@@ -223,7 +223,7 @@ mod test {
     fn test_get_best_baudrate() {
         let module_freq = 80000000.0;
         let baudrate = 500000;
-        let (best_tbaud, best_brp) = get_best_baud_rate(
+        let best = get_best_baud_rate(
             NBTP_NBRP_MSK,
             NBTP_NTSEG1_MSK,
             NBTP_NTSEG2_MSK,
@@ -231,8 +231,8 @@ mod test {
             baudrate,
         );
 
-        assert_eq!(best_tbaud, 20);
-        assert_eq!(best_brp, 8);
+        assert_eq!(best.tbaud, 20);
+        assert_eq!(best.brp, 8);
     }
 
     #[test]
