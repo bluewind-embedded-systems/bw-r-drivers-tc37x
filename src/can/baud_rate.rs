@@ -1,3 +1,7 @@
+
+// Many integer and float conversions are done in this file, we want to get rid of them
+#![deny(clippy::as_conversions, clippy::float_cmp)]
+
 use crate::util::F32Abs;
 
 pub(super) const NBTP_NBRP_MSK: usize = 0x1ff;
