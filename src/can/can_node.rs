@@ -20,12 +20,18 @@ impl NodeId {
 pub struct CanNode {
     module: CanModule,
     node_id: NodeId,
+    inner: tc37x_pac::can0::Node,
 }
 
 impl CanNode {
     /// Only a module can create a node. This function is only accessible from within this crate.
     pub(crate) fn new(module: CanModule, node_id: NodeId) -> Self {
-        Self { module, node_id }
+        let inner = module.registers().node(node_id.0.into());
+        Self {
+            module,
+            node_id,
+            inner,
+        }
     }
 
     pub fn init(self, config: CanNodeConfig) -> Result<CanNode, ()> {
@@ -35,8 +41,6 @@ impl CanNode {
         wait_nop(10);
 
         self.enable_configuration_change();
-
-        // let module_freq = crate::scu::ccu::get_mcan_frequency();
 
         Ok(self)
     }
@@ -48,8 +52,7 @@ impl CanNode {
 
     #[inline]
     fn enable_configuration_change(&self) {
-        // TODO Select the right cccr register depending on node id
-        let cccr = self.module.registers().cccr0();
+        let cccr = self.inner.cccr();
 
         if unsafe { cccr.read() }.init().get() {
             unsafe { cccr.modify(|r| r.cce().set(false)) };
