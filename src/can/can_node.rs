@@ -178,15 +178,6 @@ impl CanNode {
             get_best_sample_point::<NBTP_NTSEG1_MSK, NBTP_NTSEG2_MSK>(best_tbaud, sample_point);
         let best_sjw = get_best_sjw(best_tbaud, best_tseg2, sync_jump_width);
 
-        #[cfg(feature = "log")]
-        defmt::debug!(
-            "brp:{}, sjw:{}, tseg1:{}, tseg2:{}",
-            (best_brp - 1) as u16,
-            (best_sjw - 1) as u8,
-            (best_tseg1 - 1) as u8,
-            (best_tseg2 - 1) as u8
-        );
-
         unsafe {
             self.inner.nbtp().modify(|r| {
                 r.nbrp()
@@ -235,9 +226,11 @@ impl CanNode {
             DBTP_DTSEG1_MSK,
             DBTP_DTSEG2_MSK,
         >(module_freq, baudrate);
+
         let (best_tseg1, best_tseg2) =
             get_best_sample_point::<DBTP_DTSEG1_MSK, DBTP_DTSEG2_MSK>(best_tbaud, sample_point);
         let best_sjw = get_best_sjw(best_tbaud, best_tseg2, sync_jump_width);
+
         unsafe {
             self.inner.dbtp().modify(|r| {
                 r.dbrp()
