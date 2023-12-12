@@ -520,7 +520,7 @@ pub(crate) fn get_mcan_frequency() -> u32 {
             }
         }
         CLKSELMCAN_USEOSCILLATOR => get_osc0_frequency(),
-        CLKSELMCAN_STOPPED | _ => 0,
+        CLKSELMCAN_STOPPED => 0,
     }
 }
 
