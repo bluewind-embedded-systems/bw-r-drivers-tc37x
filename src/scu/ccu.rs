@@ -21,10 +21,10 @@ pub enum InitError {
 }
 
 pub fn init(config: &Config) -> Result<(), InitError> {
-    configure_ccu_initial_step(&config).map_err(|_| InitError::ConfigureCCUInitialStep)?;
-    modulation_init(&config).map_err(|_| InitError::ModulationInit)?;
-    distribute_clock_inline(&config).map_err(|_| InitError::DistributeClockInline)?;
-    throttle_sys_pll_clock_inline(&config).map_err(|_| InitError::ThrottleSysPllClockInline)?;
+    configure_ccu_initial_step(config).map_err(|_| InitError::ConfigureCCUInitialStep)?;
+    modulation_init(config).map_err(|_| InitError::ModulationInit)?;
+    distribute_clock_inline(config).map_err(|_| InitError::DistributeClockInline)?;
+    throttle_sys_pll_clock_inline(config).map_err(|_| InitError::ThrottleSysPllClockInline)?;
     Ok(())
 }
 
