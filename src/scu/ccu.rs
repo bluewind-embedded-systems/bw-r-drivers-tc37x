@@ -535,10 +535,10 @@ fn get_source_frequency(source: u32) -> u32 {
             1 => {
                 let source_freq = get_per_pll_frequency1();
                 let ccucon1 = unsafe { SCU.ccucon1().read() };
-                if ccucon1.pll1divdis().get() == false {
-                    source_freq / 2
-                } else {
+                if ccucon1.pll1divdis().get() {
                     source_freq
+                } else {
+                    source_freq / 2
                 }
             }
             2 => get_per_pll_frequency2(),
