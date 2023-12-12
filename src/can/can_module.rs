@@ -67,6 +67,10 @@ impl CanModule {
         let mcr = mcr.ccce().set(false).ci().set(false);
         unsafe { self.inner.mcr().write(mcr) };
     }
+
+    pub(crate) fn registers(&self) -> &pac::can0::Can0 {
+        &self.inner
+    }
 }
 
 pub(crate) struct ClockSelect(u8);

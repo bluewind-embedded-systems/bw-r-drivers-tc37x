@@ -34,11 +34,34 @@ impl CanNode {
 
         wait_nop(10);
 
+        self.enable_configuration_change();
+
+        // let module_freq = crate::scu::ccu::get_mcan_frequency();
+
         Ok(self)
     }
 
     pub fn transmit(&self, _frame: &Frame) -> Result<(), ()> {
         // TODO
         Ok(())
+    }
+
+    #[inline]
+    fn enable_configuration_change(&self) {
+        // TODO Select the right cccr register depending on node id
+        let cccr = self.module.registers().cccr0();
+
+        if unsafe { cccr.read() }.init().get() {
+            unsafe { cccr.modify(|r| r.cce().set(false)) };
+            while unsafe { cccr.read() }.cce().get() {}
+
+            unsafe { cccr.modify(|r| r.init().set(false)) };
+            while unsafe { cccr.read() }.init().get() {}
+        }
+
+        unsafe { cccr.modify(|r| r.init().set(true)) };
+        while !unsafe { cccr.read() }.init().get() {}
+
+        unsafe { cccr.modify(|r| r.cce().set(true).init().set(true)) };
     }
 }
