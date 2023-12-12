@@ -117,12 +117,13 @@ impl CanNode {
     fn configure_baud_rate(&self, calculate_bit_timing_values: bool, baud_rate: &BaudRate) {
         if calculate_bit_timing_values {
             let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
-            self.set_bit_timing(
+            let timing = calculate_bit_timing(
                 module_freq,
                 baud_rate.baud_rate,
                 baud_rate.sample_point,
                 baud_rate.sync_jump_with,
             );
+            self.set_bit_timing(timing);
         } else {
             self.set_bit_timing_values(
                 baud_rate.sync_jump_with as u8,
@@ -160,15 +161,7 @@ impl CanNode {
         }
     }
 
-    fn set_bit_timing(
-        &self,
-        module_freq: f32,
-        baudrate: u32,
-        sample_point: u16,
-        sync_jump_width: u16,
-    ) {
-        let timing = calculate_bit_timing(module_freq, baudrate, sample_point, sync_jump_width);
-
+    fn set_bit_timing(&self, timing: BitTiming) {
         unsafe {
             self.inner.nbtp().modify(|r| {
                 r.nbrp()
@@ -294,7 +287,7 @@ fn calculate_fast_bit_timing(
     baud_rate: u32,
     sample_point: u16,
     sync_jump_width: u16,
-) -> FastBitTiming {
+) -> BitTiming {
     /* Set values into node */
     let (best_tbaud, best_brp) = get_best_baud_rate(
         DBTP_DBRP_MSK,
@@ -308,17 +301,10 @@ fn calculate_fast_bit_timing(
         get_best_sample_point(DBTP_DTSEG1_MSK, DBTP_DTSEG2_MSK, best_tbaud, sample_point);
     let best_sjw = get_best_sjw(best_tbaud as _, best_tseg2 as _, sync_jump_width);
 
-    FastBitTiming {
+    BitTiming {
         brp: best_brp as u32 - 1,
         sjw: best_sjw - 1,
         tseg1: best_tseg1 as u32 - 1,
         tseg2: best_tseg2 as u32 - 1,
     }
-}
-
-struct FastBitTiming {
-    brp: u32,
-    sjw: u32,
-    tseg1: u32,
-    tseg2: u32,
 }
