@@ -1,4 +1,3 @@
-
 // Many integer and float conversions are done in this file, we want to get rid of them
 #![deny(clippy::as_conversions, clippy::float_cmp)]
 
@@ -12,13 +11,18 @@ pub(super) const DBTP_DBRP_MSK: usize = 0x1f;
 pub(super) const DBTP_DTSEG1_MSK: usize = 0x1f;
 pub(super) const DBTP_DTSEG2_MSK: usize = 0xf;
 
+pub(super) struct BestBaudRate {
+    pub(super) tbaud: i32,
+    pub(super) brp: i32,
+}
+
 pub(super) fn get_best_baud_rate(
     brp_msk: usize,
     tseg1_msk: usize,
     tseg2_msk: usize,
     module_freq: f32,
     baudrate: u32,
-) -> (i32, i32) {
+) -> BestBaudRate {
     /* search for best baudrate */
 
     let max_brp = brp_msk as i32 + 1;
@@ -72,7 +76,10 @@ pub(super) fn get_best_baud_rate(
         best_tbaud = min_tbaud;
     }
 
-    (best_tbaud as _, best_brp as _)
+    BestBaudRate {
+        tbaud: best_tbaud,
+        brp: best_brp,
+    }
 }
 
 pub(super) fn get_best_sample_point(
@@ -159,7 +166,7 @@ pub(super) fn calculate_bit_timing(
     sjw: u16,
 ) -> BitTiming {
     /* Set values into node */
-    let (best_tbaud, best_brp) = get_best_baud_rate(
+    let best = get_best_baud_rate(
         NBTP_NBRP_MSK,
         NBTP_NTSEG1_MSK,
         NBTP_NTSEG2_MSK,
@@ -168,12 +175,12 @@ pub(super) fn calculate_bit_timing(
     );
 
     let (best_tseg1, best_tseg2) =
-        get_best_sample_point(NBTP_NTSEG1_MSK, NBTP_NTSEG2_MSK, best_tbaud, sample_point);
-    let best_sjw = get_best_sjw(best_tbaud as _, best_tseg2 as _, sjw);
+        get_best_sample_point(NBTP_NTSEG1_MSK, NBTP_NTSEG2_MSK, best.tbaud, sample_point);
+    let best_sjw = get_best_sjw(best.tbaud as _, best_tseg2 as _, sjw);
 
     // TODO check this smell, why 1 is subtracted from these values?
     BitTiming {
-        brp: best_brp as u16 - 1,
+        brp: best.brp as u16 - 1,
         sjw: best_sjw as u8 - 1,
         tseg1: best_tseg1 as u8 - 1,
         tseg2: best_tseg2 as u8 - 1,
@@ -187,7 +194,7 @@ pub(super) fn calculate_fast_bit_timing(
     sjw: u16,
 ) -> BitTiming {
     /* Set values into node */
-    let (best_tbaud, best_brp) = get_best_baud_rate(
+    let best = get_best_baud_rate(
         DBTP_DBRP_MSK,
         DBTP_DTSEG1_MSK,
         DBTP_DTSEG2_MSK,
@@ -196,12 +203,12 @@ pub(super) fn calculate_fast_bit_timing(
     );
 
     let (best_tseg1, best_tseg2) =
-        get_best_sample_point(DBTP_DTSEG1_MSK, DBTP_DTSEG2_MSK, best_tbaud, sample_point);
-    let best_sjw = get_best_sjw(best_tbaud as _, best_tseg2 as _, sjw);
+        get_best_sample_point(DBTP_DTSEG1_MSK, DBTP_DTSEG2_MSK, best.tbaud, sample_point);
+    let best_sjw = get_best_sjw(best.tbaud as _, best_tseg2 as _, sjw);
 
     // TODO check this smell, why 1 is subtracted from these values?
     BitTiming {
-        brp: best_brp as u16 - 1,
+        brp: best.brp as u16 - 1,
         sjw: best_sjw as u8 - 1,
         tseg1: best_tseg1 as u8 - 1,
         tseg2: best_tseg2 as u8 - 1,
