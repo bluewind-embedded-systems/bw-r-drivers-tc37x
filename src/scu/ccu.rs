@@ -504,7 +504,6 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
 pub(crate) fn get_mcan_frequency() -> u32 {
     let ccucon1 = unsafe { SCU.ccucon1().read() };
 
-    const CLKSELMCAN_STOPPED: u8 = 0;
     const CLKSELMCAN_USEMCANI: u8 = 1;
     const CLKSELMCAN_USEOSCILLATOR: u8 = 2;
     const MCANDIV_STOPPED: u8 = 0;
