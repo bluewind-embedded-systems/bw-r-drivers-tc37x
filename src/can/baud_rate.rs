@@ -4,6 +4,10 @@ pub(super) const NBTP_NBRP_MSK: usize = 0x1ff;
 pub(super) const NBTP_NTSEG1_MSK: usize = 0xff;
 pub(super) const NBTP_NTSEG2_MSK: usize = 0x7f;
 
+pub(super) const DBTP_DBRP_MSK: usize = 0x1f;
+pub(super) const DBTP_DTSEG1_MSK: usize = 0x1f;
+pub(super) const DBTP_DTSEG2_MSK: usize = 0xf;
+
 pub(super) fn get_best_baud_rate<
     const BRP_MSK: usize,
     const TSEG1_MSK: usize,
