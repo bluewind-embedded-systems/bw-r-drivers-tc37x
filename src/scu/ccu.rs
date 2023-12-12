@@ -263,18 +263,19 @@ pub fn wait_cond<const C: usize>(cond: impl Fn() -> bool) -> Result<(), ()> {
 }
 
 // PLL management
-const EVR_OSC_FREQUENCY: f32 = 100000000.0;
-const XTAL_FREQUENCY: u32 = 20000000;
-const SYSCLK_FREQUENCY: u32 = 20000000;
+const EVR_OSC_FREQUENCY: u32 = 100_000_000;
+const XTAL_FREQUENCY: u32 = 20_000_000;
+const SYSCLK_FREQUENCY: u32 = 20_000_000;
 
 #[inline]
 pub fn get_osc_frequency() -> f32 {
-    match unsafe { SCU.syspllcon0().read() }.insel().get() {
+    let f = match unsafe { SCU.syspllcon0().read() }.insel().get() {
         0 => EVR_OSC_FREQUENCY,
-        1 => XTAL_FREQUENCY as f32,
-        2 => SYSCLK_FREQUENCY as f32,
-        _ => 0.0,
-    }
+        1 => XTAL_FREQUENCY,
+        2 => SYSCLK_FREQUENCY,
+        _ => 0,
+    };
+    f as f32
 }
 
 pub fn get_pll_frequency() -> f32 {
@@ -496,3 +497,63 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
         amp: ModulationAmplitude::_0p5,
     },
 };
+
+pub(crate) fn get_mcan_frequency() -> f32 {
+    use tc37x_pac::SCU;
+
+    let ccucon1 = unsafe { SCU.ccucon1().read() };
+
+    const CLKSELMCAN_STOPPED: u8 = 0;
+    const CLKSELMCAN_USEMCANI: u8 = 1;
+    const CLKSELMCAN_USEOSCILLATOR: u8 = 2;
+    const MCANDIV_STOPPED: u8 = 0;
+
+    match ccucon1.clkselmcan().get() {
+        CLKSELMCAN_USEMCANI => {
+            let source = get_source_frequency(1);
+            if ccucon1.mcandiv().get() != MCANDIV_STOPPED {
+                source / ccucon1.mcandiv().get() as f32
+            } else {
+                source
+            }
+        }
+        CLKSELMCAN_USEOSCILLATOR => get_osc0_frequency(),
+        CLKSELMCAN_STOPPED | _ => 0.0,
+    }
+}
+
+fn get_source_frequency(source: u32) -> f32 {
+    use tc37x_pac::SCU;
+
+    const CLKSEL_BACKUP: u8 = 0;
+    const CLKSEL_PLL: u8 = 1;
+
+    match unsafe { SCU.ccucon0().read() }.clksel().get() {
+        CLKSEL_BACKUP => get_evr_frequency(),
+        CLKSEL_PLL => match source {
+            0 => get_pll_frequency(),
+            1 => {
+                let source_freq = get_per_pll_frequency1();
+                let ccucon1 = unsafe { SCU.ccucon1().read() };
+                if ccucon1.pll1divdis().get() == false {
+                    source_freq / 2.0
+                } else {
+                    source_freq
+                }
+            }
+            2 => get_per_pll_frequency2(),
+            _ => unreachable!(),
+        },
+        _ => 0.0,
+    }
+}
+
+fn get_evr_frequency() -> f32 {
+    const EVR_OSC_FREQUENCY: f32 = 100000000.0;
+    EVR_OSC_FREQUENCY
+}
+
+pub fn get_osc0_frequency() -> f32 {
+    const XTAL_FREQUENCY: u32 = 20000000;
+    XTAL_FREQUENCY as f32
+}

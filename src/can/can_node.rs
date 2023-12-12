@@ -42,6 +42,8 @@ impl CanNode {
 
         self.enable_configuration_change();
 
+        let module_freq = crate::scu::ccu::get_mcan_frequency();
+
         Ok(self)
     }
 
