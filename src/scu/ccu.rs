@@ -278,32 +278,35 @@ pub fn get_osc_frequency() -> f32 {
     f as f32
 }
 
-pub fn get_pll_frequency() -> f32 {
+pub fn get_pll_frequency() -> u32 {
     let osc_freq = get_osc_frequency();
     let syspllcon0 = unsafe { SCU.syspllcon0().read() };
     let syspllcon1 = unsafe { SCU.syspllcon1().read() };
-    (osc_freq * (syspllcon0.ndiv().get() + 1) as f32)
-        / ((syspllcon1.k2div().get() + 1) * (syspllcon0.pdiv().get() + 1)) as f32
+    let f = (osc_freq * (syspllcon0.ndiv().get() + 1) as f32)
+        / ((syspllcon1.k2div().get() + 1) * (syspllcon0.pdiv().get() + 1)) as f32;
+    f as u32
 }
 
-pub fn get_per_pll_frequency1() -> f32 {
+pub fn get_per_pll_frequency1() -> u32 {
     let osc_freq = get_osc_frequency();
     let perpllcon0 = unsafe { SCU.perpllcon0().read() };
     let perpllcon1 = unsafe { SCU.perpllcon1().read() };
-    (osc_freq * (perpllcon0.ndiv().get() + 1) as f32)
-        / ((perpllcon0.pdiv().get() + 1) * (perpllcon1.k2div().get() + 1)) as f32
+    let f = (osc_freq * (perpllcon0.ndiv().get() + 1) as f32)
+        / ((perpllcon0.pdiv().get() + 1) * (perpllcon1.k2div().get() + 1)) as f32;
+    f as u32
 }
 
-pub fn get_per_pll_frequency2() -> f32 {
+pub fn get_per_pll_frequency2() -> u32 {
     let osc_freq = get_osc_frequency();
     let perpllcon0 = unsafe { SCU.perpllcon0().read() };
     let perpllcon1 = unsafe { SCU.perpllcon1().read() };
 
     let multiplier = if !perpllcon0.divby().get() { 1.6 } else { 2.0 };
-    (osc_freq * (perpllcon0.ndiv().get() + 1) as f32)
+    let f = (osc_freq * (perpllcon0.ndiv().get() + 1) as f32)
         / ((perpllcon0.pdiv().get() + 1) as f32
             * (perpllcon1.k2div().get() + 1) as f32
-            * multiplier)
+            * multiplier);
+    f as u32
 }
 
 pub struct SysPllConfig {
@@ -498,7 +501,7 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
     },
 };
 
-pub(crate) fn get_mcan_frequency() -> f32 {
+pub(crate) fn get_mcan_frequency() -> u32 {
     let ccucon1 = unsafe { SCU.ccucon1().read() };
 
     const CLKSELMCAN_STOPPED: u8 = 0;
@@ -510,17 +513,18 @@ pub(crate) fn get_mcan_frequency() -> f32 {
         CLKSELMCAN_USEMCANI => {
             let source = get_source_frequency(1);
             if ccucon1.mcandiv().get() != MCANDIV_STOPPED {
-                source / ccucon1.mcandiv().get() as f32
+                let div: u32 = ccucon1.mcandiv().get().into();
+                source / div
             } else {
                 source
             }
         }
         CLKSELMCAN_USEOSCILLATOR => get_osc0_frequency(),
-        CLKSELMCAN_STOPPED | _ => 0.0,
+        CLKSELMCAN_STOPPED | _ => 0,
     }
 }
 
-fn get_source_frequency(source: u32) -> f32 {
+fn get_source_frequency(source: u32) -> u32 {
     const CLKSEL_BACKUP: u8 = 0;
     const CLKSEL_PLL: u8 = 1;
 
@@ -532,7 +536,7 @@ fn get_source_frequency(source: u32) -> f32 {
                 let source_freq = get_per_pll_frequency1();
                 let ccucon1 = unsafe { SCU.ccucon1().read() };
                 if ccucon1.pll1divdis().get() == false {
-                    source_freq / 2.0
+                    source_freq / 2
                 } else {
                     source_freq
                 }
@@ -540,14 +544,14 @@ fn get_source_frequency(source: u32) -> f32 {
             2 => get_per_pll_frequency2(),
             _ => unreachable!(),
         },
-        _ => 0.0,
+        _ => 0,
     }
 }
 
-fn get_evr_frequency() -> f32 {
-    EVR_OSC_FREQUENCY as f32
+fn get_evr_frequency() -> u32 {
+    EVR_OSC_FREQUENCY
 }
 
-pub fn get_osc0_frequency() -> f32 {
-    XTAL_FREQUENCY as f32
+pub fn get_osc0_frequency() -> u32 {
+    XTAL_FREQUENCY
 }
