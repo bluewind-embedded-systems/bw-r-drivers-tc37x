@@ -167,29 +167,18 @@ impl CanNode {
         sample_point: u16,
         sync_jump_width: u16,
     ) {
-        /* Set values into node */
-        let (best_tbaud, best_brp) = get_best_baud_rate(
-            NBTP_NBRP_MSK,
-            NBTP_NTSEG1_MSK,
-            NBTP_NTSEG2_MSK,
-            module_freq,
-            baudrate,
-        );
-
-        let (best_tseg1, best_tseg2) =
-            get_best_sample_point(NBTP_NTSEG1_MSK, NBTP_NTSEG2_MSK, best_tbaud, sample_point);
-        let best_sjw = get_best_sjw(best_tbaud as _, best_tseg2 as _, sync_jump_width);
+        let timing = calculate_bit_timing(module_freq, baudrate, sample_point, sync_jump_width);
 
         unsafe {
             self.inner.nbtp().modify(|r| {
                 r.nbrp()
-                    .set((best_brp - 1) as _)
+                    .set(timing.brp as _)
                     .nsjw()
-                    .set((best_sjw - 1) as _)
+                    .set(timing.sjw as _)
                     .ntseg1()
-                    .set((best_tseg1 - 1) as _)
+                    .set(timing.tseg1 as _)
                     .ntseg2()
-                    .set((best_tseg2 - 1) as _)
+                    .set(timing.tseg2 as _)
             })
         }
     }
@@ -266,9 +255,43 @@ impl CanNode {
     }
 }
 
+fn calculate_bit_timing(
+    module_freq: f32,
+    baud_rate: u32,
+    sample_point: u16,
+    sync_jump_width: u16,
+) -> BitTiming {
+    /* Set values into node */
+    let (best_tbaud, best_brp) = get_best_baud_rate(
+        NBTP_NBRP_MSK,
+        NBTP_NTSEG1_MSK,
+        NBTP_NTSEG2_MSK,
+        module_freq,
+        baud_rate,
+    );
+
+    let (best_tseg1, best_tseg2) =
+        get_best_sample_point(NBTP_NTSEG1_MSK, NBTP_NTSEG2_MSK, best_tbaud, sample_point);
+    let best_sjw = get_best_sjw(best_tbaud as _, best_tseg2 as _, sync_jump_width);
+
+    BitTiming {
+        brp: best_brp as u32 - 1,
+        sjw: best_sjw - 1,
+        tseg1: best_tseg1 as u32 - 1,
+        tseg2: best_tseg2 as u32 - 1,
+    }
+}
+
+struct BitTiming {
+    brp: u32,
+    sjw: u32,
+    tseg1: u32,
+    tseg2: u32,
+}
+
 fn calculate_fast_bit_timing(
     module_freq: f32,
-    baudrate: u32,
+    baud_rate: u32,
     sample_point: u16,
     sync_jump_width: u16,
 ) -> FastBitTiming {
@@ -278,7 +301,7 @@ fn calculate_fast_bit_timing(
         DBTP_DTSEG1_MSK,
         DBTP_DTSEG2_MSK,
         module_freq,
-        baudrate,
+        baud_rate,
     );
 
     let (best_tseg1, best_tseg2) =
