@@ -1,3 +1,4 @@
+mod baud_rate;
 mod can_module;
 mod can_node;
 mod frame;
