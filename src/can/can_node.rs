@@ -168,14 +168,16 @@ impl CanNode {
         sync_jump_width: u16,
     ) {
         /* Set values into node */
-        let (best_tbaud, best_brp) = get_best_baud_rate::<
+        let (best_tbaud, best_brp) = get_best_baud_rate(
             NBTP_NBRP_MSK,
             NBTP_NTSEG1_MSK,
             NBTP_NTSEG2_MSK,
-        >(module_freq, baudrate);
+            module_freq,
+            baudrate,
+        );
 
         let (best_tseg1, best_tseg2) =
-            get_best_sample_point::<NBTP_NTSEG1_MSK, NBTP_NTSEG2_MSK>(best_tbaud, sample_point);
+            get_best_sample_point(NBTP_NTSEG1_MSK, NBTP_NTSEG2_MSK, best_tbaud, sample_point);
         let best_sjw = get_best_sjw(best_tbaud, best_tseg2, sync_jump_width);
 
         unsafe {
@@ -221,14 +223,16 @@ impl CanNode {
         sync_jump_width: u16,
     ) {
         /* Set values into node */
-        let (best_tbaud, best_brp) = get_best_baud_rate::<
+        let (best_tbaud, best_brp) = get_best_baud_rate(
             DBTP_DBRP_MSK,
             DBTP_DTSEG1_MSK,
             DBTP_DTSEG2_MSK,
-        >(module_freq, baudrate);
+            module_freq,
+            baudrate,
+        );
 
         let (best_tseg1, best_tseg2) =
-            get_best_sample_point::<DBTP_DTSEG1_MSK, DBTP_DTSEG2_MSK>(best_tbaud, sample_point);
+            get_best_sample_point(DBTP_DTSEG1_MSK, DBTP_DTSEG2_MSK, best_tbaud, sample_point);
         let best_sjw = get_best_sjw(best_tbaud, best_tseg2, sync_jump_width);
 
         unsafe {

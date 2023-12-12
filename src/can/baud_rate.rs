@@ -8,20 +8,19 @@ pub(super) const DBTP_DBRP_MSK: usize = 0x1f;
 pub(super) const DBTP_DTSEG1_MSK: usize = 0x1f;
 pub(super) const DBTP_DTSEG2_MSK: usize = 0xf;
 
-pub(super) fn get_best_baud_rate<
-    const BRP_MSK: usize,
-    const TSEG1_MSK: usize,
-    const TSEG2_MSK: usize,
->(
+pub(super) fn get_best_baud_rate(
+    brp_msk: usize,
+    tseg1_msk: usize,
+    tseg2_msk: usize,
     module_freq: f32,
     baudrate: u32,
 ) -> (i32, i32) {
     /* search for best baudrate */
 
-    let max_brp = BRP_MSK as i32 + 1;
+    let max_brp = brp_msk as i32 + 1;
     let min_brp = 1;
 
-    let max_tbaud = (TSEG1_MSK as i32 + 1) + (TSEG2_MSK as i32 + 1) + 1;
+    let max_tbaud = (tseg1_msk as i32 + 1) + (tseg2_msk as i32 + 1) + 1;
     let min_tbaud = 8;
 
     let mut best_error = baudrate as f32;
@@ -72,16 +71,18 @@ pub(super) fn get_best_baud_rate<
     (best_tbaud, best_brp)
 }
 
-pub(super) fn get_best_sample_point<const TSEG1_MSK: usize, const TSEG2_MSK: usize>(
+pub(super) fn get_best_sample_point(
+    tseg1_msk: usize,
+    tseg2_msk: usize,
     best_tbaud: i32,
     sample_point: u16,
 ) -> (i32, i32) {
     /* search for best sample point */
 
     let mut best_error = sample_point as f32 * 0.25; /* 25% tolerance in sample point as max error */
-    let max_tseg1 = TSEG1_MSK as i32 + 1;
+    let max_tseg1 = tseg1_msk as i32 + 1;
     let min_tseg1 = 3;
-    let max_tseg2 = TSEG2_MSK as i32 + 1;
+    let max_tseg2 = tseg2_msk as i32 + 1;
     let min_tseg2 = 2;
 
     let max_tseg1 = if best_tbaud < max_tseg1 {
@@ -148,11 +149,13 @@ mod test {
     fn test_get_best_baudrate() {
         let module_freq = 80000000.0;
         let baudrate = 500000;
-        let (best_tbaud, best_brp) = get_best_baud_rate::<
+        let (best_tbaud, best_brp) = get_best_baud_rate(
             NBTP_NBRP_MSK,
             NBTP_NTSEG1_MSK,
             NBTP_NTSEG2_MSK,
-        >(module_freq, baudrate);
+            module_freq,
+            baudrate,
+        );
 
         assert_eq!(best_tbaud, 20);
         assert_eq!(best_brp, 8);
@@ -164,7 +167,7 @@ mod test {
         let best_tbaud = 20;
 
         let (best_tseg1, best_tseg2) =
-            get_best_sample_point::<NBTP_NTSEG1_MSK, NBTP_NTSEG2_MSK>(best_tbaud, sample_point);
+            get_best_sample_point(NBTP_NTSEG1_MSK, NBTP_NTSEG2_MSK, best_tbaud, sample_point);
 
         assert_eq!(best_tseg1, 15);
         assert_eq!(best_tseg2, 4);
