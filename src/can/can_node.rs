@@ -165,13 +165,13 @@ impl CanNode {
         unsafe {
             self.inner.nbtp().modify(|r| {
                 r.nbrp()
-                    .set(timing.brp as _)
+                    .set(timing.brp)
                     .nsjw()
-                    .set(timing.sjw as _)
+                    .set(timing.sjw)
                     .ntseg1()
-                    .set(timing.tseg1 as _)
+                    .set(timing.tseg1)
                     .ntseg2()
-                    .set(timing.tseg2 as _)
+                    .set(timing.tseg2)
             })
         }
     }
@@ -197,13 +197,13 @@ impl CanNode {
         unsafe {
             self.inner.dbtp().modify(|r| {
                 r.dbrp()
-                    .set(timing.brp as _)
+                    .set(timing.brp.try_into().unwrap())
                     .dsjw()
-                    .set(timing.sjw as _)
+                    .set(timing.sjw)
                     .dtseg1()
-                    .set(timing.tseg1 as _)
+                    .set(timing.tseg1)
                     .dtseg2()
-                    .set(timing.tseg2 as _)
+                    .set(timing.tseg2)
             })
         }
     }
@@ -232,68 +232,5 @@ impl CanNode {
     pub fn set_transceiver_delay_compensation_offset(&self, delay: u8) {
         unsafe { self.inner.dbtp().modify(|r| r.tdc().set(true)) };
         unsafe { self.inner.tdcr().modify(|r| r.tdco().set(delay)) };
-    }
-}
-
-fn calculate_bit_timing(
-    module_freq: f32,
-    baud_rate: u32,
-    sample_point: u16,
-    sjw: u16,
-) -> BitTiming {
-    /* Set values into node */
-    let (best_tbaud, best_brp) = get_best_baud_rate(
-        NBTP_NBRP_MSK,
-        NBTP_NTSEG1_MSK,
-        NBTP_NTSEG2_MSK,
-        module_freq,
-        baud_rate,
-    );
-
-    let (best_tseg1, best_tseg2) =
-        get_best_sample_point(NBTP_NTSEG1_MSK, NBTP_NTSEG2_MSK, best_tbaud, sample_point);
-    let best_sjw = get_best_sjw(best_tbaud as _, best_tseg2 as _, sjw);
-
-    // TODO check this smell, why 1 is subtracted from these values?
-    BitTiming {
-        brp: best_brp as u32 - 1,
-        sjw: best_sjw - 1,
-        tseg1: best_tseg1 as u32 - 1,
-        tseg2: best_tseg2 as u32 - 1,
-    }
-}
-
-struct BitTiming {
-    brp: u32,
-    sjw: u32,
-    tseg1: u32,
-    tseg2: u32,
-}
-
-fn calculate_fast_bit_timing(
-    module_freq: f32,
-    baud_rate: u32,
-    sample_point: u16,
-    sjw: u16,
-) -> BitTiming {
-    /* Set values into node */
-    let (best_tbaud, best_brp) = get_best_baud_rate(
-        DBTP_DBRP_MSK,
-        DBTP_DTSEG1_MSK,
-        DBTP_DTSEG2_MSK,
-        module_freq,
-        baud_rate,
-    );
-
-    let (best_tseg1, best_tseg2) =
-        get_best_sample_point(DBTP_DTSEG1_MSK, DBTP_DTSEG2_MSK, best_tbaud, sample_point);
-    let best_sjw = get_best_sjw(best_tbaud as _, best_tseg2 as _, sjw);
-
-    // TODO check this smell, why 1 is subtracted from these values?
-    BitTiming {
-        brp: best_brp as u32 - 1,
-        sjw: best_sjw - 1,
-        tseg1: best_tseg1 as u32 - 1,
-        tseg2: best_tseg2 as u32 - 1,
     }
 }

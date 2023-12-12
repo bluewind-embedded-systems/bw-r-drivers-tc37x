@@ -141,6 +141,69 @@ pub(super) fn get_best_sjw(best_tbaud: u32, best_tseg2: u32, sync_jump_width: u1
     best_sjw
 }
 
+pub(super) struct BitTiming {
+    pub(super) brp: u16,
+    pub(super) sjw: u8,
+    pub(super) tseg1: u8,
+    pub(super) tseg2: u8,
+}
+
+pub(super) fn calculate_bit_timing(
+    module_freq: f32,
+    baud_rate: u32,
+    sample_point: u16,
+    sjw: u16,
+) -> BitTiming {
+    /* Set values into node */
+    let (best_tbaud, best_brp) = get_best_baud_rate(
+        NBTP_NBRP_MSK,
+        NBTP_NTSEG1_MSK,
+        NBTP_NTSEG2_MSK,
+        module_freq,
+        baud_rate,
+    );
+
+    let (best_tseg1, best_tseg2) =
+        get_best_sample_point(NBTP_NTSEG1_MSK, NBTP_NTSEG2_MSK, best_tbaud, sample_point);
+    let best_sjw = get_best_sjw(best_tbaud as _, best_tseg2 as _, sjw);
+
+    // TODO check this smell, why 1 is subtracted from these values?
+    BitTiming {
+        brp: best_brp as u16 - 1,
+        sjw: best_sjw as u8 - 1,
+        tseg1: best_tseg1 as u8 - 1,
+        tseg2: best_tseg2 as u8 - 1,
+    }
+}
+
+pub(super) fn calculate_fast_bit_timing(
+    module_freq: f32,
+    baud_rate: u32,
+    sample_point: u16,
+    sjw: u16,
+) -> BitTiming {
+    /* Set values into node */
+    let (best_tbaud, best_brp) = get_best_baud_rate(
+        DBTP_DBRP_MSK,
+        DBTP_DTSEG1_MSK,
+        DBTP_DTSEG2_MSK,
+        module_freq,
+        baud_rate,
+    );
+
+    let (best_tseg1, best_tseg2) =
+        get_best_sample_point(DBTP_DTSEG1_MSK, DBTP_DTSEG2_MSK, best_tbaud, sample_point);
+    let best_sjw = get_best_sjw(best_tbaud as _, best_tseg2 as _, sjw);
+
+    // TODO check this smell, why 1 is subtracted from these values?
+    BitTiming {
+        brp: best_brp as u16 - 1,
+        sjw: best_sjw as u8 - 1,
+        tseg1: best_tseg1 as u8 - 1,
+        tseg2: best_tseg2 as u8 - 1,
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
