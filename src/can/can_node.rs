@@ -4,6 +4,9 @@ use super::frame::Frame;
 use super::CanModule;
 use crate::util::wait_nop;
 
+
+
+
 // TODO Default values are not valid
 #[derive(Default)]
 pub struct BaudRate {
@@ -28,14 +31,14 @@ pub struct FastBaudRate {
 }
 
 #[derive(PartialEq, Debug, Default)]
-pub enum FrameMode {
+pub enum FrameMode { // TODO refactor (annabo)
     #[default]
     Standard,
     FdLong,
     FdLongAndFast,
 }
 #[derive(PartialEq, Debug, Default)]
-pub enum FrameType
+pub enum FrameType // TODO refactor (annabo)
 {
     #[default]
     Receive,             
@@ -45,6 +48,29 @@ pub enum FrameType
     RemoteAnswer,
 }
 
+#[derive(Clone, Copy, Default)]
+pub enum TxMode {
+    #[default]
+    DedicatedBuffers,
+    Fifo,
+    Queue,
+    SharedFifo,
+    SharedQueue,
+}
+
+#[derive(Clone, Copy, Default)]
+pub enum RxMode {
+
+    #[default]
+    DedicatedBuffers,
+    Fifo0,
+    Fifo1,
+    SharedFifo0,
+    SharedFifo1,
+    SharedAll,
+}
+
+
 #[derive(Default)]
 pub struct CanNodeConfig {
     pub clock_source: ClockSource,
@@ -53,6 +79,10 @@ pub struct CanNodeConfig {
     pub fast_baud_rate: FastBaudRate,
     pub frame_mode: FrameMode,
     pub frame_type: FrameType,
+    pub tx_mode: TxMode, 
+    pub rx_mode: RxMode,
+    pub tx_buffer_data_field_size:u8, //(TODO) limit possibile values to valid ones 
+    pub message_ram_tx_buffers_start_address:u16,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -100,13 +130,57 @@ impl CanNode {
         }
 
         /* transmit frame configuration */
-        if(config.frame_type == FrameType::Transmit ||
-            config.frame_type == FrameType::TransmitAndReceive || 
-            config.frame_type == FrameType::RemoteRequest || 
-            config.frame_type == FrameType::RemoteAnswer) 
-            {
+        if let FrameType::Transmit
+        | FrameType::TransmitAndReceive
+        | FrameType::RemoteRequest
+        | FrameType::RemoteAnswer = config.frame_type
+        {
+            #[cfg(feature = "log")]
+            defmt::debug!("transmit frame type configuration");
+            self.set_tx_buffer_data_field_size(config.tx_buffer_data_field_size);
+            self.set_tx_buffer_start_address(config.message_ram_tx_buffers_start_address);
 
-            }
+            let mode = config.tx_mode;
+            // match mode {
+            //     TxMode::DedicatedBuffers | TxMode::SharedFifo | TxMode::SharedQueue => {
+            //         set_dedicated_tx_buffers_number(
+            //             self.tx_config.dedicated_tx_buffers_number,
+            //         );
+            //         if let TxMode::SharedFifo | TxMode::SharedQueue = mode {
+            //             if let TxMode::SharedFifo = mode {
+            //                 set_transmit_fifo_queue_mode(TxMode::Fifo);
+            //             }
+            //             if let TxMode::SharedQueue = mode {
+            //                 set_transmit_fifo_queue_mode(TxMode::Queue);
+            //             }
+            //             set_transmit_fifo_queue_size(self.tx_config.fifo_queue_size);
+            //         }
+            //         for id in 0..self.tx_config.dedicated_tx_buffers_number
+            //             + self.tx_config.fifo_queue_size
+            //         {
+            //             enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+            //         }
+            //     }
+            //     TxMode::Fifo | TxMode::Queue => {
+            //         set_transmit_fifo_queue_mode(mode);
+            //         set_transmit_fifo_queue_size(self.tx_config.fifo_queue_size);
+            //         for id in 0..self.tx_config.fifo_queue_size {
+            //             enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+            //         }
+            //     }
+            // }
+
+            // if (1..=32).contains(&self.tx_config.event_fifo_size) {
+            //     set_tx_event_fifo_start_address(self.message_ram.tx_event_fifo_start_address);
+            //     set_tx_event_fifo_size(self.tx_config.event_fifo_size);
+            // } else {
+            //     #[cfg(feature = "log")]
+            //     defmt::assert!(self.tx_config.event_fifo_size <= 32)
+            // }
+
+            // set_frame_mode(self.frame.mode);
+        }
+
         /* recieve frame configuration */
         //if(){}
 
@@ -150,7 +224,7 @@ impl CanNode {
 
         unsafe { cccr.modify(|r| r.cce().set(true).init().set(true)) };
     }
-    
+
     #[inline]
     pub fn disable_configuration_change(&self) {
         let cccr = tc37x_pac::CAN0.cccr0();
@@ -285,9 +359,6 @@ impl CanNode {
         unsafe { tc37x_pac::CAN0.tdcr0().modify(|r| r.tdco().set(delay)) };
     }
 
-    fn  set_tx_buffer_data_field_size(){
-        todo!();
-    }
 }
 
 
@@ -499,14 +570,14 @@ impl CanNode {
     //     }
     // }
 
-    // #[inline]
-    // fn set_tx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
-    //     unsafe {
-    //         tc37x_pac::CAN0
-    //             .txesc0()
-    //             .modify(|r| r.tbds().set(data_field_size.into()))
-    //     };
-    // }
+    #[inline]
+    fn set_tx_buffer_data_field_size(&self, data_field_size: u8) {
+        unsafe {
+            tc37x_pac::CAN0
+                .txesc0()
+                .modify(|r| r.tbds().set(data_field_size))
+        };
+    }
 
     #[inline]
     fn set_tx_buffer_start_address(&self, address: u16) {
@@ -544,7 +615,7 @@ impl CanNode {
     // }
 
     // fn get_tx_buffer_data_field_size(&self) -> u8 {
-    //     let size_code = unsafe { tc37x_pac::CAN0.txesc0().read() }.tbds().get().0;
+    //     let size_code = unsafe { tc37x_pac::CAN0.txesc0().read() }.tbds().get();
 
     //     if size_code < DataFieldSize::_32.into() {
     //         (size_code + 2) * 4
