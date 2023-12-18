@@ -30,7 +30,7 @@ pub struct FastBaudRate {
     pub transceiver_delay_offset: u8,
 }
 
-#[derive(PartialEq, Debug, Default)]
+#[derive(PartialEq, Debug, Default, Copy, Clone)]
 pub enum FrameMode {
     // TODO refactor (annabo)
     #[default]
@@ -94,23 +94,32 @@ impl NodeId {
     }
 }
 
-pub struct CanNode {
+pub struct NewCanNode {
     module: CanModule,
     node_id: NodeId,
     inner: tc37x_pac::can0::Node,
 }
 
+pub struct CanNode {
+    module: CanModule,
+    node_id: NodeId,
+    inner: tc37x_pac::can0::Node,
+    frame_mode: FrameMode,
+}
+
 impl CanNode {
     /// Only a module can create a node. This function is only accessible from within this crate.
-    pub(crate) fn new(module: CanModule, node_id: NodeId) -> Self {
+    pub(crate) fn new(module: CanModule, node_id: NodeId) -> NewCanNode {
         let inner = module.registers().node(node_id.0.into());
-        Self {
+        NewCanNode {
             module,
             node_id,
             inner,
         }
     }
+}
 
+impl NewCanNode {
     pub fn init(self, config: CanNodeConfig) -> Result<CanNode, ()> {
         self.module
             .set_clock_source(self.node_id.into(), config.clock_source);
@@ -139,14 +148,16 @@ impl CanNode {
             self.set_tx_buffer_start_address(config.message_ram_tx_buffers_start_address);
         }
 
+        self.set_frame_mode(config.frame_mode);
+
         self.disable_configuration_change();
 
-        Ok(self)
-    }
-
-    pub fn transmit(&self, _frame: &Frame) -> Result<(), ()> {
-        // TODO
-        Ok(())
+        Ok(CanNode {
+            frame_mode: config.frame_mode,
+            module: self.module,
+            node_id: self.node_id,
+            inner: self.inner,
+        })
     }
 
     fn enable_configuration_change(&self) {
@@ -293,6 +304,29 @@ impl CanNode {
         };
     }
 
+    fn set_tx_buffer_data_field_size(&self, data_field_size: u8) {
+        let data_field_size = tc37x_pac::can0::node::txesc::Tbds(data_field_size);
+        unsafe { self.inner.txesc().modify(|r| r.tbds().set(data_field_size)) };
+    }
+
+    fn set_tx_buffer_start_address(&self, address: u16) {
+        unsafe { self.inner.txbc().modify(|r| r.tbsa().set(address >> 2)) };
+    }
+
+    fn set_frame_mode(&self, frame_mode: FrameMode) {
+        let (fdoe, brse) = match frame_mode {
+            FrameMode::Standard => (false, false),
+            FrameMode::FdLong => (true, false),
+            FrameMode::FdLongAndFast => (true, true),
+        };
+
+        unsafe {
+            self.inner
+                .cccr()
+                .modify(|r| r.fdoe().set(fdoe).brse().set(brse))
+        };
+    }
+
     pub fn set_transceiver_delay_compensation_offset(&self, delay: u8) {
         unsafe { self.inner.dbtp().modify(|r| r.tdc().set(true)) };
         unsafe { self.inner.tdcr().modify(|r| r.tdco().set(delay)) };
@@ -300,6 +334,11 @@ impl CanNode {
 }
 
 impl CanNode {
+    pub fn transmit(&self, _frame: &Frame) -> Result<(), ()> {
+        // TODO
+        Ok(())
+    }
+
     fn get_rx_fifo0_fill_level(&self) -> u8 {
         unsafe { self.inner.rxf0s().read() }.f0fl().get()
     }
@@ -335,9 +374,7 @@ impl CanNode {
     fn set_rx_fifo1_watermark_level(&self, level: u8) {
         unsafe { self.inner.rxf1c().modify(|r| r.f1wm().set(level)) };
     }
-}
 
-impl CanNode {
     fn is_tx_event_fifo_element_lost(&self) -> bool {
         unsafe { self.inner.txefs().read() }.tefl().get()
     }
@@ -358,21 +395,10 @@ impl CanNode {
         unsafe { self.inner.txbc().modify(|r| r.ndtb().set(number)) };
     }
 
-    fn set_tx_buffer_data_field_size(&self, data_field_size: u8) {
-        let data_field_size = tc37x_pac::can0::node::txesc::Tbds(data_field_size);
-        unsafe { self.inner.txesc().modify(|r| r.tbds().set(data_field_size)) };
-    }
-
-    fn set_tx_buffer_start_address(&self, address: u16) {
-        unsafe { self.inner.txbc().modify(|r| r.tbsa().set(address >> 2)) };
-    }
-
     fn set_transmit_fifo_queue_size(&self, number: u8) {
         unsafe { self.inner.txbc().modify(|r| r.tfqs().set(number)) };
     }
-}
 
-impl CanNode {
     fn set_tx_event_fifo_start_address(&self, address: u16) {
         unsafe { self.inner.txefc().modify(|r| r.efsa().set(address >> 2)) };
     }
@@ -380,9 +406,7 @@ impl CanNode {
     fn set_tx_event_fifo_size(&self, size: u8) {
         unsafe { self.inner.txefc().modify(|r| r.efs().set(size)) };
     }
-}
 
-impl CanNode {
     fn set_standard_filter_list_start_address(&self, address: u16) {
         unsafe { self.inner.sidfc().modify(|r| r.flssa().set(address >> 2)) };
     }

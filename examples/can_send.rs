@@ -13,8 +13,8 @@ use tc37x_hal::can::{CanModule, CanModuleConfig, CanNode, CanNodeConfig, NodeId}
 use tc37x_hal::cpu::asm::enable_interrupts;
 use tc37x_hal::gpio::GpioExt;
 use tc37x_hal::log::info;
+use tc37x_hal::util::wait_nop;
 use tc37x_hal::{pac, ssw};
-use tc37x_hal::util::{wait_nop};
 
 fn setup_can() -> Result<CanNode, ()> {
     let can_module = CanModule::new(0);

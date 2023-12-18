@@ -1,4 +1,5 @@
 use super::can_node::{CanNode, NodeId};
+use crate::can::NewCanNode;
 use crate::{pac, scu};
 
 #[derive(Default)]
@@ -37,7 +38,7 @@ impl CanModule {
         scu::wdt::set_cpu_endinit_inline(passw);
     }
 
-    pub fn take_node(&mut self, node_id: NodeId) -> Result<CanNode, ()> {
+    pub fn take_node(&mut self, node_id: NodeId) -> Result<NewCanNode, ()> {
         // Instead of dealing with lifetimes, we just create a new instance of CanModule
         // TODO This is not ideal, but it works for now
         // TODO Remember the node has been taken and return None on next call
