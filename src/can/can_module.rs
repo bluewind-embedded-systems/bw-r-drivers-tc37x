@@ -37,9 +37,10 @@ impl CanModule {
         scu::wdt::set_cpu_endinit_inline(passw);
     }
 
-    pub fn get_node(&mut self, node_id: NodeId) -> Result<CanNode, ()> {
+    pub fn take_node(&mut self, node_id: NodeId) -> Result<CanNode, ()> {
         // Instead of dealing with lifetimes, we just create a new instance of CanModule
         // TODO This is not ideal, but it works for now
+        // TODO Remember the node has been taken and return None on next call
         let module = CanModule { inner: self.inner };
         Ok(CanNode::new(module, node_id))
     }

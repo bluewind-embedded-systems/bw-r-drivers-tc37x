@@ -21,7 +21,7 @@ fn setup_can() -> Result<CanNode, ()> {
     let can_module_config = CanModuleConfig::default();
     let mut can_module = can_module.init(can_module_config)?;
 
-    let can_node = can_module.get_node(NodeId::new(0))?;
+    let can_node = can_module.take_node(NodeId::new(0))?;
     let can_node_config = CanNodeConfig::default();
     let can_node = can_node.init(can_node_config)?;
 
