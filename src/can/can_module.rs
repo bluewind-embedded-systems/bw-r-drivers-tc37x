@@ -22,7 +22,6 @@ impl CanModule {
         Ok(self)
     }
 
-    #[inline]
     pub fn is_enabled(&self) -> bool {
         !unsafe { self.inner.clc().read() }.diss().get()
     }

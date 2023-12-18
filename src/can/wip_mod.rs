@@ -54,7 +54,6 @@ impl ACanModule for CanModule0 {
         0
     }
 
-    #[inline]
     fn is_enabled(&self) -> bool {
         !unsafe { self.inner.clc().read() }.diss().get()
     }
