@@ -45,10 +45,6 @@ pub enum CanClockSelect {
 // TODO (annabo) use tc37x_pac::can1::Can1; impl CanModule for Can1
 use crate::scu;
 
-#[cfg(feature = "log")]
-#[cfg(target_arch = "tricore")]
-use defmt::println;
-
 impl ACanModule for CanModule0 {
     fn node_id(&self) -> u8 {
         0
@@ -64,9 +60,6 @@ impl ACanModule for CanModule0 {
 
     fn enable_module(&self) {
         let passw = scu::wdt::get_cpu_watchdog_password();
-
-        #[cfg(feature = "log")]
-        println!("enable module watchdog passw: {:x}", passw);
 
         scu::wdt::clear_cpu_endinit_inline(passw);
 
@@ -123,8 +116,6 @@ impl ACanModule for CanModule0 {
 
     fn init_module(&self) {
         if !self.is_enabled() {
-            #[cfg(feature = "log")]
-            defmt::debug!("module was disabled, enabling it");
             self.enable_module();
         }
     }
