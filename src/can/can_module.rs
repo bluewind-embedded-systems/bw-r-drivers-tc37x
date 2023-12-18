@@ -14,7 +14,7 @@ pub struct CanModule {
 }
 
 impl NewCanModule {
-    pub fn configure(self, _config: CanModuleConfig) -> Result<CanModule, ()> {
+    pub fn enable(self) -> Result<CanModule, ()> {
         if !self.is_enabled() {
             self.enable_module();
         }
