@@ -4,9 +4,6 @@ use super::frame::Frame;
 use super::CanModule;
 use crate::util::wait_nop;
 
-
-
-
 // TODO Default values are not valid
 #[derive(Default)]
 pub struct BaudRate {
@@ -31,20 +28,22 @@ pub struct FastBaudRate {
 }
 
 #[derive(PartialEq, Debug, Default)]
-pub enum FrameMode { // TODO refactor (annabo)
+pub enum FrameMode {
+    // TODO refactor (annabo)
     #[default]
     Standard,
     FdLong,
     FdLongAndFast,
 }
 #[derive(PartialEq, Debug, Default)]
-pub enum FrameType // TODO refactor (annabo)
+pub enum FrameType
+// TODO refactor (annabo)
 {
     #[default]
-    Receive,             
-    Transmit,           
-    TransmitAndReceive,  
-    RemoteRequest,       
+    Receive,
+    Transmit,
+    TransmitAndReceive,
+    RemoteRequest,
     RemoteAnswer,
 }
 
@@ -60,7 +59,6 @@ pub enum TxMode {
 
 #[derive(Clone, Copy, Default)]
 pub enum RxMode {
-
     #[default]
     DedicatedBuffers,
     Fifo0,
@@ -70,7 +68,6 @@ pub enum RxMode {
     SharedAll,
 }
 
-
 #[derive(Default)]
 pub struct CanNodeConfig {
     pub clock_source: ClockSource,
@@ -79,10 +76,10 @@ pub struct CanNodeConfig {
     pub fast_baud_rate: FastBaudRate,
     pub frame_mode: FrameMode,
     pub frame_type: FrameType,
-    pub tx_mode: TxMode, 
+    pub tx_mode: TxMode,
     pub rx_mode: RxMode,
-    pub tx_buffer_data_field_size:u8, //(TODO) limit possibile values to valid ones 
-    pub message_ram_tx_buffers_start_address:u16,
+    pub tx_buffer_data_field_size: u8, //(TODO) limit possibile values to valid ones
+    pub message_ram_tx_buffers_start_address: u16,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -94,7 +91,6 @@ impl NodeId {
     }
 }
 
-
 pub struct CanNode {
     module: CanModule,
     node_id: NodeId,
@@ -103,12 +99,8 @@ pub struct CanNode {
 impl CanNode {
     /// Only a module can create a node. This function is only accessible from within this crate.
     pub(crate) fn new(module: CanModule, node_id: NodeId) -> Self {
-
         //let inner = module.registers().node(node_id.0.into());
-        Self {
-            module,
-            node_id,
-        }
+        Self { module, node_id }
     }
 
     pub fn init(self, config: CanNodeConfig) -> Result<CanNode, ()> {
@@ -190,7 +182,7 @@ impl CanNode {
         // }
 
         // if(config.loopback_enabled){
-        //     ... 
+        //     ...
         // }
 
         // interrupt groups configuration
@@ -237,8 +229,6 @@ impl CanNode {
 
         while unsafe { cccr.read() }.init().get() {}
     }
-
-
 
     fn configure_baud_rate(&self, calculate_bit_timing_values: bool, baud_rate: &BaudRate) {
         if calculate_bit_timing_values {
@@ -339,7 +329,8 @@ impl CanNode {
         sjw: u8,
         time_segment2: u8,
         time_segment1: u8,
-        prescaler: u8,) {
+        prescaler: u8,
+    ) {
         unsafe {
             tc37x_pac::CAN0.dbtp0().modify(|r| {
                 r.dsjw()
@@ -358,9 +349,7 @@ impl CanNode {
         unsafe { tc37x_pac::CAN0.dbtp0().modify(|r| r.tdc().set(true)) };
         unsafe { tc37x_pac::CAN0.tdcr0().modify(|r| r.tdco().set(delay)) };
     }
-
 }
-
 
 // IfxLld_Can_Std_Rx_Element_Functions
 impl CanNode {
@@ -438,7 +427,11 @@ impl CanNode {
 
     #[inline]
     fn set_rx_buffers_start_address(&self, address: u16) {
-        unsafe { tc37x_pac::CAN0.rxbc0().modify(|r| r.rbsa().set(address >> 2)) };
+        unsafe {
+            tc37x_pac::CAN0
+                .rxbc0()
+                .modify(|r| r.rbsa().set(address >> 2))
+        };
     }
 
     // #[inline]
@@ -466,7 +459,11 @@ impl CanNode {
 
     #[inline]
     fn set_rx_fifo0_start_address(&self, address: u16) {
-        unsafe { tc37x_pac::CAN0.rxf0c0().modify(|r| r.f0sa().set(address >> 2)) };
+        unsafe {
+            tc37x_pac::CAN0
+                .rxf0c0()
+                .modify(|r| r.f0sa().set(address >> 2))
+        };
     }
 
     #[inline]
@@ -499,14 +496,17 @@ impl CanNode {
 
     #[inline]
     fn set_rx_fifo1_start_address(&self, address: u16) {
-        unsafe { tc37x_pac::CAN0.rxf1c0().modify(|r| r.f1sa().set(address >> 2)) };
+        unsafe {
+            tc37x_pac::CAN0
+                .rxf1c0()
+                .modify(|r| r.f1sa().set(address >> 2))
+        };
     }
 
     #[inline]
     fn set_rx_fifo1_watermark_level(&self, level: u8) {
         unsafe { tc37x_pac::CAN0.rxf1c0().modify(|r| r.f1wm().set(level)) };
     }
-
 }
 
 // IfxLld_Can_Std_Tx_Element_Functions
@@ -569,7 +569,6 @@ impl CanNode {
     //             .modify(|r| r.ar(tx_buffer_id.into()).set(true))
     //     }
     // }
-
     #[inline]
     fn set_tx_buffer_data_field_size(&self, data_field_size: u8) {
         unsafe {
@@ -581,7 +580,11 @@ impl CanNode {
 
     #[inline]
     fn set_tx_buffer_start_address(&self, address: u16) {
-        unsafe { tc37x_pac::CAN0.txbc0().modify(|r| r.tbsa().set(address >> 2)) };
+        unsafe {
+            tc37x_pac::CAN0
+                .txbc0()
+                .modify(|r| r.tbsa().set(address >> 2))
+        };
     }
 
     #[inline]
@@ -593,7 +596,6 @@ impl CanNode {
     //         panic!("invalid fifo queue mode");
     //     }
     // }
-
     #[inline]
     fn set_transmit_fifo_queue_size(&self, number: u8) {
         unsafe { tc37x_pac::CAN0.txbc0().modify(|r| r.tfqs().set(number)) };
@@ -664,7 +666,11 @@ impl CanNode {
 impl CanNode {
     #[inline]
     fn set_tx_event_fifo_start_address(&self, address: u16) {
-        unsafe { tc37x_pac::CAN0.txefc0().modify(|r| r.efsa().set(address >> 2)) };
+        unsafe {
+            tc37x_pac::CAN0
+                .txefc0()
+                .modify(|r| r.efsa().set(address >> 2))
+        };
     }
 
     #[inline]
@@ -733,7 +739,11 @@ impl CanNode {
 impl CanNode {
     #[inline]
     fn set_standard_filter_list_start_address(&self, address: u16) {
-        unsafe { tc37x_pac::CAN0.sidfc0().modify(|r| r.flssa().set(address >> 2)) };
+        unsafe {
+            tc37x_pac::CAN0
+                .sidfc0()
+                .modify(|r| r.flssa().set(address >> 2))
+        };
     }
 
     #[inline]
@@ -741,7 +751,7 @@ impl CanNode {
         unsafe { tc37x_pac::CAN0.sidfc0().modify(|r| r.lss().set(size)) };
     }
 
-   //#[inline]
+    //#[inline]
     // fn configure_standard_filter_for_non_matching_frame(&self, filter: NonMatchingFrame) {
     //     unsafe {
     //         tc37x_pac::CAN0
@@ -757,7 +767,11 @@ impl CanNode {
 
     #[inline]
     fn set_extended_filter_list_start_address(&self, address: u16) {
-        unsafe { tc37x_pac::CAN0.xidfc0().modify(|r| r.flesa().set(address >> 2)) };
+        unsafe {
+            tc37x_pac::CAN0
+                .xidfc0()
+                .modify(|r| r.flesa().set(address >> 2))
+        };
     }
 
     #[inline]
@@ -773,7 +787,6 @@ impl CanNode {
     //             .modify(|r| r.anfe().set(can0::node::gfc::Anfe(filter as _)))
     //     };
     // }
-
     #[inline]
     fn reject_remote_frames_with_extended_id(&self) {
         unsafe { tc37x_pac::CAN0.gfc0().modify(|r| r.rrfe().set(true)) };
