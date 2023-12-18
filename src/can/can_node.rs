@@ -188,11 +188,11 @@ impl NewCanNode {
             PadDriver::CmosAutomotiveSpeed3,
         );
 
-        // self.connect_pin_tx(
-        //     TXD00_P20_8_OUT,
-        //     OutputMode::PUSH_PULL,
-        //     PadDriver::CmosAutomotiveSpeed3,
-        // );
+        self.connect_pin_tx(
+            TXD00_P20_8_OUT,
+            OutputMode::PUSH_PULL,
+            PadDriver::CmosAutomotiveSpeed3,
+        );
 
         Ok(CanNode {
             frame_mode: config.frame_mode,
@@ -526,6 +526,12 @@ impl NewCanNode {
                 .npcr()
                 .modify(|r| r.rxsel().set(rxd.select as u8))
         };
+    }
+
+    fn connect_pin_tx(&self, txd: TxdOut, mode: OutputMode, pad_driver: PadDriver) {
+        let port = Port::new(txd.port);
+        port.set_pin_mode_output(txd.pin_index, mode, txd.select);
+        port.set_pin_pad_driver(txd.pin_index, pad_driver);
     }
 }
 
