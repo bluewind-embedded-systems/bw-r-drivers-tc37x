@@ -124,6 +124,7 @@ impl NewCanNode {
         self.module
             .set_clock_source(self.node_id.into(), config.clock_source);
 
+        // TODO Document why this is needed
         wait_nop_cycles(10);
 
         self.enable_configuration_change();
