@@ -8,6 +8,7 @@ use super::CanModule;
 use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
 use std::mem::transmute;
+use tc37x_pac::can0::Node;
 use tc37x_pac::hidden::RegValue;
 
 // TODO Default values are not valid
@@ -536,7 +537,14 @@ impl NewCanNode {
 }
 
 impl CanNode {
-    pub fn transmit(&self, _frame: &Frame) -> Result<(), ()> {
+    pub fn transmit(&self, frame: &Frame) -> Result<(), ()> {
+        // TODO Call the right function depending on fifo mode
+        transmit_fifo(&self.inner, frame);
+
+        // while let None = dst_node.send_fifo(msg_id, &read_buf) {
+        //     wait_nop(10);
+        // }
+
         // TODO
         Ok(())
     }
@@ -1040,3 +1048,85 @@ impl TxdOut {
 pub struct TxBufferId(pub u8);
 
 pub type Priority = u8;
+
+fn transmit_fifo(node: &Node, frame: &Frame) {
+    use embedded_can::Frame;
+    let buffer_id = get_tx_fifo_queue_put_index(node);
+    let id = frame.id().into();
+    let data = frame.data();
+    // TODO Handle error
+    let _ = transmit(node, buffer_id, id, false, false, false, data);
+}
+
+pub fn get_tx_fifo_queue_put_index(node: &Node) -> TxBufferId {
+    let id = unsafe { node.txfqs().read() }.tfqpi().get();
+    TxBufferId::new_const(id)
+}
+
+fn transmit(
+    node: &Node,
+    buffer_id: TxBufferId,
+    id: MessageId,
+    tx_event_fifo_control: bool,
+    remote_transmit_request: bool,
+    error_state_indicator: bool,
+    data: &[u8],
+) -> Option<()> {
+    if node.is_tx_buffer_request_pending(buffer_id) {
+        None
+    } else {
+        // TODO
+        // let tx_buf_el = node.get_tx_element_address(M::RAM.base, self.tx.start_address, buffer_id);
+        //
+        // tx_buf_el.set_msg_id(id);
+        //
+        // if tx_event_fifo_control {
+        //     tx_buf_el.set_tx_event_fifo_ctrl(tx_event_fifo_control);
+        //     tx_buf_el.set_message_marker(buffer_id);
+        // }
+        //
+        // tx_buf_el.set_remote_transmit_req(remote_transmit_request);
+        //
+        // if let FrameMode::FdLong | FrameMode::FdLongAndFast = self.frame_mode {
+        //     tx_buf_el.set_err_state_indicator(error_state_indicator)
+        // }
+        //
+        // tx_buf_el.set_data_length(self.tx.data_field_size.into());
+        //
+        // tx_buf_el.write_tx_buf_data(self.tx.data_field_size.into(), data.as_ptr());
+        //
+        // tx_buf_el.set_frame_mode_req(self.frame_mode);
+        //
+        // N::reg().set_tx_buffer_add_request(buffer_id);
+
+        Some(())
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum MessageIdLenght {
+    Standard,
+    Extended,
+    Both,
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct MessageId {
+    pub data: u32,
+    pub lenght: MessageIdLenght,
+}
+
+impl From<embedded_can::Id> for MessageId {
+    fn from(id: embedded_can::Id) -> Self {
+        match id {
+            embedded_can::Id::Standard(id) => MessageId {
+                data: id.into(),
+                lenght: MessageIdLenght::Standard,
+            },
+            embedded_can::Id::Extended(id) => MessageId {
+                data: id.into(),
+                lenght: MessageIdLenght::Extended,
+            },
+        }
+    }
+}
