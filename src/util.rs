@@ -3,7 +3,7 @@ use core::time::Duration;
 pub fn wait_nop(period: Duration) {
     #[cfg(target_arch = "tricore")]
     {
-        wait_nop_cycles(period.as_micros() / 5);
+        wait_nop_cycles((period.as_micros() as u32) / 5);
     }
 
     #[cfg(not(target_arch = "tricore"))]
