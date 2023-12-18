@@ -6,7 +6,6 @@
 #[cfg(target_arch = "tricore")]
 tc37x_rt::entry!(main);
 
-use core::arch::asm;
 use embedded_hal::digital::StatefulOutputPin;
 use core::time::Duration;
 use tc37x_hal::gpio::GpioExt;
@@ -23,6 +22,9 @@ pub enum State {
 fn main() -> ! {
     #[cfg(not(target_arch = "tricore"))]
     let _report = tc37x_hal::tracing::print::Report::new();
+
+    #[cfg(not(target_arch = "tricore"))]
+    env_logger::init();
 
     let gpio00 = pac::PORT_00.split();
 
@@ -76,7 +78,7 @@ fn wait_nop(period: Duration) {
     {
         let n = period.as_micros() / 5;
         for _ in 0..n {
-            unsafe { asm!("nop") };
+            unsafe { core::arch::asm!("nop") };
         }
     }
 

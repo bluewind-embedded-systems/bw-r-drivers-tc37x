@@ -6,6 +6,14 @@ edition = "2021"
 [dependencies]
 embedded-can = "0.4.1"
 
+[dependencies.log]
+optional = true
+version = "0.4"
+
+[dependencies.env_logger]
+optional = true
+version = "0.10.1"
+
 [dependencies.defmt-rtt]
 optional = true
 version = "0.4.0"
@@ -67,8 +75,9 @@ features = ["ron"]
 
 [features]
 default = []
-example = ["rt", "panic_handler", "log", "disable_watchdogs"]
-log = ["dep:defmt", "dep:defmt-rtt"]
+example = ["rt", "panic_handler", "disable_watchdogs"]
+log_with_defmt = ["dep:defmt", "dep:defmt-rtt"]
+log_with_env_logger = ["dep:log", "dep:env_logger"]
 rt = ["dep:tc37x-rt", "dep:critical-section"]
 panic_handler = []
 disable_watchdogs = []

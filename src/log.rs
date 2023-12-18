@@ -1,10 +1,23 @@
+// Log with defmt
+#[cfg(all(not(feature = "log_with_env_logger"), feature = "log_with_defmt"))]
+pub use tricore_log::*;
+
+// No log system
+#[cfg(all(not(feature = "log_with_defmt"), not(feature = "log_with_env_logger")))]
+pub use crate::{
+    no_log_debug as debug, no_log_error as error, no_log_info as info, no_log_trace as trace,
+    no_log_warn as warn,
+};
+
+// Log with log crate
+#[cfg(all(not(feature = "log_with_defmt"), feature = "log_with_env_logger"))]
+pub use ::log::{debug, error, info, trace, warn};
+
 // link with defmt implementation
-#[cfg(feature = "log")]
-#[cfg(target_arch = "tricore")]
+#[cfg(feature = "log_with_defmt")]
 extern crate defmt_rtt;
 
-#[cfg(feature = "log")]
-#[cfg(target_arch = "tricore")]
+#[cfg(feature = "log_with_defmt")]
 mod tricore_log {
     pub use defmt::debug;
     pub use defmt::error;
@@ -13,39 +26,27 @@ mod tricore_log {
     pub use defmt::warn;
 }
 
-#[cfg(not(feature = "log"))]
-#[cfg(target_arch = "tricore")]
-mod tricore_no_log {
-    #[macro_export]
-    macro_rules! debug {
-        ($($ignored:tt)*) => {};
-    }
-
-    #[macro_export]
-    macro_rules! trace {
-        ($($ignored:tt)*) => {};
-    }
-
-    #[macro_export]
-    macro_rules! info {
-        ($($ignored:tt)*) => {};
-    }
-
-    #[macro_export]
-    macro_rules! warn {
-        ($($ignored:tt)*) => {};
-    }
-
-    #[macro_export]
-    macro_rules! error {
-        ($($ignored:tt)*) => {};
-    }
+#[macro_export]
+macro_rules! no_log_debug {
+    ($($ignored:tt)*) => {};
 }
 
-#[cfg(feature = "log")]
-#[cfg(target_arch = "tricore")]
-pub use tricore_log::*;
+#[macro_export]
+macro_rules! no_log_trace {
+    ($($ignored:tt)*) => {};
+}
 
-#[cfg(not(feature = "log"))]
-#[cfg(target_arch = "tricore")]
-pub use crate::{debug, error, info, trace, warn};
+#[macro_export]
+macro_rules! no_log_info {
+    ($($ignored:tt)*) => {};
+}
+
+#[macro_export]
+macro_rules! no_log_warn {
+    ($($ignored:tt)*) => {};
+}
+
+#[macro_export]
+macro_rules! no_log_error {
+    ($($ignored:tt)*) => {};
+}
