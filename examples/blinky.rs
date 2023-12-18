@@ -11,6 +11,7 @@ use core::time::Duration;
 use tc37x_hal::gpio::GpioExt;
 use tc37x_hal::log::info;
 use tc37x_hal::pac;
+use tc37x_hal::util::wait_nop;
 
 pub enum State {
     NotChanged = 0,
@@ -23,7 +24,7 @@ fn main() -> ! {
     #[cfg(not(target_arch = "tricore"))]
     let _report = tc37x_hal::tracing::print::Report::new();
 
-    #[cfg(not(target_arch = "tricore"))]
+    #[cfg(feature = "log_with_env_logger")]
     env_logger::init();
 
     let gpio00 = pac::PORT_00.split();
@@ -71,17 +72,4 @@ fn main() -> ! {
 
         wait_nop(period);
     }
-}
-
-fn wait_nop(period: Duration) {
-    #[cfg(target_arch = "tricore")]
-    {
-        let n = period.as_micros() / 5;
-        for _ in 0..n {
-            unsafe { core::arch::asm!("nop") };
-        }
-    }
-
-    #[cfg(not(target_arch = "tricore"))]
-    std::thread::sleep(period);
 }

@@ -5,7 +5,7 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 
 // Catch usage of `print!` and `println!`
-#![deny(print_stdout)]
+#![deny(clippy::print_stdout)]
 
 #[cfg(target_arch = "tricore")]
 mod runtime;
@@ -19,7 +19,7 @@ pub mod gpio;
 pub mod log;
 pub mod scu;
 pub mod ssw;
-mod util;
+pub mod util;
 
 pub use tc37x_pac as pac;
 
