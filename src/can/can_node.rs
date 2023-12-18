@@ -146,7 +146,6 @@ impl CanNode {
         Ok(())
     }
 
-    #[inline]
     fn enable_configuration_change(&self) {
         let cccr = self.inner.cccr();
 
@@ -164,7 +163,6 @@ impl CanNode {
         unsafe { cccr.modify(|r| r.cce().set(true).init().set(true)) };
     }
 
-    #[inline]
     pub fn disable_configuration_change(&self) {
         let cccr = self.inner.cccr();
 
@@ -298,7 +296,6 @@ impl CanNode {
     }
 }
 
-// IfxLld_Can_Std_Rx_Element_Functions
 impl CanNode {
     fn get_rx_fifo0_fill_level(&self) -> u8 {
         unsafe { self.inner.rxf0s().read() }.f0fl().get()
@@ -308,64 +305,52 @@ impl CanNode {
         unsafe { self.inner.rxf1s().read() }.f1fl().get()
     }
 
-    #[inline]
     fn set_rx_buffers_start_address(&self, address: u16) {
         unsafe { self.inner.rxbc().modify(|r| r.rbsa().set(address >> 2)) };
     }
 
-    #[inline]
     fn set_rx_fifo0_size(&self, size: u8) {
         unsafe { self.inner.rxf0c().modify(|r| r.f0s().set(size)) };
     }
 
-    #[inline]
     fn set_rx_fifo0_start_address(&self, address: u16) {
         unsafe { self.inner.rxf0c().modify(|r| r.f0sa().set(address >> 2)) };
     }
 
-    #[inline]
     fn set_rx_fifo0_watermark_level(&self, level: u8) {
         unsafe { self.inner.rxf0c().modify(|r| r.f0wm().set(level)) };
     }
 
-    #[inline]
     fn set_rx_fifo1_size(&self, size: u8) {
         unsafe { self.inner.rxf1c().modify(|r| r.f1s().set(size)) };
     }
 
-    #[inline]
     fn set_rx_fifo1_start_address(&self, address: u16) {
         unsafe { self.inner.rxf1c().modify(|r| r.f1sa().set(address >> 2)) };
     }
 
-    #[inline]
     fn set_rx_fifo1_watermark_level(&self, level: u8) {
         unsafe { self.inner.rxf1c().modify(|r| r.f1wm().set(level)) };
     }
 }
 
 impl CanNode {
-    #[inline]
     fn is_tx_event_fifo_element_lost(&self) -> bool {
         unsafe { self.inner.txefs().read() }.tefl().get()
     }
 
-    #[inline]
     fn is_tx_event_fifo_full(&self) -> bool {
         unsafe { self.inner.txefs().read() }.eff().get()
     }
 
-    #[inline]
     fn is_tx_fifo_queue_full(&self) -> bool {
         unsafe { self.inner.txfqs().read() }.tfqf().get()
     }
 
-    #[inline]
     fn pause_trasmission(&self, enable: bool) {
         unsafe { self.inner.cccr().modify(|r| r.txp().set(enable)) };
     }
 
-    #[inline]
     fn set_dedicated_tx_buffers_number(&self, number: u8) {
         unsafe { self.inner.txbc().modify(|r| r.ndtb().set(number)) };
     }
@@ -375,7 +360,6 @@ impl CanNode {
         unsafe { self.inner.txesc().modify(|r| r.tbds().set(data_field_size)) };
     }
 
-    #[inline]
     fn set_tx_buffer_start_address(&self, address: u16) {
         unsafe { self.inner.txbc().modify(|r| r.tbsa().set(address >> 2)) };
     }
@@ -386,39 +370,32 @@ impl CanNode {
 }
 
 impl CanNode {
-    #[inline]
     fn set_tx_event_fifo_start_address(&self, address: u16) {
         unsafe { self.inner.txefc().modify(|r| r.efsa().set(address >> 2)) };
     }
 
-    #[inline]
     fn set_tx_event_fifo_size(&self, size: u8) {
         unsafe { self.inner.txefc().modify(|r| r.efs().set(size)) };
     }
 }
 
 impl CanNode {
-    #[inline]
     fn set_standard_filter_list_start_address(&self, address: u16) {
         unsafe { self.inner.sidfc().modify(|r| r.flssa().set(address >> 2)) };
     }
 
-    #[inline]
     fn set_standard_filter_list_size(&self, size: u8) {
         unsafe { self.inner.sidfc().modify(|r| r.lss().set(size)) };
     }
 
-    #[inline]
     fn reject_remote_frames_with_standard_id(&self) {
         unsafe { self.inner.gfc().modify(|r| r.rrfs().set(true)) };
     }
 
-    #[inline]
     fn set_extended_filter_list_start_address(&self, address: u16) {
         unsafe { self.inner.xidfc().modify(|r| r.flesa().set(address >> 2)) };
     }
 
-    #[inline]
     pub fn set_extended_filter_list_size(&self, size: u8) {
         unsafe { self.inner.xidfc().modify(|r| r.lse().set(size)) };
     }
