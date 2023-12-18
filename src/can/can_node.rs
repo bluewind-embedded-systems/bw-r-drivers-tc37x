@@ -562,7 +562,7 @@ impl CanNode {
     //             .modify(|r| r.ar(tx_buffer_id.into()).set(true))
     //     }
     // }
-    #[inline]
+
     fn set_tx_buffer_data_field_size(&self, data_field_size: u8) {
         let data_field_size = tc37x_pac::can0::node::txesc::Tbds(data_field_size);
         unsafe { self.inner.txesc().modify(|r| r.tbds().set(data_field_size)) };
@@ -582,7 +582,7 @@ impl CanNode {
     //         panic!("invalid fifo queue mode");
     //     }
     // }
-    #[inline]
+
     fn set_transmit_fifo_queue_size(&self, number: u8) {
         unsafe { self.inner.txbc().modify(|r| r.tfqs().set(number)) };
     }
@@ -761,7 +761,7 @@ impl CanNode {
     //             .modify(|r| r.anfe().set(can0::node::gfc::Anfe(filter as _)))
     //     };
     // }
-    #[inline]
+
     fn reject_remote_frames_with_extended_id(&self) {
         unsafe { self.inner.gfc().modify(|r| r.rrfe().set(true)) };
     }
