@@ -15,7 +15,7 @@ impl CanModule {
         Self { inner: pac::CAN0 }
     }
 
-    pub fn init(self, _config: CanModuleConfig) -> Result<CanModule, ()> {
+    pub fn configure(self, _config: CanModuleConfig) -> Result<CanModule, ()> {
         if !self.is_enabled() {
             self.enable_module();
         }

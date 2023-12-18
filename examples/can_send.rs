@@ -19,11 +19,11 @@ use tc37x_hal::{pac, ssw};
 fn setup_can() -> Result<CanNode, ()> {
     let can_module = CanModule::new(0);
     let can_module_config = CanModuleConfig::default();
-    let mut can_module = can_module.init(can_module_config)?;
+    let mut can_module = can_module.configure(can_module_config)?;
 
     let can_node = can_module.take_node(NodeId::new(0))?;
     let can_node_config = CanNodeConfig::default();
-    let can_node = can_node.init(can_node_config)?;
+    let can_node = can_node.configure(can_node_config)?;
 
     Ok(can_node)
 }

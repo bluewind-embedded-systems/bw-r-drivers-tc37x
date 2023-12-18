@@ -120,7 +120,7 @@ impl CanNode {
 }
 
 impl NewCanNode {
-    pub fn init(self, config: CanNodeConfig) -> Result<CanNode, ()> {
+    pub fn configure(self, config: CanNodeConfig) -> Result<CanNode, ()> {
         self.module
             .set_clock_source(self.node_id.into(), config.clock_source);
 
