@@ -7,7 +7,7 @@
 #[cfg(target_arch = "tricore")]
 tc37x_rt::entry!(main);
 
-use std::time::Duration;
+use core::time::Duration;
 use embedded_can::{ExtendedId, Frame};
 use tc37x_hal::can::{CanModule, CanModuleConfig, CanNode, CanNodeConfig, NodeId};
 use tc37x_hal::cpu::asm::enable_interrupts;

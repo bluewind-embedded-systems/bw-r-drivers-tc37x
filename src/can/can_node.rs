@@ -5,7 +5,7 @@ use super::baud_rate::*;
 use super::can_module::ClockSource;
 use super::frame::Frame;
 use super::CanModule;
-use crate::util::wait_nop;
+use crate::util::wait_nop_cycles;
 
 // TODO Default values are not valid
 #[derive(Default)]
@@ -115,7 +115,7 @@ impl CanNode {
         self.module
             .set_clock_source(self.node_id.into(), config.clock_source);
 
-        wait_nop(10);
+        wait_nop_cycles(10);
 
         self.enable_configuration_change();
 
