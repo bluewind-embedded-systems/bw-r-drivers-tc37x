@@ -5,6 +5,7 @@ use super::baud_rate::*;
 use super::can_module::{CanModuleId, ClockSource};
 use super::frame::Frame;
 use super::CanModule;
+use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
 use std::mem::transmute;
 use tc37x_pac::hidden::RegValue;
@@ -181,12 +182,12 @@ impl NewCanNode {
             Tos::Cpu0,
         );
 
-        // self.connect_pin_rx(
-        //     RXD00B_P20_7_IN,
-        //     InputMode::PULL_UP,
-        //     PadDriver::CmosAutomotiveSpeed3,
-        // );
-        //
+        self.connect_pin_rx(
+            RXD00B_P20_7_IN,
+            InputMode::PULL_UP,
+            PadDriver::CmosAutomotiveSpeed3,
+        );
+
         // self.connect_pin_tx(
         //     TXD00_P20_8_OUT,
         //     OutputMode::PUSH_PULL,
@@ -514,6 +515,18 @@ impl NewCanNode {
             };
         }
     }
+
+    fn connect_pin_rx(&self, rxd: RxdIn, mode: InputMode, pad_driver: PadDriver) {
+        let port = Port::new(rxd.port);
+        port.set_pin_mode_input(rxd.pin_index, mode);
+        port.set_pin_pad_driver(rxd.pin_index, pad_driver);
+
+        unsafe {
+            self.inner
+                .npcr()
+                .modify(|r| r.rxsel().set(rxd.select as u8))
+        };
+    }
 }
 
 impl CanNode {
@@ -716,10 +729,10 @@ pub enum Tos {
     Cpu2,
 }
 
-pub const RXD00B_P20_7_IN: RxdIn =
+const RXD00B_P20_7_IN: RxdIn =
     RxdIn::new(CanModuleId::Can0, NodeId(0), PortNumber::_20, 7, RxSel::_B);
 
-pub const TXD00_P20_8_OUT: TxdOut = TxdOut::new(
+const TXD00_P20_8_OUT: TxdOut = TxdOut::new(
     CanModuleId::Can0,
     NodeId(0),
     PortNumber::_20,
@@ -759,6 +772,10 @@ pub enum PadDriver {
     Ttl3v3speed4 = 15,
 }
 
+pub struct Port {
+    inner: tc37x_pac::port_00::Port00,
+}
+
 #[derive(Clone, Copy)]
 pub enum PortNumber {
     _00,
@@ -780,26 +797,179 @@ pub enum PortNumber {
     _40,
 }
 
-#[derive(Clone, Copy)]
-pub struct OutputIdx(u32);
-impl OutputIdx {
-    pub const GENERAL: Self = Self(0x10 << 3);
-    pub const ALT1: Self = Self(0x11 << 3);
-    pub const ALT2: Self = Self(0x12 << 3);
-    pub const ALT3: Self = Self(0x13 << 3);
-    pub const ALT4: Self = Self(0x14 << 3);
-    pub const ALT5: Self = Self(0x15 << 3);
-    pub const ALT6: Self = Self(0x16 << 3);
-    pub const ALT7: Self = Self(0x17 << 3);
+#[derive(Debug, PartialEq)]
+enum State {
+    NotChanged = 0,
+    High = 1,
+    Low = 1 << 16,
+    Toggled = (1 << 16) | 1,
+}
+
+impl Port {
+    pub fn new(port: PortNumber) -> Self {
+        use tc37x_pac::port_00::Port00;
+        use tc37x_pac::*;
+
+        let inner: Port00 = unsafe {
+            match port {
+                PortNumber::_00 => core::mem::transmute(PORT_00),
+                PortNumber::_01 => core::mem::transmute(PORT_01),
+                PortNumber::_02 => core::mem::transmute(PORT_02),
+                PortNumber::_10 => core::mem::transmute(PORT_10),
+                PortNumber::_11 => core::mem::transmute(PORT_11),
+                PortNumber::_12 => core::mem::transmute(PORT_12),
+                PortNumber::_13 => core::mem::transmute(PORT_13),
+                PortNumber::_14 => core::mem::transmute(PORT_14),
+                PortNumber::_15 => core::mem::transmute(PORT_15),
+                PortNumber::_20 => core::mem::transmute(PORT_20),
+                PortNumber::_21 => core::mem::transmute(PORT_21),
+                PortNumber::_22 => core::mem::transmute(PORT_22),
+                PortNumber::_23 => core::mem::transmute(PORT_23),
+                PortNumber::_32 => core::mem::transmute(PORT_32),
+                PortNumber::_33 => core::mem::transmute(PORT_33),
+                PortNumber::_34 => core::mem::transmute(PORT_34),
+                PortNumber::_40 => core::mem::transmute(PORT_40),
+            }
+        };
+        Self { inner }
+    }
+
+    fn set_pin_state(&self, index: u8, action: State) {
+        unsafe {
+            self.inner.omr().init(|mut r| {
+                let data = r.data_mut_ref();
+                *data = ((action as u32) << index).into();
+                r
+            })
+        };
+    }
+
+    fn toogle_pin(&self, index: u8) {
+        self.set_pin_state(index, State::Toggled)
+    }
+
+    fn set_pin_high(&self, index: u8) {
+        self.set_pin_state(index, State::High)
+    }
+
+    fn set_pin_low(&self, index: u8) {
+        self.set_pin_state(index, State::Low)
+    }
+
+    fn set_pin_mode_output(&self, pin_index: u8, mode: OutputMode, index: OutputIdx) {
+        self.set_pin_mode(pin_index, (mode, index).into());
+    }
+
+    fn set_pin_mode_input(&self, pin_index: u8, mode: InputMode) {
+        self.set_pin_mode(pin_index, mode.into())
+    }
+
+    fn set_pin_mode(&self, index: u8, mode: Mode) {
+        let ioc_index = index / 4;
+        let shift = (index & 0x3) * 8;
+
+        let is_supervisor =
+            unsafe { transmute::<_, usize>(self.inner) == transmute(crate::pac::PORT_40) };
+        if is_supervisor {
+            wdt_call::call_without_cpu_endinit(|| unsafe {
+                self.inner.pdisc().modify(|mut r| {
+                    *r.data_mut_ref() &= !(1 << index);
+                    r
+                })
+            });
+        }
+
+        let iocr: crate::pac::Reg<crate::pac::port_00::Iocr0, crate::pac::RW> = unsafe {
+            let iocr0 = self.inner.iocr0();
+            let addr: *mut u32 = transmute(iocr0);
+            let addr = addr.add(ioc_index as _);
+            transmute(addr)
+        };
+
+        unsafe {
+            iocr.modify_atomic(|mut r| {
+                *r.data_mut_ref() = (mode.0) << shift;
+                *r.get_mask_mut_ref() = 0xFFu32 << shift;
+                r
+            })
+        };
+    }
+
+    fn set_pin_pad_driver(&self, index: u8, driver: PadDriver) {
+        let pdr_index = index / 8;
+        let shift = (index & 0x7) * 4;
+        let pdr: crate::pac::Reg<crate::pac::port_00::Pdr0, crate::pac::RW> = unsafe {
+            let pdr0 = self.inner.pdr0();
+            let addr: *mut u32 = core::mem::transmute(pdr0);
+            let addr = addr.add(pdr_index as _);
+            core::mem::transmute(addr)
+        };
+
+        wdt_call::call_without_cpu_endinit(|| unsafe {
+            pdr.modify_atomic(|mut r| {
+                *r.data_mut_ref() = (driver as u32) << shift;
+                *r.get_mask_mut_ref() = 0xF << shift;
+                r
+            })
+        });
+    }
+}
+
+impl From<InputMode> for Mode {
+    fn from(value: InputMode) -> Self {
+        Mode(value.0)
+    }
+}
+
+impl From<(OutputMode, OutputIdx)> for Mode {
+    fn from(value: (OutputMode, OutputIdx)) -> Self {
+        Mode(value.0 .0 | value.1 .0)
+    }
+}
+
+struct Mode(u32);
+impl Mode {
+    const INPUT_NO_PULL_DEVICE: Mode = Self(0);
+    const INPUT_PULL_DOWN: Mode = Self(8);
+    const INPUT_PULL_UP: Mode = Self(0x10);
+    const OUTPUT_PUSH_PULL_GENERAL: Mode = Self(0x80);
+    const OUTPUT_PUSH_PULL_ALT1: Mode = Self(0x88);
+    const OUTPUT_PUSH_PULL_ALT2: Mode = Self(0x90);
+    const OUTPUT_PUSH_PULL_ALT3: Mode = Self(0x98);
+    const OUTPUT_PUSH_PULL_ALT4: Mode = Self(0xA0);
+    const OUTPUT_PUSH_PULL_ALT5: Mode = Self(0xA8);
+    const OUTPUT_PUSH_PULL_ALT6: Mode = Self(0xB0);
+    const OUTPUT_PUSH_PULL_ALT7: Mode = Self(0xB8);
+    const OUTPUT_OPEN_DRAIN_GENERAL: Mode = Self(0xC0);
+    const OUTPUT_OPEN_DRAIN_ALT1: Mode = Self(0xC8);
+    const OUTPUT_OPEN_DRAIN_ALT2: Mode = Self(0xD0);
+    const OUTPUT_OPEN_DRAIN_ALT3: Mode = Self(0xD8);
+    const OUTPUT_OPEN_DRAIN_ALT4: Mode = Self(0xE0);
+    const OUTPUT_OPEN_DRAIN_ALT5: Mode = Self(0xE8);
+    const OUTPUT_OPEN_DRAIN_ALT6: Mode = Self(0xF0);
+    const OUTPUT_OPEN_DRAIN_ALT7: Mode = Self(0xF8);
 }
 
 #[derive(Clone, Copy)]
-pub struct RxdIn {
-    pub module: CanModuleId,
-    pub node_id: NodeId,
-    pub port: PortNumber,
-    pub pin_index: u8,
-    pub select: RxSel,
+struct OutputIdx(u32);
+impl OutputIdx {
+    const GENERAL: Self = Self(0x10 << 3);
+    const ALT1: Self = Self(0x11 << 3);
+    const ALT2: Self = Self(0x12 << 3);
+    const ALT3: Self = Self(0x13 << 3);
+    const ALT4: Self = Self(0x14 << 3);
+    const ALT5: Self = Self(0x15 << 3);
+    const ALT6: Self = Self(0x16 << 3);
+    const ALT7: Self = Self(0x17 << 3);
+}
+
+#[derive(Clone, Copy)]
+struct RxdIn {
+    module: CanModuleId,
+    node_id: NodeId,
+    port: PortNumber,
+    pin_index: u8,
+    select: RxSel,
 }
 
 impl RxdIn {
@@ -833,12 +1003,12 @@ pub enum RxSel {
 }
 
 #[derive(Clone, Copy)]
-pub struct TxdOut {
-    pub module: CanModuleId,
-    pub node_id: NodeId,
-    pub port: PortNumber,
-    pub pin_index: u8,
-    pub select: OutputIdx,
+struct TxdOut {
+    module: CanModuleId,
+    node_id: NodeId,
+    port: PortNumber,
+    pin_index: u8,
+    select: OutputIdx,
 }
 
 impl TxdOut {
