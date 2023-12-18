@@ -269,7 +269,7 @@ mod tests {
 
     #[test]
     pub fn test_get_wdt_con0() {
-        let pwd = unsafe { get_cpu_watchdog_password() };
+        let pwd = get_cpu_watchdog_password();
         assert_eq!(pwd, 0x3F);
     }
 }
