@@ -2,10 +2,11 @@
 #![allow(dead_code)]
 
 use super::baud_rate::*;
-use super::can_module::ClockSource;
+use super::can_module::{CanModuleId, ClockSource};
 use super::frame::Frame;
 use super::CanModule;
 use crate::util::wait_nop_cycles;
+use std::mem::transmute;
 use tc37x_pac::hidden::RegValue;
 
 // TODO Default values are not valid
@@ -172,14 +173,14 @@ impl NewCanNode {
             4,
         );
 
-        // self.interrupt(
-        //     InterruptGroup::Rxf0n,
-        //     Interrupt::RxFifo0newMessage,
-        //     InterruptLine(1),
-        //     2,
-        //     Tos::Cpu0,
-        // );
-        //
+        self.set_interrupt(
+            InterruptGroup::Rxf0n,
+            Interrupt::RxFifo0newMessage,
+            InterruptLine(1),
+            2,
+            Tos::Cpu0,
+        );
+
         // self.connect_pin_rx(
         //     RXD00B_P20_7_IN,
         //     InputMode::PULL_UP,
@@ -448,6 +449,71 @@ impl NewCanNode {
         unsafe { self.inner.dbtp().modify(|r| r.tdc().set(true)) };
         unsafe { self.inner.tdcr().modify(|r| r.tdco().set(delay)) };
     }
+
+    fn set_interrupt(
+        &self,
+        interrupt_group: InterruptGroup,
+        interrupt: Interrupt,
+        line: InterruptLine,
+        priority: Priority,
+        tos: Tos,
+    ) {
+        self.set_group_interrupt_line(interrupt_group, line);
+
+        let src = tc37x_pac::SRC;
+
+        use crate::pac::{src::Can0Int0, Reg, RW};
+
+        let can_int: Reg<Can0Int0, RW> = match (self.module.id(), line) {
+            // TODO Add other lines and can modules
+            (CanModuleId::Can0, InterruptLine(0)) => unsafe { transmute(src.can0int0()) },
+            (CanModuleId::Can0, InterruptLine(1)) => unsafe { transmute(src.can0int1()) },
+            _ => unreachable!(),
+        };
+
+        let priority = priority.into();
+        let tos = tos as u8;
+
+        // Set priority and type of service
+        unsafe { can_int.modify(|r| r.srpn().set(priority).tos().set(tos)) };
+
+        // Clear request
+        unsafe { can_int.modify(|r| r.clrr().set(true)) };
+
+        // Enable service request
+        unsafe { can_int.modify(|r| r.sre().set(true)) };
+
+        // Enable interrupt
+        unsafe {
+            self.inner.ie().modify(|mut r| {
+                *r.data_mut_ref() |= 1 << interrupt as u32;
+                r
+            })
+        };
+    }
+
+    fn set_group_interrupt_line(
+        &self,
+        interrupt_group: InterruptGroup,
+        interrupt_line: InterruptLine,
+    ) {
+        if interrupt_group <= InterruptGroup::Loi {
+            unsafe {
+                self.inner.grint1().modify(|mut r| {
+                    *r.data_mut_ref() |= (interrupt_line.0 as u32) << (interrupt_group as u32 * 4);
+                    r
+                })
+            };
+        } else {
+            unsafe {
+                self.inner.grint2().modify(|mut r| {
+                    *r.data_mut_ref() |=
+                        (interrupt_line.0 as u32) << ((interrupt_group as u32 % 8) * 4);
+                    r
+                })
+            };
+        }
+    }
 }
 
 impl CanNode {
@@ -651,10 +717,10 @@ pub enum Tos {
 }
 
 pub const RXD00B_P20_7_IN: RxdIn =
-    RxdIn::new(CanModuleId::_0, NodeId(0), PortNumber::_20, 7, RxSel::_B);
+    RxdIn::new(CanModuleId::Can0, NodeId(0), PortNumber::_20, 7, RxSel::_B);
 
 pub const TXD00_P20_8_OUT: TxdOut = TxdOut::new(
-    CanModuleId::_0,
+    CanModuleId::Can0,
     NodeId(0),
     PortNumber::_20,
     8,
@@ -691,13 +757,6 @@ pub enum PadDriver {
     Ttl3v3speed2 = 13,
     Ttl3v3speed3 = 14,
     Ttl3v3speed4 = 15,
-}
-
-#[derive(PartialEq, PartialOrd, Clone, Copy, Debug, Default)]
-pub struct CanModuleId(u8);
-impl CanModuleId {
-    pub const _0: Self = Self(0);
-    pub const _1: Self = Self(0);
 }
 
 #[derive(Clone, Copy)]
@@ -803,3 +862,5 @@ impl TxdOut {
 #[derive(Clone, Copy, Debug)]
 #[repr(transparent)]
 pub struct TxBufferId(pub u8);
+
+pub type Priority = u8;
