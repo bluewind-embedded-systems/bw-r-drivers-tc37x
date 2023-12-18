@@ -1,11 +1,10 @@
-// link with defmt implementation
-extern crate defmt_rtt;
-
+use crate::log::error;
 use core::panic::PanicInfo;
 
+#[allow(unused_variables)]
 #[panic_handler]
 fn panic(panic: &PanicInfo<'_>) -> ! {
-    defmt::error!("Panic! {}", defmt::Display2Format(panic));
+    error!("Panic! {}", defmt::Display2Format(panic));
     #[allow(clippy::empty_loop)]
     loop {}
 }

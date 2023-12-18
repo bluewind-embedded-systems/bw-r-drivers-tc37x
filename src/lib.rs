@@ -10,6 +10,7 @@ pub mod tracing;
 pub mod can;
 pub mod cpu;
 pub mod gpio;
+pub mod log;
 pub mod scu;
 pub mod ssw;
 mod util;

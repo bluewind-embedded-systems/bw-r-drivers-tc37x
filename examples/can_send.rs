@@ -7,13 +7,11 @@
 #[cfg(target_arch = "tricore")]
 tc37x_rt::entry!(main);
 
-#[cfg(target_arch = "tricore")]
-use defmt::println;
-
 use embedded_can::{ExtendedId, Frame};
 use tc37x_hal::can::{CanModule, CanModuleConfig, CanNode, CanNodeConfig, NodeId};
 use tc37x_hal::cpu::asm::enable_interrupts;
 use tc37x_hal::gpio::GpioExt;
+use tc37x_hal::log::info;
 use tc37x_hal::{pac, ssw};
 
 fn setup_can() -> Result<CanNode, ()> {
@@ -32,16 +30,16 @@ fn main() -> ! {
     #[cfg(not(target_arch = "tricore"))]
     let _report = tc37x_hal::tracing::print::Report::new();
 
-    println!("Start example: can_send");
+    info!("Start example: can_send");
 
-    println!("Enable interrupts");
+    info!("Enable interrupts");
     ssw::init_software();
     enable_interrupts();
 
     let gpio00 = pac::PORT_00.split();
     let mut led1 = gpio00.p00_5.into_push_pull_output();
 
-    println!("Create can module ... ");
+    info!("Create can module ... ");
 
     let can_id: ExtendedId = ExtendedId::new(0x0CFE6E00).unwrap();
     let mut data: [u8; 8] = [0; 8];
@@ -63,7 +61,7 @@ fn main() -> ! {
         data[0] = count;
 
         if can.transmit(&test_frame).is_err() {
-            println!("Cannot send frame");
+            info!("Cannot send frame");
         }
 
         led1.set_high();
