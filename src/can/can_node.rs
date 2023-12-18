@@ -118,7 +118,7 @@ impl CanNode {
 
         self.configure_baud_rate(config.calculate_bit_timing_values, &config.baud_rate);
 
-        // for CAN FD frames, set fast baudrate
+        // for CAN FD frames, set fast baud rate
         if config.frame_mode != FrameMode::Standard {
             self.configure_fast_baud_rate(
                 config.calculate_bit_timing_values,
@@ -126,74 +126,16 @@ impl CanNode {
             );
         }
 
-        /* transmit frame configuration */
+        // transmit frame configuration
         if let FrameType::Transmit
         | FrameType::TransmitAndReceive
         | FrameType::RemoteRequest
         | FrameType::RemoteAnswer = config.frame_type
         {
-            #[cfg(feature = "log")]
-            defmt::debug!("transmit frame type configuration");
             self.set_tx_buffer_data_field_size(config.tx_buffer_data_field_size);
             self.set_tx_buffer_start_address(config.message_ram_tx_buffers_start_address);
-
-            let mode = config.tx_mode;
-            // match mode {
-            //     TxMode::DedicatedBuffers | TxMode::SharedFifo | TxMode::SharedQueue => {
-            //         set_dedicated_tx_buffers_number(
-            //             self.tx_config.dedicated_tx_buffers_number,
-            //         );
-            //         if let TxMode::SharedFifo | TxMode::SharedQueue = mode {
-            //             if let TxMode::SharedFifo = mode {
-            //                 set_transmit_fifo_queue_mode(TxMode::Fifo);
-            //             }
-            //             if let TxMode::SharedQueue = mode {
-            //                 set_transmit_fifo_queue_mode(TxMode::Queue);
-            //             }
-            //             set_transmit_fifo_queue_size(self.tx_config.fifo_queue_size);
-            //         }
-            //         for id in 0..self.tx_config.dedicated_tx_buffers_number
-            //             + self.tx_config.fifo_queue_size
-            //         {
-            //             enable_tx_buffer_transmission_interrupt(TxBufferId(id));
-            //         }
-            //     }
-            //     TxMode::Fifo | TxMode::Queue => {
-            //         set_transmit_fifo_queue_mode(mode);
-            //         set_transmit_fifo_queue_size(self.tx_config.fifo_queue_size);
-            //         for id in 0..self.tx_config.fifo_queue_size {
-            //             enable_tx_buffer_transmission_interrupt(TxBufferId(id));
-            //         }
-            //     }
-            // }
-
-            // if (1..=32).contains(&self.tx_config.event_fifo_size) {
-            //     set_tx_event_fifo_start_address(self.message_ram.tx_event_fifo_start_address);
-            //     set_tx_event_fifo_size(self.tx_config.event_fifo_size);
-            // } else {
-            //     #[cfg(feature = "log")]
-            //     defmt::assert!(self.tx_config.event_fifo_size <= 32)
-            // }
-
-            // set_frame_mode(self.frame.mode);
         }
 
-        /* recieve frame configuration */
-        //if(){}
-
-        // if(config.pins ... )
-        // {
-
-        // }
-
-        // if(config.loopback_enabled){
-        //     ...
-        // }
-
-        // interrupt groups configuration
-        //{
-
-        //}
         self.disable_configuration_change();
 
         Ok(self)
@@ -362,96 +304,14 @@ impl CanNode {
         unsafe { self.inner.rxf0s().read() }.f0fl().get()
     }
 
-    // fn get_rx_fifo0_get_index(&self) -> RxBufferId {
-    //     let id = unsafe { self.inner.rxf0s().read() }.f0gi().get();
-    //     RxBufferId::new_const(id)
-    // }
-
     fn get_rx_fifo1_fill_level(&self) -> u8 {
         unsafe { self.inner.rxf1s().read() }.f1fl().get()
     }
-
-    // fn get_rx_fifo1_get_index(&self) -> RxBufferId {
-    //     let id = unsafe { self.inner.rxf1s().read() }.f1gi().get();
-    //     RxBufferId::new_const(id)
-    // }
-
-    // #[inline]
-    // pub fn set_rx_buffer_data_field_size(&self, size: DataFieldSize) {
-    //     unsafe { self.inner.rxesc0().modify(|r| r.rbds().set(size.into())) };
-    // }
-
-    //  fn is_rx_buffer_new_data_updated(&self, rx_buffer_id: RxBufferId) -> bool {
-    //     let (data, mask) = if rx_buffer_id < RxBufferId::new_const(32) {
-    //         let data = unsafe { self.inner.ndat10().read() }.data();
-    //         let mask = 1 << u8::from(rx_buffer_id);
-    //         (data, mask)
-    //     } else {
-    //         let data = unsafe { self.inner.ndat20().read() }.data();
-    //         let mask = 1 << (u8::from(rx_buffer_id) - 32);
-    //         (data, mask)
-    //     };
-    //     (data & mask) != 0
-    // }
-
-    // #[inline]
-    // fn set_rx_fifo0_acknowledge_index(&self, rx_buffer_id: RxBufferId) {
-    //     unsafe {
-    //         self.inner
-    //             .rxf0a0()
-    //             .modify(|r| r.f0ai().set(rx_buffer_id.into()))
-    //     };
-    // }
-
-    // #[inline]
-    // fn set_rx_fifo1_acknowledge_index(&self, rx_buffer_id: RxBufferId) {
-    //     unsafe {
-    //         self.inner
-    //             .rxf1a0()
-    //             .modify(|r| r.f1ai().set(rx_buffer_id.into()))
-    //     };
-    // }
-
-    // fn clear_rx_buffer_new_data_flag(&self, rx_buffer_id: RxBufferId) {
-    //     if rx_buffer_id < RxBufferId::new_const(32) {
-    //         unsafe {
-    //             self.inner.ndat10().init(|mut r| {
-    //                 *r.data_mut_ref() = 1u32 << u8::from(rx_buffer_id);
-    //                 r
-    //             })
-    //         };
-    //     } else {
-    //         unsafe {
-    //             self.inner.ndat20().init(|mut r| {
-    //                 *r.data_mut_ref() = 1u32 << (u8::from(rx_buffer_id) - 32);
-    //                 r
-    //             })
-    //         };
-    //     }
-    // }
 
     #[inline]
     fn set_rx_buffers_start_address(&self, address: u16) {
         unsafe { self.inner.rxbc().modify(|r| r.rbsa().set(address >> 2)) };
     }
-
-    // #[inline]
-    // fn set_rx_fifo0_data_field_size(&self, size: DataFieldSize) {
-    //     unsafe {
-    //         self.inner
-    //             .rxesc0()
-    //             .modify(|r| r.f0ds().set(can0::node::rxesc::F0Ds(size.into())))
-    //     };
-    // }
-
-    // #[inline]
-    // fn set_rx_fifo0_operating_mode(&self, mode: RxFifoMode) {
-    //     unsafe {
-    //         self.inner
-    //             .rxf0c0()
-    //             .modify(|r| r.f0om().set(mode == RxFifoMode::Overwrite))
-    //     };
-    // }
 
     #[inline]
     fn set_rx_fifo0_size(&self, size: u8) {
@@ -467,24 +327,6 @@ impl CanNode {
     fn set_rx_fifo0_watermark_level(&self, level: u8) {
         unsafe { self.inner.rxf0c().modify(|r| r.f0wm().set(level)) };
     }
-
-    // #[inline]
-    // fn set_rx_fifo1_data_field_size(&self, size: DataFieldSize) {
-    //     unsafe {
-    //         self.inner
-    //             .rxesc0()
-    //             .modify(|r| r.f1ds().set(can0::node::rxesc::F1Ds(size.into())))
-    //     };
-    // }
-
-    // #[inline]
-    // fn set_rx_fifo1_operating_mode(&self, mode: RxFifoMode) {
-    //     unsafe {
-    //         self.inner
-    //             .rxf1c0()
-    //             .modify(|r| r.f1om().set(mode == RxFifoMode::Overwrite))
-    //     };
-    // }
 
     #[inline]
     fn set_rx_fifo1_size(&self, size: u8) {
@@ -502,33 +344,7 @@ impl CanNode {
     }
 }
 
-// IfxLld_Can_Std_Tx_Element_Functions
 impl CanNode {
-    // #[inline]
-    // fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
-    //     let id = unsafe { self.inner.txfqs().read() }.tfqpi().get();
-    //     TxBufferId::new_const(id)
-    // }
-
-    // #[inline]
-    // fn is_tx_buffer_cancellation_finished(&self, tx_buffer_id: TxBufferId) -> bool {
-    //     self.is_tx_buffer_transmission_occured(tx_buffer_id)
-    // }
-
-    // #[inline]
-    // fn is_tx_buffer_request_pending(&self, tx_buffer_id: TxBufferId) -> bool {
-    //     unsafe { self.inner.txbrp0().read() }
-    //         .trp(tx_buffer_id.into())
-    //         .get()
-    // }
-
-    // #[inline]
-    // fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: TxBufferId) -> bool {
-    //     let data = unsafe { self.inner.txbto0().read() }.data();
-    //     let mask = 1u32 << u32::from(tx_buffer_id);
-    //     (data & mask) != 0
-    // }
-
     #[inline]
     fn is_tx_event_fifo_element_lost(&self) -> bool {
         unsafe { self.inner.txefs().read() }.tefl().get()
@@ -554,15 +370,6 @@ impl CanNode {
         unsafe { self.inner.txbc().modify(|r| r.ndtb().set(number)) };
     }
 
-    #[inline]
-    // fn set_tx_buffer_add_request(&self, tx_buffer_id: TxBufferId) {
-    //     unsafe {
-    //         self.inner
-    //             .txbar0()
-    //             .modify(|r| r.ar(tx_buffer_id.into()).set(true))
-    //     }
-    // }
-
     fn set_tx_buffer_data_field_size(&self, data_field_size: u8) {
         let data_field_size = tc37x_pac::can0::node::txesc::Tbds(data_field_size);
         unsafe { self.inner.txesc().modify(|r| r.tbds().set(data_field_size)) };
@@ -573,82 +380,11 @@ impl CanNode {
         unsafe { self.inner.txbc().modify(|r| r.tbsa().set(address >> 2)) };
     }
 
-    #[inline]
-    // pub fn set_transmit_fifo_queue_mode(&self, mode: TxMode) {
-    //     if let TxMode::Fifo | TxMode::Queue = mode {
-    //         let val = (mode as u8) != 0;
-    //         unsafe { self.inner.txbc().modify(|r| r.tfqm().set(val)) };
-    //     } else {
-    //         panic!("invalid fifo queue mode");
-    //     }
-    // }
-
     fn set_transmit_fifo_queue_size(&self, number: u8) {
         unsafe { self.inner.txbc().modify(|r| r.tfqs().set(number)) };
     }
-
-    // fn get_data_field_size(&self, from: ReadFrom) -> u8 {
-    //     let rx_esc = unsafe { self.inner.rxesc0().read() };
-    //     let size_code = match from {
-    //         ReadFrom::Buffer(_) => rx_esc.rbds().get().0,
-    //         ReadFrom::RxFifo0 => rx_esc.f0ds().get().0,
-    //         ReadFrom::RxFifo1 => rx_esc.f1ds().get().0,
-    //     };
-
-    //     if size_code < DataFieldSize::_32.into() {
-    //         (size_code + 2) * 4
-    //     } else {
-    //         (size_code - 3) * 16
-    //     }
-    // }
-
-    // fn get_tx_buffer_data_field_size(&self) -> u8 {
-    //     let size_code = unsafe { self.inner.txesc().read() }.tbds().get();
-
-    //     if size_code < DataFieldSize::_32.into() {
-    //         (size_code + 2) * 4
-    //     } else {
-    //         (size_code - 3) * 16
-    //     }
-    // }
-
-    // fn get_rx_element_address(
-    //     &self,
-    //     ram_base_address: u32,
-    //     tx_buffers_start_address: u16,
-    //     buf_from: ReadFrom,
-    //     buffer_number: RxBufferId,
-    // ) -> Rx {
-    //     let num_of_config_bytes = 8u32;
-    //     let num_of_data_bytes = self.get_data_field_size(buf_from) as u32;
-    //     let tx_buffer_size = num_of_config_bytes + num_of_data_bytes;
-    //     let tx_buffer_index = tx_buffer_size * u32::from(buffer_number);
-
-    //     let tx_buffer_element_address =
-    //         ram_base_address + tx_buffers_start_address as u32 + tx_buffer_index;
-
-    //     Rx::new(tx_buffer_element_address as *mut u8)
-    // }
-
-    // fn get_tx_element_address(
-    //     &self,
-    //     ram_base_address: u32,
-    //     tx_buffers_start_address: u16,
-    //     buffer_number: TxBufferId,
-    // ) -> Tx {
-    //     let num_of_config_bytes = 8u32;
-    //     let num_of_data_bytes = self.get_tx_buffer_data_field_size() as u32;
-    //     let tx_buffer_size = num_of_config_bytes + num_of_data_bytes;
-    //     let tx_buffer_index = tx_buffer_size * u32::from(buffer_number);
-
-    //     let tx_buffer_element_address =
-    //         ram_base_address + tx_buffers_start_address as u32 + tx_buffer_index;
-
-    //     Tx::new(tx_buffer_element_address as *mut u8)
-    // }
 }
 
-// IfxLld_Can_Std_Tx_Event_FIFO_Element_Functions
 impl CanNode {
     #[inline]
     fn set_tx_event_fifo_start_address(&self, address: u16) {
@@ -661,63 +397,6 @@ impl CanNode {
     }
 }
 
-// IfxLld_Can_Std_Interrupt_Functions
-impl CanNode {
-    // #[inline]
-    // fn enable_tx_buffer_transmission_interrupt(&self, tx_buffer_id: TxBufferId) {
-    //     unsafe {
-    //         self.inner.txbtie0().modify(|mut r| {
-    //             *r.data_mut_ref() |= 1 << tx_buffer_id.0;
-    //             r
-    //         })
-    //     };
-    // }
-
-    // fn set_group_interrupt_line(
-    //     &self,
-    //     interrupt_group: InterruptGroup,
-    //     interrupt_line: InterruptLine,
-    // ) {
-    //     if interrupt_group <= InterruptGroup::Loi {
-    //         unsafe {
-    //             self.inner.grint10().modify(|mut r| {
-    //                 *r.data_mut_ref() |= (interrupt_line.0 as u32) << (interrupt_group as u32 * 4);
-    //                 r
-    //             })
-    //         };
-    //     } else {
-    //         unsafe {
-    //             self.inner.grint20().modify(|mut r| {
-    //                 *r.data_mut_ref() |=
-    //                     (interrupt_line.0 as u32) << ((interrupt_group as u32 % 8) * 4);
-    //                 r
-    //             })
-    //         };
-    //     }
-    // }
-
-    // #[inline]
-    // fn enable_interrupt(&self, interrupt: Interrupt) {
-    //     unsafe {
-    //         self.inner.ie0().modify(|mut r| {
-    //             *r.data_mut_ref() |= 1 << interrupt as u32;
-    //             r
-    //         })
-    //     };
-    // }
-
-    // #[inline]
-    // fn clear_interrupt_flag(&self, interrupt: Interrupt) {
-    //     unsafe {
-    //         self.inner.ir0().init(|mut r| {
-    //             *r.data_mut_ref() = 1 << interrupt as u32;
-    //             r
-    //         })
-    //     };
-    // }
-}
-
-// IfxLld_Can_Std_Filter_Functions
 impl CanNode {
     #[inline]
     fn set_standard_filter_list_start_address(&self, address: u16) {
@@ -728,15 +407,6 @@ impl CanNode {
     fn set_standard_filter_list_size(&self, size: u8) {
         unsafe { self.inner.sidfc().modify(|r| r.lss().set(size)) };
     }
-
-    //#[inline]
-    // fn configure_standard_filter_for_non_matching_frame(&self, filter: NonMatchingFrame) {
-    //     unsafe {
-    //         self.inner
-    //             .gfc()
-    //             .modify(|r| r.anfs().set(can0::node::gfc::Anfs(filter as _)))
-    //     };
-    // }
 
     #[inline]
     fn reject_remote_frames_with_standard_id(&self) {
@@ -753,44 +423,7 @@ impl CanNode {
         unsafe { self.inner.xidfc().modify(|r| r.lse().set(size)) };
     }
 
-    #[inline]
-    // fn configure_extended_filter_for_non_matching_frame(&self, filter: NonMatchingFrame) {
-    //     unsafe {
-    //         self.inner
-    //             .gfc()
-    //             .modify(|r| r.anfe().set(can0::node::gfc::Anfe(filter as _)))
-    //     };
-    // }
-
     fn reject_remote_frames_with_extended_id(&self) {
         unsafe { self.inner.gfc().modify(|r| r.rrfe().set(true)) };
     }
 }
-
-// fn get_standard_filter_element_address(
-//     ram_base_address: u32,
-//     standard_filter_list_start_address: u16,
-//     filter_number: u8,
-// ) -> StdMsg {
-//     let filter_index = filter_number as u32 * 4;
-//     let standard_filter_element_address =
-//         ram_base_address + standard_filter_list_start_address as u32 + filter_index;
-//     StdMsg::new(standard_filter_element_address as _)
-// }
-
-// pub fn get_extended_filter_element_address(
-//     ram_base_address: u32,
-//     extended_filter_list_start_address: u16,
-//     filter_number: u8,
-// ) -> ExtMsg {
-//     let filter_index = filter_number as u32 * 8;
-//     let extended_filter_element_address =
-//         ram_base_address + extended_filter_list_start_address as u32 + filter_index;
-//     ExtMsg::new(extended_filter_element_address as _)
-// }
-
-// impl GroupInterruptConfig {
-//     pub fn is_enable_src(&self) -> bool {
-//         self.priority > 0 || self.type_of_service == Tos::Dma
-//     }
-// }
