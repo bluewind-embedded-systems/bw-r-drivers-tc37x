@@ -1,3 +1,6 @@
+// TODO Remove asap
+#![allow(dead_code)]
+
 use super::baud_rate::*;
 use super::can_module::ClockSource;
 use super::frame::Frame;
