@@ -9,6 +9,7 @@ tc37x_rt::entry!(main);
 use core::arch::asm;
 use embedded_hal::digital::StatefulOutputPin;
 use tc37x_hal::gpio::GpioExt;
+use tc37x_hal::log::info;
 use tc37x_hal::pac;
 
 pub enum State {
@@ -28,7 +29,20 @@ fn main() -> ! {
     let mut led2 = gpio00.p00_6.into_push_pull_output();
     let button1 = gpio00.p00_7.into_input();
 
+    let mut was_pressed = false;
+
     loop {
+        let is_pressed = button1.is_high();
+
+        if is_pressed != was_pressed {
+            was_pressed = is_pressed;
+            if is_pressed {
+                info!("Button pressed");
+            } else {
+                info!("Button released");
+            }
+        }
+
         let period = if button1.is_high() { 100_000 } else { 25_000 };
 
         // Test set_low
