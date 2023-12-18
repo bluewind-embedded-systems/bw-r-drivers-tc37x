@@ -6,6 +6,7 @@ use super::can_module::ClockSource;
 use super::frame::Frame;
 use super::CanModule;
 use crate::util::wait_nop_cycles;
+use tc37x_pac::hidden::RegValue;
 
 // TODO Default values are not valid
 #[derive(Default)]
@@ -153,12 +154,127 @@ impl NewCanNode {
 
         self.disable_configuration_change();
 
+        // TODO FifoData from config
+        self.set_rx_fifo0(FifoData {
+            field_size: DataFieldSize::_8,
+            operation_mode: RxFifoMode::Blocking,
+            watermark_level: 0,
+            size: 4,
+            start_address: 0x100,
+        });
+
+        // TODO DedicatedData from config
+        self.set_tx_fifo(
+            DedicatedData {
+                field_size: DataFieldSize::_8,
+                start_address: 0x440,
+            },
+            4,
+        );
+
+        // self.interrupt(
+        //     InterruptGroup::Rxf0n,
+        //     Interrupt::RxFifo0newMessage,
+        //     InterruptLine(1),
+        //     2,
+        //     Tos::Cpu0,
+        // );
+        //
+        // self.connect_pin_rx(
+        //     RXD00B_P20_7_IN,
+        //     InputMode::PULL_UP,
+        //     PadDriver::CmosAutomotiveSpeed3,
+        // );
+        //
+        // self.connect_pin_tx(
+        //     TXD00_P20_8_OUT,
+        //     OutputMode::PUSH_PULL,
+        //     PadDriver::CmosAutomotiveSpeed3,
+        // );
+
         Ok(CanNode {
             frame_mode: config.frame_mode,
             module: self.module,
             node_id: self.node_id,
             inner: self.inner,
         })
+    }
+
+    fn set_rx_fifo0(&self, data: FifoData) {
+        self.set_rx_fifo0_data_field_size(data.field_size);
+        self.set_rx_fifo0_start_address(data.start_address);
+        self.set_rx_fifo0_size(data.size);
+        self.set_rx_fifo0_operating_mode(data.operation_mode);
+        self.set_rx_fifo0_watermark_level(data.watermark_level);
+    }
+
+    fn set_rx_fifo0_data_field_size(&self, size: DataFieldSize) {
+        let size = tc37x_pac::can0::node::rxesc::F0Ds(size as u8);
+        unsafe { self.inner.rxesc().modify(|r| r.f0ds().set(size)) };
+    }
+
+    fn set_rx_fifo0_start_address(&self, address: u16) {
+        unsafe { self.inner.rxf0c().modify(|r| r.f0sa().set(address >> 2)) };
+    }
+
+    fn set_rx_fifo0_size(&self, size: u8) {
+        unsafe { self.inner.rxf0c().modify(|r| r.f0s().set(size)) };
+    }
+
+    fn set_rx_fifo0_watermark_level(&self, level: u8) {
+        unsafe { self.inner.rxf0c().modify(|r| r.f0wm().set(level)) };
+    }
+
+    fn set_rx_fifo0_operating_mode(&self, mode: RxFifoMode) {
+        unsafe {
+            self.inner
+                .rxf0c()
+                .modify(|r| r.f0om().set(mode == RxFifoMode::Overwrite))
+        };
+    }
+
+    fn set_tx_fifo(&self, buffers: DedicatedData, fifo_size: u8) {
+        self.set_inner_tx_buffers(buffers);
+        self.set_inner_tx_fifo_queue(TxMode::Fifo, fifo_size);
+        self.set_inner_tx_int(fifo_size);
+    }
+
+    fn set_inner_tx_buffers(&self, dedicated: DedicatedData) {
+        self.set_tx_buffer_data_field_size(dedicated.field_size as u8);
+        self.set_tx_buffer_start_address(dedicated.start_address);
+    }
+
+    fn set_inner_tx_fifo_queue(&self, mode: TxMode, size: u8) {
+        self.set_transmit_fifo_queue_mode(mode);
+        self.set_transmit_fifo_queue_size(size);
+    }
+
+    fn set_inner_tx_int(&self, size: u8) {
+        for id in 0..size {
+            self.enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+        }
+    }
+
+    fn enable_tx_buffer_transmission_interrupt(&self, tx_buffer_id: TxBufferId) {
+        unsafe {
+            self.inner.txbtie().modify(|mut r| {
+                *r.data_mut_ref() |= 1 << tx_buffer_id.0;
+                r
+            })
+        };
+    }
+
+    fn set_transmit_fifo_queue_mode(&self, mode: TxMode) {
+        if let TxMode::Fifo | TxMode::Queue = mode {
+            let val = (mode as u8) != 0;
+            unsafe { self.inner.txbc().modify(|r| r.tfqm().set(val)) };
+        } else {
+            panic!("invalid fifo queue mode");
+        }
+    }
+
+    fn set_transmit_fifo_queue_size(&self, number: u8) {
+        unsafe { self.inner.txbc().modify(|r| r.tfqs().set(number)) };
     }
 
     fn enable_configuration_change(&self) {
@@ -432,3 +548,258 @@ impl CanNode {
         unsafe { self.inner.gfc().modify(|r| r.rrfe().set(true)) };
     }
 }
+
+#[derive(Clone, Copy)]
+pub struct FifoData {
+    pub field_size: DataFieldSize,
+    pub operation_mode: RxFifoMode,
+    pub watermark_level: u8,
+    pub size: u8,
+    pub start_address: u16,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum RxFifoMode {
+    Blocking,
+    Overwrite,
+}
+
+#[repr(u8)]
+#[derive(Clone, Copy)]
+pub enum DataFieldSize {
+    _8,
+    _12,
+    _16,
+    _20,
+    _24,
+    _32,
+    _48,
+    _64,
+}
+
+#[derive(Clone, Copy)]
+pub struct DedicatedData {
+    pub field_size: DataFieldSize,
+    pub start_address: u16,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub enum InterruptGroup {
+    Tefifo,
+    Hpe,
+    Wati,
+    Alrt,
+    Moer,
+    Safe,
+    Boff,
+    Loi,
+    Reint,
+    Rxf1f,
+    Rxf0f,
+    Rxf1n,
+    Rxf0n,
+    Reti,
+    Traq,
+    Traco,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Interrupt {
+    RxFifo0newMessage,
+    RxFifo0watermarkReached,
+    RxFifo0full,
+    RxFifo0messageLost,
+    RxFifo1newMessage,
+    RxFifo1watermarkReached,
+    RxFifo1full,
+    RxFifo1messageLost,
+    HighPriorityMessage,
+    TransmissionCompleted,
+    TransmissionCancellationFinished,
+    TxFifoEmpty,
+    TxEventFifoNewEntry,
+    TxEventFifoWatermarkReached,
+    TxEventFifoFull,
+    TxEventFifoEventLost,
+    TimestampWraparound,
+    MessageRamaccessFailure,
+    TimeoutOccurred,
+    MessageStoredToDedicatedRxBuffer,
+    BitErrorCorrected,
+    BitErrorUncorrected,
+    ErrorLoggingOverflow,
+    ErrorPassive,
+    WarningStatus,
+    BusOffStatus,
+    Watchdog,
+    ProtocolErrorArbitration,
+    ProtocolErrorData,
+    AccessToReservedAddress,
+}
+
+#[repr(transparent)]
+#[derive(PartialEq, PartialOrd, Clone, Copy, Debug, Default)]
+pub struct InterruptLine(pub u8);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub enum Tos {
+    #[default]
+    Cpu0,
+    Dma,
+    Cpu1,
+    Cpu2,
+}
+
+pub const RXD00B_P20_7_IN: RxdIn =
+    RxdIn::new(CanModuleId::_0, NodeId(0), PortNumber::_20, 7, RxSel::_B);
+
+pub const TXD00_P20_8_OUT: TxdOut = TxdOut::new(
+    CanModuleId::_0,
+    NodeId(0),
+    PortNumber::_20,
+    8,
+    OutputIdx::ALT5,
+);
+
+#[derive(Clone, Copy)]
+pub struct InputMode(u32);
+impl InputMode {
+    pub const NO_PULL_DEVICE: Self = Self(0 << 3);
+    pub const PULL_DOWN: Self = Self(1 << 3);
+    pub const PULL_UP: Self = Self(2 << 3);
+}
+
+#[derive(Clone, Copy)]
+pub struct OutputMode(u32);
+impl OutputMode {
+    pub const PUSH_PULL: OutputMode = Self(0x10 << 3);
+    pub const OPEN_DRAIN: OutputMode = Self(0x18 << 3);
+    pub const NONE: OutputMode = Self(0);
+}
+
+#[derive(Clone, Copy)]
+pub enum PadDriver {
+    CmosAutomotiveSpeed1 = 0,
+    CmosAutomotiveSpeed2 = 1,
+    CmosAutomotiveSpeed3 = 2,
+    CmosAutomotiveSpeed4 = 3,
+    TtlSpeed1 = 8,
+    TtlSpeed2 = 9,
+    TtlSpeed3 = 10,
+    TtlSpeed4 = 11,
+    Ttl3v3speed1 = 12,
+    Ttl3v3speed2 = 13,
+    Ttl3v3speed3 = 14,
+    Ttl3v3speed4 = 15,
+}
+
+#[derive(PartialEq, PartialOrd, Clone, Copy, Debug, Default)]
+pub struct CanModuleId(u8);
+impl CanModuleId {
+    pub const _0: Self = Self(0);
+    pub const _1: Self = Self(0);
+}
+
+#[derive(Clone, Copy)]
+pub enum PortNumber {
+    _00,
+    _01,
+    _02,
+    _10,
+    _11,
+    _12,
+    _13,
+    _14,
+    _15,
+    _20,
+    _21,
+    _22,
+    _23,
+    _32,
+    _33,
+    _34,
+    _40,
+}
+
+#[derive(Clone, Copy)]
+pub struct OutputIdx(u32);
+impl OutputIdx {
+    pub const GENERAL: Self = Self(0x10 << 3);
+    pub const ALT1: Self = Self(0x11 << 3);
+    pub const ALT2: Self = Self(0x12 << 3);
+    pub const ALT3: Self = Self(0x13 << 3);
+    pub const ALT4: Self = Self(0x14 << 3);
+    pub const ALT5: Self = Self(0x15 << 3);
+    pub const ALT6: Self = Self(0x16 << 3);
+    pub const ALT7: Self = Self(0x17 << 3);
+}
+
+#[derive(Clone, Copy)]
+pub struct RxdIn {
+    pub module: CanModuleId,
+    pub node_id: NodeId,
+    pub port: PortNumber,
+    pub pin_index: u8,
+    pub select: RxSel,
+}
+
+impl RxdIn {
+    pub const fn new(
+        module: CanModuleId,
+        node_id: NodeId,
+        port: PortNumber,
+        pin_index: u8,
+        select: RxSel,
+    ) -> Self {
+        Self {
+            module,
+            node_id,
+            port,
+            pin_index,
+            select,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub enum RxSel {
+    _A,
+    _B,
+    _C,
+    _D,
+    _E,
+    _F,
+    _G,
+    _H,
+}
+
+#[derive(Clone, Copy)]
+pub struct TxdOut {
+    pub module: CanModuleId,
+    pub node_id: NodeId,
+    pub port: PortNumber,
+    pub pin_index: u8,
+    pub select: OutputIdx,
+}
+
+impl TxdOut {
+    pub const fn new(
+        module: CanModuleId,
+        node_id: NodeId,
+        port: PortNumber,
+        pin_index: u8,
+        select: OutputIdx,
+    ) -> Self {
+        Self {
+            module,
+            node_id,
+            port,
+            pin_index,
+            select,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+#[repr(transparent)]
+pub struct TxBufferId(pub u8);
