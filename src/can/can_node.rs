@@ -94,13 +94,18 @@ impl NodeId {
 pub struct CanNode {
     module: CanModule,
     node_id: NodeId,
+    inner: tc37x_pac::can0::Node,
 }
 
 impl CanNode {
     /// Only a module can create a node. This function is only accessible from within this crate.
     pub(crate) fn new(module: CanModule, node_id: NodeId) -> Self {
-        //let inner = module.registers().node(node_id.0.into());
-        Self { module, node_id }
+        let inner = module.registers().node(node_id.0.into());
+        Self {
+            module,
+            node_id,
+            inner,
+        }
     }
 
     pub fn init(self, config: CanNodeConfig) -> Result<CanNode, ()> {
@@ -201,7 +206,7 @@ impl CanNode {
 
     #[inline]
     fn enable_configuration_change(&self) {
-        let cccr = tc37x_pac::CAN0.cccr0();
+        let cccr = self.inner.cccr();
 
         if unsafe { cccr.read() }.init().get() {
             unsafe { cccr.modify(|r| r.cce().set(false)) };
@@ -219,7 +224,7 @@ impl CanNode {
 
     #[inline]
     pub fn disable_configuration_change(&self) {
-        let cccr = tc37x_pac::CAN0.cccr0();
+        let cccr = self.inner.cccr();
 
         unsafe { cccr.modify(|r| r.cce().set(false)) };
 
@@ -279,7 +284,7 @@ impl CanNode {
 
     fn set_bit_timing(&self, timing: BitTiming) {
         unsafe {
-            tc37x_pac::CAN0.nbtp0().modify(|r| {
+            self.inner.nbtp().modify(|r| {
                 r.nbrp()
                     .set(timing.brp)
                     .nsjw()
@@ -294,7 +299,7 @@ impl CanNode {
 
     fn set_bit_timing_values(&self, sjw: u8, time_segment2: u8, time_segment1: u8, prescaler: u16) {
         unsafe {
-            tc37x_pac::CAN0.nbtp0().modify(|r| {
+            self.inner.nbtp().modify(|r| {
                 r.nsjw()
                     .set(sjw)
                     .ntseg1()
@@ -311,7 +316,7 @@ impl CanNode {
         let timing = calculate_fast_bit_timing(module_freq, baudrate, sample_point, sjw);
 
         unsafe {
-            tc37x_pac::CAN0.dbtp0().modify(|r| {
+            self.inner.dbtp().modify(|r| {
                 r.dbrp()
                     .set(timing.brp.try_into().unwrap())
                     .dsjw()
@@ -332,7 +337,7 @@ impl CanNode {
         prescaler: u8,
     ) {
         unsafe {
-            tc37x_pac::CAN0.dbtp0().modify(|r| {
+            self.inner.dbtp().modify(|r| {
                 r.dsjw()
                     .set(sjw)
                     .dtseg1()
@@ -346,43 +351,43 @@ impl CanNode {
     }
 
     pub fn set_transceiver_delay_compensation_offset(&self, delay: u8) {
-        unsafe { tc37x_pac::CAN0.dbtp0().modify(|r| r.tdc().set(true)) };
-        unsafe { tc37x_pac::CAN0.tdcr0().modify(|r| r.tdco().set(delay)) };
+        unsafe { self.inner.dbtp().modify(|r| r.tdc().set(true)) };
+        unsafe { self.inner.tdcr().modify(|r| r.tdco().set(delay)) };
     }
 }
 
 // IfxLld_Can_Std_Rx_Element_Functions
 impl CanNode {
     fn get_rx_fifo0_fill_level(&self) -> u8 {
-        unsafe { tc37x_pac::CAN0.rxf0s0().read() }.f0fl().get()
+        unsafe { self.inner.rxf0s().read() }.f0fl().get()
     }
 
     // fn get_rx_fifo0_get_index(&self) -> RxBufferId {
-    //     let id = unsafe { tc37x_pac::CAN0.rxf0s0().read() }.f0gi().get();
+    //     let id = unsafe { self.inner.rxf0s().read() }.f0gi().get();
     //     RxBufferId::new_const(id)
     // }
 
     fn get_rx_fifo1_fill_level(&self) -> u8 {
-        unsafe { tc37x_pac::CAN0.rxf1s0().read() }.f1fl().get()
+        unsafe { self.inner.rxf1s().read() }.f1fl().get()
     }
 
     // fn get_rx_fifo1_get_index(&self) -> RxBufferId {
-    //     let id = unsafe { tc37x_pac::CAN0.rxf1s0().read() }.f1gi().get();
+    //     let id = unsafe { self.inner.rxf1s().read() }.f1gi().get();
     //     RxBufferId::new_const(id)
     // }
 
     // #[inline]
     // pub fn set_rx_buffer_data_field_size(&self, size: DataFieldSize) {
-    //     unsafe { tc37x_pac::CAN0.rxesc0().modify(|r| r.rbds().set(size.into())) };
+    //     unsafe { self.inner.rxesc0().modify(|r| r.rbds().set(size.into())) };
     // }
 
     //  fn is_rx_buffer_new_data_updated(&self, rx_buffer_id: RxBufferId) -> bool {
     //     let (data, mask) = if rx_buffer_id < RxBufferId::new_const(32) {
-    //         let data = unsafe { tc37x_pac::CAN0.ndat10().read() }.data();
+    //         let data = unsafe { self.inner.ndat10().read() }.data();
     //         let mask = 1 << u8::from(rx_buffer_id);
     //         (data, mask)
     //     } else {
-    //         let data = unsafe { tc37x_pac::CAN0.ndat20().read() }.data();
+    //         let data = unsafe { self.inner.ndat20().read() }.data();
     //         let mask = 1 << (u8::from(rx_buffer_id) - 32);
     //         (data, mask)
     //     };
@@ -392,7 +397,7 @@ impl CanNode {
     // #[inline]
     // fn set_rx_fifo0_acknowledge_index(&self, rx_buffer_id: RxBufferId) {
     //     unsafe {
-    //         tc37x_pac::CAN0
+    //         self.inner
     //             .rxf0a0()
     //             .modify(|r| r.f0ai().set(rx_buffer_id.into()))
     //     };
@@ -401,7 +406,7 @@ impl CanNode {
     // #[inline]
     // fn set_rx_fifo1_acknowledge_index(&self, rx_buffer_id: RxBufferId) {
     //     unsafe {
-    //         tc37x_pac::CAN0
+    //         self.inner
     //             .rxf1a0()
     //             .modify(|r| r.f1ai().set(rx_buffer_id.into()))
     //     };
@@ -410,14 +415,14 @@ impl CanNode {
     // fn clear_rx_buffer_new_data_flag(&self, rx_buffer_id: RxBufferId) {
     //     if rx_buffer_id < RxBufferId::new_const(32) {
     //         unsafe {
-    //             tc37x_pac::CAN0.ndat10().init(|mut r| {
+    //             self.inner.ndat10().init(|mut r| {
     //                 *r.data_mut_ref() = 1u32 << u8::from(rx_buffer_id);
     //                 r
     //             })
     //         };
     //     } else {
     //         unsafe {
-    //             tc37x_pac::CAN0.ndat20().init(|mut r| {
+    //             self.inner.ndat20().init(|mut r| {
     //                 *r.data_mut_ref() = 1u32 << (u8::from(rx_buffer_id) - 32);
     //                 r
     //             })
@@ -427,17 +432,13 @@ impl CanNode {
 
     #[inline]
     fn set_rx_buffers_start_address(&self, address: u16) {
-        unsafe {
-            tc37x_pac::CAN0
-                .rxbc0()
-                .modify(|r| r.rbsa().set(address >> 2))
-        };
+        unsafe { self.inner.rxbc().modify(|r| r.rbsa().set(address >> 2)) };
     }
 
     // #[inline]
     // fn set_rx_fifo0_data_field_size(&self, size: DataFieldSize) {
     //     unsafe {
-    //         tc37x_pac::CAN0
+    //         self.inner
     //             .rxesc0()
     //             .modify(|r| r.f0ds().set(can0::node::rxesc::F0Ds(size.into())))
     //     };
@@ -446,7 +447,7 @@ impl CanNode {
     // #[inline]
     // fn set_rx_fifo0_operating_mode(&self, mode: RxFifoMode) {
     //     unsafe {
-    //         tc37x_pac::CAN0
+    //         self.inner
     //             .rxf0c0()
     //             .modify(|r| r.f0om().set(mode == RxFifoMode::Overwrite))
     //     };
@@ -454,27 +455,23 @@ impl CanNode {
 
     #[inline]
     fn set_rx_fifo0_size(&self, size: u8) {
-        unsafe { tc37x_pac::CAN0.rxf0c0().modify(|r| r.f0s().set(size)) };
+        unsafe { self.inner.rxf0c().modify(|r| r.f0s().set(size)) };
     }
 
     #[inline]
     fn set_rx_fifo0_start_address(&self, address: u16) {
-        unsafe {
-            tc37x_pac::CAN0
-                .rxf0c0()
-                .modify(|r| r.f0sa().set(address >> 2))
-        };
+        unsafe { self.inner.rxf0c().modify(|r| r.f0sa().set(address >> 2)) };
     }
 
     #[inline]
     fn set_rx_fifo0_watermark_level(&self, level: u8) {
-        unsafe { tc37x_pac::CAN0.rxf0c0().modify(|r| r.f0wm().set(level)) };
+        unsafe { self.inner.rxf0c().modify(|r| r.f0wm().set(level)) };
     }
 
     // #[inline]
     // fn set_rx_fifo1_data_field_size(&self, size: DataFieldSize) {
     //     unsafe {
-    //         tc37x_pac::CAN0
+    //         self.inner
     //             .rxesc0()
     //             .modify(|r| r.f1ds().set(can0::node::rxesc::F1Ds(size.into())))
     //     };
@@ -483,7 +480,7 @@ impl CanNode {
     // #[inline]
     // fn set_rx_fifo1_operating_mode(&self, mode: RxFifoMode) {
     //     unsafe {
-    //         tc37x_pac::CAN0
+    //         self.inner
     //             .rxf1c0()
     //             .modify(|r| r.f1om().set(mode == RxFifoMode::Overwrite))
     //     };
@@ -491,21 +488,17 @@ impl CanNode {
 
     #[inline]
     fn set_rx_fifo1_size(&self, size: u8) {
-        unsafe { tc37x_pac::CAN0.rxf1c0().modify(|r| r.f1s().set(size)) };
+        unsafe { self.inner.rxf1c().modify(|r| r.f1s().set(size)) };
     }
 
     #[inline]
     fn set_rx_fifo1_start_address(&self, address: u16) {
-        unsafe {
-            tc37x_pac::CAN0
-                .rxf1c0()
-                .modify(|r| r.f1sa().set(address >> 2))
-        };
+        unsafe { self.inner.rxf1c().modify(|r| r.f1sa().set(address >> 2)) };
     }
 
     #[inline]
     fn set_rx_fifo1_watermark_level(&self, level: u8) {
-        unsafe { tc37x_pac::CAN0.rxf1c0().modify(|r| r.f1wm().set(level)) };
+        unsafe { self.inner.rxf1c().modify(|r| r.f1wm().set(level)) };
     }
 }
 
@@ -513,7 +506,7 @@ impl CanNode {
 impl CanNode {
     // #[inline]
     // fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
-    //     let id = unsafe { tc37x_pac::CAN0.txfqs().read() }.tfqpi().get();
+    //     let id = unsafe { self.inner.txfqs().read() }.tfqpi().get();
     //     TxBufferId::new_const(id)
     // }
 
@@ -524,85 +517,78 @@ impl CanNode {
 
     // #[inline]
     // fn is_tx_buffer_request_pending(&self, tx_buffer_id: TxBufferId) -> bool {
-    //     unsafe { tc37x_pac::CAN0.txbrp0().read() }
+    //     unsafe { self.inner.txbrp0().read() }
     //         .trp(tx_buffer_id.into())
     //         .get()
     // }
 
     // #[inline]
     // fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: TxBufferId) -> bool {
-    //     let data = unsafe { tc37x_pac::CAN0.txbto0().read() }.data();
+    //     let data = unsafe { self.inner.txbto0().read() }.data();
     //     let mask = 1u32 << u32::from(tx_buffer_id);
     //     (data & mask) != 0
     // }
 
     #[inline]
     fn is_tx_event_fifo_element_lost(&self) -> bool {
-        unsafe { tc37x_pac::CAN0.txefs0().read() }.tefl().get()
+        unsafe { self.inner.txefs().read() }.tefl().get()
     }
 
     #[inline]
     fn is_tx_event_fifo_full(&self) -> bool {
-        unsafe { tc37x_pac::CAN0.txefs0().read() }.eff().get()
+        unsafe { self.inner.txefs().read() }.eff().get()
     }
 
     #[inline]
     fn is_tx_fifo_queue_full(&self) -> bool {
-        unsafe { tc37x_pac::CAN0.txfqs0().read() }.tfqf().get()
+        unsafe { self.inner.txfqs().read() }.tfqf().get()
     }
 
     #[inline]
     fn pause_trasmission(&self, enable: bool) {
-        unsafe { tc37x_pac::CAN0.cccr0().modify(|r| r.txp().set(enable)) };
+        unsafe { self.inner.cccr().modify(|r| r.txp().set(enable)) };
     }
 
     #[inline]
     fn set_dedicated_tx_buffers_number(&self, number: u8) {
-        unsafe { tc37x_pac::CAN0.txbc0().modify(|r| r.ndtb().set(number)) };
+        unsafe { self.inner.txbc().modify(|r| r.ndtb().set(number)) };
     }
 
     #[inline]
     // fn set_tx_buffer_add_request(&self, tx_buffer_id: TxBufferId) {
     //     unsafe {
-    //         tc37x_pac::CAN0
+    //         self.inner
     //             .txbar0()
     //             .modify(|r| r.ar(tx_buffer_id.into()).set(true))
     //     }
     // }
     #[inline]
     fn set_tx_buffer_data_field_size(&self, data_field_size: u8) {
-        unsafe {
-            tc37x_pac::CAN0
-                .txesc0()
-                .modify(|r| r.tbds().set(data_field_size))
-        };
+        let data_field_size = tc37x_pac::can0::node::txesc::Tbds(data_field_size);
+        unsafe { self.inner.txesc().modify(|r| r.tbds().set(data_field_size)) };
     }
 
     #[inline]
     fn set_tx_buffer_start_address(&self, address: u16) {
-        unsafe {
-            tc37x_pac::CAN0
-                .txbc0()
-                .modify(|r| r.tbsa().set(address >> 2))
-        };
+        unsafe { self.inner.txbc().modify(|r| r.tbsa().set(address >> 2)) };
     }
 
     #[inline]
     // pub fn set_transmit_fifo_queue_mode(&self, mode: TxMode) {
     //     if let TxMode::Fifo | TxMode::Queue = mode {
     //         let val = (mode as u8) != 0;
-    //         unsafe { tc37x_pac::CAN0.txbc0().modify(|r| r.tfqm().set(val)) };
+    //         unsafe { self.inner.txbc().modify(|r| r.tfqm().set(val)) };
     //     } else {
     //         panic!("invalid fifo queue mode");
     //     }
     // }
     #[inline]
     fn set_transmit_fifo_queue_size(&self, number: u8) {
-        unsafe { tc37x_pac::CAN0.txbc0().modify(|r| r.tfqs().set(number)) };
+        unsafe { self.inner.txbc().modify(|r| r.tfqs().set(number)) };
     }
 
     // fn get_data_field_size(&self, from: ReadFrom) -> u8 {
-    //     let rx_esc = unsafe { tc37x_pac::CAN0.rxesc0().read() };
+    //     let rx_esc = unsafe { self.inner.rxesc0().read() };
     //     let size_code = match from {
     //         ReadFrom::Buffer(_) => rx_esc.rbds().get().0,
     //         ReadFrom::RxFifo0 => rx_esc.f0ds().get().0,
@@ -617,7 +603,7 @@ impl CanNode {
     // }
 
     // fn get_tx_buffer_data_field_size(&self) -> u8 {
-    //     let size_code = unsafe { tc37x_pac::CAN0.txesc0().read() }.tbds().get();
+    //     let size_code = unsafe { self.inner.txesc().read() }.tbds().get();
 
     //     if size_code < DataFieldSize::_32.into() {
     //         (size_code + 2) * 4
@@ -666,16 +652,12 @@ impl CanNode {
 impl CanNode {
     #[inline]
     fn set_tx_event_fifo_start_address(&self, address: u16) {
-        unsafe {
-            tc37x_pac::CAN0
-                .txefc0()
-                .modify(|r| r.efsa().set(address >> 2))
-        };
+        unsafe { self.inner.txefc().modify(|r| r.efsa().set(address >> 2)) };
     }
 
     #[inline]
     fn set_tx_event_fifo_size(&self, size: u8) {
-        unsafe { tc37x_pac::CAN0.txefc0().modify(|r| r.efs().set(size)) };
+        unsafe { self.inner.txefc().modify(|r| r.efs().set(size)) };
     }
 }
 
@@ -684,7 +666,7 @@ impl CanNode {
     // #[inline]
     // fn enable_tx_buffer_transmission_interrupt(&self, tx_buffer_id: TxBufferId) {
     //     unsafe {
-    //         tc37x_pac::CAN0.txbtie0().modify(|mut r| {
+    //         self.inner.txbtie0().modify(|mut r| {
     //             *r.data_mut_ref() |= 1 << tx_buffer_id.0;
     //             r
     //         })
@@ -698,14 +680,14 @@ impl CanNode {
     // ) {
     //     if interrupt_group <= InterruptGroup::Loi {
     //         unsafe {
-    //             tc37x_pac::CAN0.grint10().modify(|mut r| {
+    //             self.inner.grint10().modify(|mut r| {
     //                 *r.data_mut_ref() |= (interrupt_line.0 as u32) << (interrupt_group as u32 * 4);
     //                 r
     //             })
     //         };
     //     } else {
     //         unsafe {
-    //             tc37x_pac::CAN0.grint20().modify(|mut r| {
+    //             self.inner.grint20().modify(|mut r| {
     //                 *r.data_mut_ref() |=
     //                     (interrupt_line.0 as u32) << ((interrupt_group as u32 % 8) * 4);
     //                 r
@@ -717,7 +699,7 @@ impl CanNode {
     // #[inline]
     // fn enable_interrupt(&self, interrupt: Interrupt) {
     //     unsafe {
-    //         tc37x_pac::CAN0.ie0().modify(|mut r| {
+    //         self.inner.ie0().modify(|mut r| {
     //             *r.data_mut_ref() |= 1 << interrupt as u32;
     //             r
     //         })
@@ -727,7 +709,7 @@ impl CanNode {
     // #[inline]
     // fn clear_interrupt_flag(&self, interrupt: Interrupt) {
     //     unsafe {
-    //         tc37x_pac::CAN0.ir0().init(|mut r| {
+    //         self.inner.ir0().init(|mut r| {
     //             *r.data_mut_ref() = 1 << interrupt as u32;
     //             r
     //         })
@@ -739,57 +721,49 @@ impl CanNode {
 impl CanNode {
     #[inline]
     fn set_standard_filter_list_start_address(&self, address: u16) {
-        unsafe {
-            tc37x_pac::CAN0
-                .sidfc0()
-                .modify(|r| r.flssa().set(address >> 2))
-        };
+        unsafe { self.inner.sidfc().modify(|r| r.flssa().set(address >> 2)) };
     }
 
     #[inline]
     fn set_standard_filter_list_size(&self, size: u8) {
-        unsafe { tc37x_pac::CAN0.sidfc0().modify(|r| r.lss().set(size)) };
+        unsafe { self.inner.sidfc().modify(|r| r.lss().set(size)) };
     }
 
     //#[inline]
     // fn configure_standard_filter_for_non_matching_frame(&self, filter: NonMatchingFrame) {
     //     unsafe {
-    //         tc37x_pac::CAN0
-    //             .gfc0()
+    //         self.inner
+    //             .gfc()
     //             .modify(|r| r.anfs().set(can0::node::gfc::Anfs(filter as _)))
     //     };
     // }
 
     #[inline]
     fn reject_remote_frames_with_standard_id(&self) {
-        unsafe { tc37x_pac::CAN0.gfc0().modify(|r| r.rrfs().set(true)) };
+        unsafe { self.inner.gfc().modify(|r| r.rrfs().set(true)) };
     }
 
     #[inline]
     fn set_extended_filter_list_start_address(&self, address: u16) {
-        unsafe {
-            tc37x_pac::CAN0
-                .xidfc0()
-                .modify(|r| r.flesa().set(address >> 2))
-        };
+        unsafe { self.inner.xidfc().modify(|r| r.flesa().set(address >> 2)) };
     }
 
     #[inline]
     pub fn set_extended_filter_list_size(&self, size: u8) {
-        unsafe { tc37x_pac::CAN0.xidfc0().modify(|r| r.lse().set(size)) };
+        unsafe { self.inner.xidfc().modify(|r| r.lse().set(size)) };
     }
 
     #[inline]
     // fn configure_extended_filter_for_non_matching_frame(&self, filter: NonMatchingFrame) {
     //     unsafe {
-    //         tc37x_pac::CAN0
-    //             .gfc0()
+    //         self.inner
+    //             .gfc()
     //             .modify(|r| r.anfe().set(can0::node::gfc::Anfe(filter as _)))
     //     };
     // }
     #[inline]
     fn reject_remote_frames_with_extended_id(&self) {
-        unsafe { tc37x_pac::CAN0.gfc0().modify(|r| r.rrfe().set(true)) };
+        unsafe { self.inner.gfc().modify(|r| r.rrfe().set(true)) };
     }
 }
 
