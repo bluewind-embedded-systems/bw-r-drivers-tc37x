@@ -19,7 +19,6 @@ package = "embedded-hal"
 git = "https://github.com/rust-embedded/embedded-hal.git"
 rev = "v1.0.0-rc.1"
 
-
 [dependencies.tc37x-rt]
 optional = true
 path = "../tc37x-rt"
@@ -74,8 +73,6 @@ rt = ["dep:tc37x-rt", "dep:critical-section"]
 panic_handler = []
 disable_watchdogs = []
 tracing = ["dep:insta"]
-
-
 
 [[example]]
 name = "blinky"
