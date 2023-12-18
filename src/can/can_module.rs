@@ -2,14 +2,22 @@ use super::can_node::{CanNode, NodeId};
 use crate::can::NewCanNode;
 use crate::{pac, scu};
 
+#[derive(Clone, Copy)]
+pub enum CanModuleId {
+    Can0,
+    Can1,
+}
+
 #[derive(Default)]
 pub struct CanModuleConfig {}
 
 pub struct NewCanModule {
+    id: CanModuleId,
     inner: pac::can0::Can0,
 }
 
 pub struct CanModule {
+    id: CanModuleId,
     inner: pac::can0::Can0,
 }
 
@@ -19,7 +27,10 @@ impl NewCanModule {
             self.enable_module();
         }
 
-        Ok(CanModule { inner: self.inner })
+        Ok(CanModule {
+            inner: self.inner,
+            id: self.id,
+        })
     }
 
     pub fn is_enabled(&self) -> bool {
@@ -39,17 +50,27 @@ impl NewCanModule {
 }
 
 impl CanModule {
-    pub const fn new(_index: usize) -> NewCanModule {
-        // TODO Use index
-        NewCanModule { inner: pac::CAN0 }
+    pub const fn new(id: CanModuleId) -> NewCanModule {
+        // TODO Use id to select the correct CAN module
+        NewCanModule {
+            inner: pac::CAN0,
+            id,
+        }
     }
 
     pub fn take_node(&mut self, node_id: NodeId) -> Result<NewCanNode, ()> {
         // Instead of dealing with lifetimes, we just create a new instance of CanModule
         // TODO This is not ideal, but it works for now
         // TODO Remember the node has been taken and return None on next call
-        let module = CanModule { inner: self.inner };
+        let module = CanModule {
+            inner: self.inner,
+            id: self.id,
+        };
         Ok(CanNode::new(module, node_id))
+    }
+
+    pub fn id(&self) -> CanModuleId {
+        self.id
     }
 
     pub(crate) fn set_clock_source(&self, clock_select: ClockSelect, clock_source: ClockSource) {
