@@ -5,22 +5,21 @@ use crate::{pac, scu};
 #[derive(Default)]
 pub struct CanModuleConfig {}
 
+pub struct NewCanModule {
+    inner: pac::can0::Can0,
+}
+
 pub struct CanModule {
     inner: pac::can0::Can0,
 }
 
-impl CanModule {
-    pub const fn new(_index: usize) -> Self {
-        // TODO Use index
-        Self { inner: pac::CAN0 }
-    }
-
+impl NewCanModule {
     pub fn configure(self, _config: CanModuleConfig) -> Result<CanModule, ()> {
         if !self.is_enabled() {
             self.enable_module();
         }
 
-        Ok(self)
+        Ok(CanModule { inner: self.inner })
     }
 
     pub fn is_enabled(&self) -> bool {
@@ -36,6 +35,13 @@ impl CanModule {
         while !self.is_enabled() {}
 
         scu::wdt::set_cpu_endinit_inline(passw);
+    }
+}
+
+impl CanModule {
+    pub const fn new(_index: usize) -> NewCanModule {
+        // TODO Use index
+        NewCanModule { inner: pac::CAN0 }
     }
 
     pub fn take_node(&mut self, node_id: NodeId) -> Result<NewCanNode, ()> {
