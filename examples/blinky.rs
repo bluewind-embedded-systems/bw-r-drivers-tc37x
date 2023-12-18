@@ -8,6 +8,7 @@ tc37x_rt::entry!(main);
 
 use core::arch::asm;
 use embedded_hal::digital::StatefulOutputPin;
+use core::time::Duration;
 use tc37x_hal::gpio::GpioExt;
 use tc37x_hal::log::info;
 use tc37x_hal::pac;
@@ -32,7 +33,7 @@ fn main() -> ! {
     let mut was_pressed = false;
 
     loop {
-        let is_pressed = button1.is_high();
+        let is_pressed = button1.is_low();
 
         if is_pressed != was_pressed {
             was_pressed = is_pressed;
@@ -43,7 +44,7 @@ fn main() -> ! {
             }
         }
 
-        let period = if button1.is_high() { 100_000 } else { 25_000 };
+        let period = Duration::from_millis(if is_pressed { 50 } else { 500 });
 
         // Test set_low
         led1.set_low();
@@ -70,8 +71,15 @@ fn main() -> ! {
     }
 }
 
-fn wait_nop(cycle: u32) {
-    for _ in 0..cycle {
-        unsafe { asm!("nop") };
+fn wait_nop(period: Duration) {
+    #[cfg(target_arch = "tricore")]
+    {
+        let n = period.as_micros() / 5;
+        for _ in 0..n {
+            unsafe { asm!("nop") };
+        }
     }
+
+    #[cfg(not(target_arch = "tricore"))]
+    std::thread::sleep(period);
 }
