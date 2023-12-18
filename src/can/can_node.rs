@@ -8,7 +8,6 @@ use super::CanModule;
 use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
 use std::mem::transmute;
-use tc37x_pac::can0::Node;
 use tc37x_pac::hidden::RegValue;
 
 // TODO Default values are not valid
@@ -539,7 +538,7 @@ impl NewCanNode {
 impl CanNode {
     pub fn transmit(&self, frame: &Frame) -> Result<(), ()> {
         // TODO Call the right function depending on fifo mode
-        transmit_fifo(&self.inner, frame);
+        self.transmit_fifo(frame);
 
         // while let None = dst_node.send_fifo(msg_id, &read_buf) {
         //     wait_nop(10);
@@ -1047,59 +1046,64 @@ impl TxdOut {
 #[repr(transparent)]
 pub struct TxBufferId(pub u8);
 
+impl TxBufferId {
+    pub const MAX: u8 = 31;
+
+    pub fn new(n: u8) -> Option<Self> {
+        match n {
+            ..=Self::MAX => Some(Self(n)),
+            _ => None,
+        }
+    }
+
+    pub const fn new_const(n: u8) -> Self {
+        match n {
+            ..=Self::MAX => Self(n),
+            _ => panic!("over the max range"),
+        }
+    }
+}
+
 pub type Priority = u8;
 
-fn transmit_fifo(node: &Node, frame: &Frame) {
-    use embedded_can::Frame;
-    let buffer_id = get_tx_fifo_queue_put_index(node);
-    let id = frame.id().into();
-    let data = frame.data();
-    // TODO Handle error
-    let _ = transmit(node, buffer_id, id, false, false, false, data);
-}
+impl CanNode {
+    fn transmit_fifo(&self, frame: &Frame) {
+        use embedded_can::Frame;
+        let buffer_id = self.get_tx_fifo_queue_put_index();
+        let id = frame.id().into();
+        let data = frame.data();
+        // TODO Handle error
+        let _ = self.transmit_inner(buffer_id, id, false, false, false, data);
+    }
 
-pub fn get_tx_fifo_queue_put_index(node: &Node) -> TxBufferId {
-    let id = unsafe { node.txfqs().read() }.tfqpi().get();
-    TxBufferId::new_const(id)
-}
+    pub fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
+        let id = unsafe { self.inner.txfqs().read() }.tfqpi().get();
+        TxBufferId::new_const(id)
+    }
 
-fn transmit(
-    node: &Node,
-    buffer_id: TxBufferId,
-    id: MessageId,
-    tx_event_fifo_control: bool,
-    remote_transmit_request: bool,
-    error_state_indicator: bool,
-    data: &[u8],
-) -> Option<()> {
-    if node.is_tx_buffer_request_pending(buffer_id) {
-        None
-    } else {
-        // TODO
-        // let tx_buf_el = node.get_tx_element_address(M::RAM.base, self.tx.start_address, buffer_id);
-        //
-        // tx_buf_el.set_msg_id(id);
-        //
-        // if tx_event_fifo_control {
-        //     tx_buf_el.set_tx_event_fifo_ctrl(tx_event_fifo_control);
-        //     tx_buf_el.set_message_marker(buffer_id);
-        // }
-        //
-        // tx_buf_el.set_remote_transmit_req(remote_transmit_request);
-        //
-        // if let FrameMode::FdLong | FrameMode::FdLongAndFast = self.frame_mode {
-        //     tx_buf_el.set_err_state_indicator(error_state_indicator)
-        // }
-        //
-        // tx_buf_el.set_data_length(self.tx.data_field_size.into());
-        //
-        // tx_buf_el.write_tx_buf_data(self.tx.data_field_size.into(), data.as_ptr());
-        //
-        // tx_buf_el.set_frame_mode_req(self.frame_mode);
-        //
-        // N::reg().set_tx_buffer_add_request(buffer_id);
+    // TODO Change return type from Option to Result with a description of the error
+    #[allow(unused_variables)]
+    fn transmit_inner(
+        &self,
+        buffer_id: TxBufferId,
+        id: MessageId,
+        tx_event_fifo_control: bool,
+        remote_transmit_request: bool,
+        error_state_indicator: bool,
+        data: &[u8],
+    ) -> Option<()> {
+        if self.is_tx_buffer_request_pending(buffer_id) {
+            None
+        } else {
+            // TODO Implement this
+            Some(())
+        }
+    }
 
-        Some(())
+    fn is_tx_buffer_request_pending(&self, tx_buffer_id: TxBufferId) -> bool {
+        unsafe { self.inner.txbrp().read() }
+            .trp(tx_buffer_id.into())
+            .get()
     }
 }
 
@@ -1120,13 +1124,25 @@ impl From<embedded_can::Id> for MessageId {
     fn from(id: embedded_can::Id) -> Self {
         match id {
             embedded_can::Id::Standard(id) => MessageId {
-                data: id.into(),
+                data: id.as_raw().into(),
                 lenght: MessageIdLenght::Standard,
             },
             embedded_can::Id::Extended(id) => MessageId {
-                data: id.into(),
+                data: id.as_raw().into(),
                 lenght: MessageIdLenght::Extended,
             },
         }
+    }
+}
+
+impl From<TxBufferId> for u8 {
+    fn from(value: TxBufferId) -> Self {
+        value.0
+    }
+}
+
+impl From<TxBufferId> for u16 {
+    fn from(value: TxBufferId) -> Self {
+        value.0.into()
     }
 }
