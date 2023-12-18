@@ -178,7 +178,7 @@ impl NewCanNode {
         unsafe { cccr.modify(|r| r.cce().set(true).init().set(true)) };
     }
 
-    pub fn disable_configuration_change(&self) {
+    fn disable_configuration_change(&self) {
         let cccr = self.inner.cccr();
 
         unsafe { cccr.modify(|r| r.cce().set(false)) };
@@ -284,7 +284,7 @@ impl NewCanNode {
         }
     }
 
-    pub fn set_fast_bit_timing_values(
+    fn set_fast_bit_timing_values(
         &self,
         sjw: u8,
         time_segment2: u8,
@@ -328,7 +328,7 @@ impl NewCanNode {
         };
     }
 
-    pub fn set_transceiver_delay_compensation_offset(&self, delay: u8) {
+    fn set_transceiver_delay_compensation_offset(&self, delay: u8) {
         unsafe { self.inner.dbtp().modify(|r| r.tdc().set(true)) };
         unsafe { self.inner.tdcr().modify(|r| r.tdco().set(delay)) };
     }
@@ -424,7 +424,7 @@ impl CanNode {
         unsafe { self.inner.xidfc().modify(|r| r.flesa().set(address >> 2)) };
     }
 
-    pub fn set_extended_filter_list_size(&self, size: u8) {
+    fn set_extended_filter_list_size(&self, size: u8) {
         unsafe { self.inner.xidfc().modify(|r| r.lse().set(size)) };
     }
 
