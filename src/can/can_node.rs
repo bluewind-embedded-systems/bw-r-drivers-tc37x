@@ -7,7 +7,7 @@ use super::frame::Frame;
 use super::CanModule;
 use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
-use std::mem::transmute;
+use core::mem::transmute;
 use tc37x_pac::hidden::RegValue;
 
 // TODO Default values are not valid
