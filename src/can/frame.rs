@@ -1,6 +1,6 @@
 #![allow(unused_variables)]
 
-use embedded_can::Id;
+use embedded_can::{Id, StandardId};
 
 pub struct Frame;
 
@@ -14,22 +14,26 @@ impl embedded_can::Frame for Frame {
     }
 
     fn is_extended(&self) -> bool {
-        todo!()
+        false
+        //TODO 
     }
 
     fn is_remote_frame(&self) -> bool {
-        todo!()
+        false
+        //TODO
     }
 
     fn id(&self) -> Id {
-        todo!()
+        Id::Standard(StandardId::new(123).unwrap())
+        //TODO
     }
 
     fn dlc(&self) -> usize {
-        todo!()
+        8
+        //TODO
     }
 
     fn data(&self) -> &[u8] {
-        todo!()
+        &[1, 2, 3, 4, 5, 6, 7, 8]
     }
 }

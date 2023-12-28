@@ -111,17 +111,18 @@ impl From<NodeId> for ClockSelect {
 
 #[derive(Default)]
 pub enum ClockSource {
-    #[default]
-    NoClock,
+    //TODO remove NoClock 
+    //NoClock,
     Asynchronous,
     Synchronous,
+    #[default]
     Both,
 }
 
 impl From<ClockSource> for u8 {
     fn from(x: ClockSource) -> Self {
         match x {
-            ClockSource::NoClock => 0,
+            //ClockSource::NoClock => 0,
             ClockSource::Asynchronous => 1,
             ClockSource::Synchronous => 2,
             ClockSource::Both => 3,
