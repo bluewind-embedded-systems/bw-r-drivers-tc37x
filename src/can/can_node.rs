@@ -9,6 +9,8 @@ use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
 use core::mem::transmute;
 use tc37x_pac::hidden::RegValue;
+use tc37x_pac::RegisterValue;
+use crate::log::info;
 
 // TODO Default values are not valid
 #[derive(Default)]
@@ -1095,7 +1097,31 @@ impl CanNode {
         if self.is_tx_buffer_request_pending(buffer_id) {
             None
         } else {
-            // TODO Implement this
+           // let base_addr_module = self.module.registers()
+            //let tx_buf_el = Tx::new(); 
+                //self.inner.get_tx_element_address(self.module, self.tx.start_address, buffer_id);
+
+            // tx_buf_el.set_msg_id(id);
+
+            // if tx_event_fifo_control {
+            //     tx_buf_el.set_tx_event_fifo_ctrl(tx_event_fifo_control);
+            //     tx_buf_el.set_message_marker(buffer_id);
+            // }
+
+            // tx_buf_el.set_remote_transmit_req(remote_transmit_request);
+
+            // if let FrameMode::FdLong | FrameMode::FdLongAndFast = self.frame_mode {
+            //     tx_buf_el.set_err_state_indicator(error_state_indicator)
+            // }
+
+            // tx_buf_el.set_data_length(self.tx.data_field_size.into());
+
+            // tx_buf_el.write_tx_buf_data(self.tx.data_field_size.into(), data.as_ptr());
+
+            // tx_buf_el.set_frame_mode_req(self.frame_mode);
+            //TODO 
+            //self.inner.set_tx_buffer_add_request(buffer_id);
+
             Some(())
         }
     }

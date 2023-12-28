@@ -54,6 +54,9 @@ fn main() -> ! {
         Err(_) => loop {},
     };
 
+    info!("Sending message ... ");
+
+
     let mut count = 0;
 
     loop {
