@@ -8,4 +8,5 @@ mod msg;
 
 pub use can_module::{CanModule, CanModuleConfig, CanModuleId};
 pub use can_node::{CanNode, CanNodeConfig, NewCanNode, NodeId};
+pub use msg::{TxBufferId};
 pub use frame::Frame;

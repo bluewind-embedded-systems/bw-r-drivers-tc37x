@@ -1,6 +1,5 @@
 use crate::can::{
-    reg, can_node::{FrameMode, MessageId, MessageIdLenght, TxBufferId}, frame::DataLenghtCode,
-    //types::{DataLenghtCode, FrameMode, MessageId, MessageIdLenght, TxBufferId},
+    reg, can_node::{FrameMode, MessageId, MessageIdLenght}, frame::DataLenghtCode, TxBufferId,
 };
 
 pub struct Tx {

@@ -5,6 +5,8 @@ use super::baud_rate::*;
 use super::can_module::{CanModuleId, ClockSource};
 use super::frame::Frame;
 use super::CanModule;
+use super::internals::{Tx, Rx};
+use super::msg::{RxBufferId, ReadFrom, TxBufferId};
 use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
 use core::mem::transmute;
@@ -1044,27 +1046,6 @@ impl TxdOut {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
-#[repr(transparent)]
-pub struct TxBufferId(pub u8);
-
-impl TxBufferId {
-    pub const MAX: u8 = 31;
-
-    pub fn new(n: u8) -> Option<Self> {
-        match n {
-            ..=Self::MAX => Some(Self(n)),
-            _ => None,
-        }
-    }
-
-    pub const fn new_const(n: u8) -> Self {
-        match n {
-            ..=Self::MAX => Self(n),
-            _ => panic!("over the max range"),
-        }
-    }
-}
 
 pub type Priority = u8;
 
@@ -1097,9 +1078,9 @@ impl CanNode {
         if self.is_tx_buffer_request_pending(buffer_id) {
             None
         } else {
-           // let base_addr_module = self.module.registers()
-            //let tx_buf_el = Tx::new(); 
-                //self.inner.get_tx_element_address(self.module, self.tx.start_address, buffer_id);
+           
+          // let tx_buf_el = Tx::new(
+           // self.get_tx_element_address(self.module, self.tx.start_address, buffer_id);
 
             // tx_buf_el.set_msg_id(id);
 
@@ -1133,6 +1114,176 @@ impl CanNode {
     }
 }
 
+
+// IfxLld_Can_Std_Rx_Element_Functions
+impl CanNode {
+
+    pub fn get_rx_fifo0_get_index(&self) -> RxBufferId {
+        let id = unsafe { self.inner.rxf0s().read() }.f0gi().get();
+        RxBufferId::new_const(id)
+    }
+
+    pub fn get_rx_fifo1_get_index(&self) -> RxBufferId {
+        let id = unsafe { self.inner.rxf1s().read() }.f1gi().get();
+        RxBufferId::new_const(id)
+    }
+
+    #[inline]
+    pub fn set_rx_buffer_data_field_size(&self, size: DataFieldSize) {
+       todo!()
+       // unsafe { self.inner.rxesc().modify(|r| r.rbds().set(size.into())) };
+    }
+
+    pub fn is_rx_buffer_new_data_updated(&self, rx_buffer_id: RxBufferId) -> bool {
+        let (data, mask) = if rx_buffer_id < RxBufferId::new_const(32) {
+            let data = unsafe { self.inner.ndat1().read() }.data();
+            let mask = 1 << u8::from(rx_buffer_id);
+            (data, mask)
+        } else {
+            let data = unsafe { self.inner.ndat2().read() }.data();
+            let mask = 1 << (u8::from(rx_buffer_id) - 32);
+            (data, mask)
+        };
+        (data & mask) != 0
+    }
+
+    #[inline]
+    pub fn set_rx_fifo0_acknowledge_index(&self, rx_buffer_id: RxBufferId) {
+        unsafe {
+            self.inner
+                .rxf0a()
+                .modify(|r| r.f0ai().set(rx_buffer_id.into()))
+        };
+    }
+
+    #[inline]
+    pub fn set_rx_fifo1_acknowledge_index(&self, rx_buffer_id: RxBufferId) {
+        unsafe {
+            self.inner
+                .rxf1a()
+                .modify(|r| r.f1ai().set(rx_buffer_id.into()))
+        };
+    }
+
+    #[inline]
+    pub fn _a(&self) {}
+}
+
+// IfxLld_Can_Std_Tx_Element_Functions
+impl CanNode {
+    #[inline]
+    pub fn is_tx_buffer_cancellation_finished(&self, tx_buffer_id: TxBufferId) -> bool {
+        self.is_tx_buffer_transmission_occured(tx_buffer_id)
+    }
+
+    #[inline]
+    pub fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: TxBufferId) -> bool {
+        let data = unsafe { self.inner.txbto().read() }.data();
+        let mask = 1u32 << u32::from(tx_buffer_id);
+        (data & mask) != 0
+    }
+
+    #[inline]
+    pub fn set_tx_buffer_add_request(&self, tx_buffer_id: TxBufferId) {
+        unsafe {
+            self.inner
+                .txbar()
+                .modify(|r| r.ar(tx_buffer_id.into()).set(true))
+        }
+    }
+
+    #[inline]
+    pub fn set_tx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
+        // TODO 
+        // unsafe {
+        //     self.inner
+        //         .txesc()
+        //         .modify(|r| r.tbds().set(data_field_size.into()))
+        // };
+    }
+
+    #[inline]
+    pub fn set_tx_buffer_start_address(&self, address: u16) {
+        unsafe { self.inner.txbc().modify(|r| r.tbsa().set(address >> 2)) };
+    }
+
+    #[inline]
+    pub fn set_transmit_fifo_queue_mode(&self, mode: TxMode) {
+        if let TxMode::Fifo | TxMode::Queue = mode {
+            let val = (mode as u8) != 0;
+            unsafe { self.inner.txbc().modify(|r| r.tfqm().set(val)) };
+        } else {
+            panic!("invalid fifo queue mode");
+        }
+    }
+
+    pub fn get_data_field_size(&self, from: ReadFrom) -> u8 {
+        // let rx_esc = unsafe { self.inner.rxesc().read() };
+        // let size_code:u32 = match from {
+        //     ReadFrom::Buffer(_) => rx_esc.rbds().get().0,
+        //     ReadFrom::RxFifo0 => rx_esc.f0ds().get().0,
+        //     ReadFrom::RxFifo1 => rx_esc.f1ds().get().0,
+        // };
+
+        // if size_code < DataFieldSize::_32.into() {
+        //     (size_code + 2) * 4
+        // } else {
+        //     (size_code - 3) * 16
+        // }
+        // TODO 
+        0
+    }
+    pub fn get_tx_buffer_data_field_size(&self) -> u8 {
+        todo!(); 
+        //let size_code = unsafe { self.inner.txesc().read() }.tbds().get().0;
+
+        // if size_code < DataFieldSize::_32.into() {
+        //     (size_code + 2) * 4
+        // } else {
+        //     (size_code - 3) * 16
+        // }
+    }
+
+    pub fn get_rx_element_address(
+        &self,
+        ram_base_address: u32,
+        tx_buffers_start_address: u16,
+        buf_from: ReadFrom,
+        buffer_number: RxBufferId,
+    ) -> Rx {
+        let num_of_config_bytes = 8u32;
+        let num_of_data_bytes = self.get_data_field_size(buf_from) as u32;
+        let tx_buffer_size = num_of_config_bytes + num_of_data_bytes;
+        let tx_buffer_index = tx_buffer_size * u32::from(buffer_number);
+
+        let tx_buffer_element_address =
+            ram_base_address + tx_buffers_start_address as u32 + tx_buffer_index;
+
+        Rx::new(tx_buffer_element_address as *mut u8)
+    }
+
+    pub fn get_tx_element_address(
+        &self,
+        ram_base_address: u32,
+        tx_buffers_start_address: u16,
+        buffer_number: TxBufferId,
+    ) -> Tx {
+        let num_of_config_bytes = 8u32;
+        let num_of_data_bytes = self.get_tx_buffer_data_field_size() as u32;
+        let tx_buffer_size = num_of_config_bytes + num_of_data_bytes;
+        let tx_buffer_index = tx_buffer_size * u32::from(buffer_number);
+
+        let tx_buffer_element_address =
+            ram_base_address + tx_buffers_start_address as u32 + tx_buffer_index;
+
+        Tx::new(tx_buffer_element_address as *mut u8)
+    }
+}
+
+
+
+
+
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum MessageIdLenght {
     Standard,
@@ -1161,14 +1312,3 @@ impl From<embedded_can::Id> for MessageId {
     }
 }
 
-impl From<TxBufferId> for u8 {
-    fn from(value: TxBufferId) -> Self {
-        value.0
-    }
-}
-
-impl From<TxBufferId> for u16 {
-    fn from(value: TxBufferId) -> Self {
-        value.0.into()
-    }
-}
