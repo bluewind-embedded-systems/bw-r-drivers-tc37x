@@ -4,15 +4,16 @@
 use super::baud_rate::*;
 use super::can_module::{CanModuleId, ClockSource};
 use super::frame::Frame;
+use super::internals::{Rx, Tx};
+use super::msg::{ReadFrom, RxBufferId, TxBufferId};
 use super::CanModule;
-use super::internals::{Tx, Rx};
-use super::msg::{RxBufferId, ReadFrom, TxBufferId};
 use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
 use core::mem::transmute;
-use tc37x_pac::hidden::RegValue;
-use tc37x_pac::RegisterValue;
 use crate::log::info;
+use tc37x_pac::RegisterValue;
+use tc37x_pac::can0::node::txesc::{self, Tbds};
+use tc37x_pac::hidden::RegValue;
 
 // TODO Default values are not valid
 #[derive(Default)]
@@ -88,7 +89,7 @@ pub struct CanNodeConfig {
     pub frame_type: FrameType,
     pub tx_mode: TxMode,
     pub rx_mode: RxMode,
-    pub tx_buffer_data_field_size: u8, //(TODO) limit possibile values to valid ones
+    pub tx_buffer_data_field_size: DataFieldSize, 
     pub message_ram_tx_buffers_start_address: u16,
 }
 
@@ -246,7 +247,7 @@ impl NewCanNode {
     }
 
     fn set_inner_tx_buffers(&self, dedicated: DedicatedData) {
-        self.set_tx_buffer_data_field_size(dedicated.field_size as u8);
+        self.set_tx_buffer_data_field_size(dedicated.field_size);
         self.set_tx_buffer_start_address(dedicated.start_address);
     }
 
@@ -427,11 +428,38 @@ impl NewCanNode {
         };
     }
 
-    fn set_tx_buffer_data_field_size(&self, data_field_size: u8) {
-        let data_field_size = tc37x_pac::can0::node::txesc::Tbds(data_field_size);
-        unsafe { self.inner.txesc().modify(|r| r.tbds().set(data_field_size)) };
-    }
+    // fn set_tx_buffer_data_field_size(&self, data_field_size: u8) {
+    //     let tmp = data_field_size;
+    //     let data_field_size = tc37x_pac::can0::node::txesc::Tbds(data_field_size);
+    //     unsafe { self.inner.txesc().modify(|r| r.tbds().set(data_field_size)) };
+    //     info!("Data field size (set) {}", tmp); 
+    // }
+    #[inline]
+    pub fn set_tx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
 
+        
+        info!("Data field size: {}", data_field_size as u8); 
+        let tdbs = match data_field_size {
+            DataFieldSize::_8 =>  Tbds::TBDS_BUFFERSIZE8,
+            DataFieldSize::_12 => Tbds::TBDS_BUFFERSIZE12,
+            DataFieldSize::_16 => Tbds::TBDS_BUFFERSIZE16,
+            DataFieldSize::_20 => Tbds::TBDS_BUFFERSIZE20,
+            DataFieldSize::_24 => Tbds::TBDS_BUFFERSIZE24,
+            DataFieldSize::_32 => Tbds::TBDS_BUFFERSIZE32,
+            DataFieldSize::_48 => Tbds::TBDS_BUFFERSIZE48,
+            DataFieldSize::_64 => Tbds::TBDS_BUFFERSIZE64,
+        }; 
+        unsafe {
+            self.inner
+                .txesc()
+                .modify(|r| r.tbds().set(tdbs))
+        };
+        let txesc = unsafe {
+            self.inner
+                .txesc().read().get_raw();       
+        };
+        info!("txesc {:b} ", txesc); 
+    }
     fn set_tx_buffer_start_address(&self, address: u16) {
         unsafe { self.inner.txbc().modify(|r| r.tbsa().set(address >> 2)) };
     }
@@ -661,8 +689,9 @@ pub enum RxFifoMode {
 }
 
 #[repr(u8)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub enum DataFieldSize {
+    #[default]
     _8,
     _12,
     _16,
@@ -672,6 +701,7 @@ pub enum DataFieldSize {
     _48,
     _64,
 }
+
 
 #[derive(Clone, Copy)]
 pub struct DedicatedData {
@@ -1046,17 +1076,18 @@ impl TxdOut {
     }
 }
 
-
 pub type Priority = u8;
 
 impl CanNode {
-    fn transmit_fifo(&self, frame: &Frame) {
+    fn transmit_fifo(&self, frame: &Frame) -> Result<(), ()>{
         use embedded_can::Frame;
         let buffer_id = self.get_tx_fifo_queue_put_index();
-        let id = frame.id().into();
+        let id: MessageId = frame.id().into();
         let data = frame.data();
+        
         // TODO Handle error
         let _ = self.transmit_inner(buffer_id, id, false, false, false, data);
+        Ok(())
     }
 
     pub fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
@@ -1074,36 +1105,41 @@ impl CanNode {
         remote_transmit_request: bool,
         error_state_indicator: bool,
         data: &[u8],
-    ) -> Option<()> {
+    ) -> Result<(), ()> { // Todo list errors 
         if self.is_tx_buffer_request_pending(buffer_id) {
-            None
+            Err(())
         } else {
-           
-          // let tx_buf_el = Tx::new(
-           // self.get_tx_element_address(self.module, self.tx.start_address, buffer_id);
+            let module_addr: u32 = 0xf0200000u32;
+            self.module.registers();
+            //log::info!("addr {:p}", &module_addr);
 
-            // tx_buf_el.set_msg_id(id);
+            let tx_start_addr: u16 = 1088; //self.tx.start_address
+                                           //todo!(); //not zero
 
-            // if tx_event_fifo_control {
-            //     tx_buf_el.set_tx_event_fifo_ctrl(tx_event_fifo_control);
-            //     tx_buf_el.set_message_marker(buffer_id);
-            // }
+            let tx_buf_el = self.get_tx_element_address(module_addr, tx_start_addr, buffer_id);
 
-            // tx_buf_el.set_remote_transmit_req(remote_transmit_request);
+            tx_buf_el.set_msg_id(id);
 
-            // if let FrameMode::FdLong | FrameMode::FdLongAndFast = self.frame_mode {
-            //     tx_buf_el.set_err_state_indicator(error_state_indicator)
-            // }
+            if tx_event_fifo_control {
+                tx_buf_el.set_tx_event_fifo_ctrl(tx_event_fifo_control);
+                tx_buf_el.set_message_marker(buffer_id);
+            }
 
-            // tx_buf_el.set_data_length(self.tx.data_field_size.into());
+            tx_buf_el.set_remote_transmit_req(remote_transmit_request);
 
-            // tx_buf_el.write_tx_buf_data(self.tx.data_field_size.into(), data.as_ptr());
+            if let FrameMode::FdLong | FrameMode::FdLongAndFast = self.frame_mode {
+                tx_buf_el.set_err_state_indicator(error_state_indicator)
+            }
 
-            // tx_buf_el.set_frame_mode_req(self.frame_mode);
-            //TODO 
-            //self.inner.set_tx_buffer_add_request(buffer_id);
+           //tx_buf_el.set_data_length(self.tx.data_field_size.into());
 
-            Some(())
+           // tx_buf_el.write_tx_buf_data(self.tx.data_field_size.into(), data.as_ptr());
+
+           // tx_buf_el.set_frame_mode_req(self.frame_mode);
+            //TODO
+           // self.set_tx_buffer_add_request(buffer_id);
+
+            Ok(())
         }
     }
 
@@ -1130,8 +1166,8 @@ impl CanNode {
 
     #[inline]
     pub fn set_rx_buffer_data_field_size(&self, size: DataFieldSize) {
-       todo!()
-       // unsafe { self.inner.rxesc().modify(|r| r.rbds().set(size.into())) };
+        todo!()
+        // unsafe { self.inner.rxesc().modify(|r| r.rbds().set(size.into())) };
     }
 
     pub fn is_rx_buffer_new_data_updated(&self, rx_buffer_id: RxBufferId) -> bool {
@@ -1192,15 +1228,6 @@ impl CanNode {
         }
     }
 
-    #[inline]
-    pub fn set_tx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
-        // TODO 
-        // unsafe {
-        //     self.inner
-        //         .txesc()
-        //         .modify(|r| r.tbds().set(data_field_size.into()))
-        // };
-    }
 
     #[inline]
     pub fn set_tx_buffer_start_address(&self, address: u16) {
@@ -1218,6 +1245,7 @@ impl CanNode {
     }
 
     pub fn get_data_field_size(&self, from: ReadFrom) -> u8 {
+        todo!();
         // let rx_esc = unsafe { self.inner.rxesc().read() };
         // let size_code:u32 = match from {
         //     ReadFrom::Buffer(_) => rx_esc.rbds().get().0,
@@ -1230,18 +1258,17 @@ impl CanNode {
         // } else {
         //     (size_code - 3) * 16
         // }
-        // TODO 
+        // TODO
         0
     }
+    
     pub fn get_tx_buffer_data_field_size(&self) -> u8 {
-        todo!(); 
-        //let size_code = unsafe { self.inner.txesc().read() }.tbds().get().0;
-
-        // if size_code < DataFieldSize::_32.into() {
-        //     (size_code + 2) * 4
-        // } else {
-        //     (size_code - 3) * 16
-        // }
+        let size_code:u8 = (unsafe { self.inner.txesc().read() }.get_raw() & 0x2)as u8;
+        if size_code < Tbds::TBDS_BUFFERSIZE32.0 {
+            (size_code + 2) * 4
+        } else {
+            (size_code - 3) * 16
+        }
     }
 
     pub fn get_rx_element_address(
