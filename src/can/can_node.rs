@@ -3,19 +3,31 @@
 
 use super::baud_rate::*;
 use super::can_module::{CanModuleId, ClockSource};
-use super::frame::Frame;
+use super::frame::{DataLenghtCode, Frame};
 use super::internals::{Rx, Tx};
 use super::msg::{ReadFrom, RxBufferId, TxBufferId};
 use super::CanModule;
+use crate::can::can_module::ClockSelect;
+use crate::log::info;
 use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
 use core::mem::transmute;
-use crate::log::info;
-use tc37x_pac::RegisterValue;
 use tc37x_pac::can0::node::txesc::{self, Tbds};
 use tc37x_pac::hidden::RegValue;
+use tc37x_pac::RegisterValue;
 
 // TODO Default values are not valid
+
+// pub trait BaudrateConfg{
+//     fn get_baud_rate() -> u32;
+//     fn get_sample_point() -> u32;
+//     fn get_sync_jump_with() -> u32;
+//     fn get_prescalar() -> u32;
+//     fn get_time_segment_1() -> u32;
+//     fn get_time_segment_2() -> u32;
+//     fn recalculate_value() -> bool; 
+//     fn transceiver_delay_offset() -> Option<u8>; 
+// }
 #[derive(Default)]
 pub struct BaudRate {
     pub baud_rate: u32,
@@ -25,7 +37,11 @@ pub struct BaudRate {
     pub time_segment_1: u8,
     pub time_segment_2: u8,
 }
-
+// impl Default for Baudrate{
+//     fn default() -> Self {
+//         todo!()
+//     }
+// }
 // TODO Default values are not valid
 #[derive(Default)]
 pub struct FastBaudRate {
@@ -37,6 +53,13 @@ pub struct FastBaudRate {
     pub time_segment_2: u8,
     pub transceiver_delay_offset: u8,
 }
+
+// impl Default for FastBaudRate{
+//     fn default() -> Self {
+//         todo!()
+//     }
+// }
+
 
 #[derive(PartialEq, Debug, Default, Copy, Clone)]
 pub enum FrameMode {
@@ -118,7 +141,7 @@ pub struct CanNode {
 impl CanNode {
     /// Only a module can create a node. This function is only accessible from within this crate.
     pub(crate) fn new(module: CanModule, node_id: NodeId) -> NewCanNode {
-        let inner = module.registers().node(node_id.0.into());
+        let inner: tc37x_pac::can0::Node = module.registers().node(node_id.0.into());
         NewCanNode {
             module,
             node_id,
@@ -135,12 +158,23 @@ impl NewCanNode {
         // TODO Document why this is needed
         wait_nop_cycles(10);
 
+        info!("assert 1");
+        defmt::assert_eq!(
+            unsafe { tc37x_pac::CAN0.mcr().read() }.clksel0().get() as u8,
+            3
+        ); 
+
         self.enable_configuration_change();
 
-        self.configure_baud_rate(config.calculate_bit_timing_values, &config.baud_rate);
 
         // for CAN FD frames, set fast baud rate
-        if config.frame_mode != FrameMode::Standard {
+        if config.frame_mode ==FrameMode::Standard {
+            info!("configure_baud_rate FrameMode::Standard calculate? {}",config.calculate_bit_timing_values );
+            self.configure_baud_rate(config.calculate_bit_timing_values, &config.baud_rate);
+
+        }
+        else {
+            info!("configure_baud_rate FrameMode::Extended");
             self.configure_fast_baud_rate(
                 config.calculate_bit_timing_values,
                 &config.fast_baud_rate,
@@ -292,6 +326,7 @@ impl NewCanNode {
             while unsafe { cccr.read() }.cce().get() {}
 
             unsafe { cccr.modify(|r| r.init().set(false)) };
+            
             while unsafe { cccr.read() }.init().get() {}
         }
 
@@ -299,6 +334,11 @@ impl NewCanNode {
         while !unsafe { cccr.read() }.init().get() {}
 
         unsafe { cccr.modify(|r| r.cce().set(true).init().set(true)) };
+        let cce = unsafe { cccr.read().cce().get()}; 
+        let init = unsafe { cccr.read().init().get()}; 
+
+        info!("cce {}", cce); 
+        info!("init {}", init); 
     }
 
     fn disable_configuration_change(&self) {
@@ -361,6 +401,10 @@ impl NewCanNode {
     }
 
     fn set_bit_timing(&self, timing: BitTiming) {
+        info!(" set_FAST_bit_timing brp:{}", timing.brp);
+        info!(" set_FAST_bit_timing sjw:{}",timing.sjw);
+        info!(" set_FAST_bit_timing tseg1:{}",timing.tseg1);
+        info!(" set_FAST_bit_timing tseg2:{}",timing.tseg2);
         unsafe {
             self.inner.nbtp().modify(|r| {
                 r.nbrp()
@@ -376,6 +420,10 @@ impl NewCanNode {
     }
 
     fn set_bit_timing_values(&self, sjw: u8, time_segment2: u8, time_segment1: u8, prescaler: u16) {
+        info!(" set_bit_timing_values brp:{}", prescaler);
+        info!(" set_bit_timing_values sjw:{}",sjw);
+        info!(" set_bit_timing_values tseg1:{}",time_segment1);
+        info!(" set_bit_timing_values tseg2:{}",time_segment2);
         unsafe {
             self.inner.nbtp().modify(|r| {
                 r.nsjw()
@@ -392,7 +440,10 @@ impl NewCanNode {
 
     fn set_fast_bit_timing(&self, module_freq: f32, baudrate: u32, sample_point: u16, sjw: u16) {
         let timing = calculate_fast_bit_timing(module_freq, baudrate, sample_point, sjw);
-
+        info!(" set_FAST_bit_timing brp:{}", timing.brp);
+        info!(" set_FAST_bit_timing sjw:{}",timing.sjw);
+        info!(" set_FAST_bit_timing tseg1:{}",timing.tseg1);
+        info!(" set_FAST_bit_timing tseg2:{}",timing.tseg2);
         unsafe {
             self.inner.dbtp().modify(|r| {
                 r.dbrp()
@@ -414,6 +465,10 @@ impl NewCanNode {
         time_segment1: u8,
         prescaler: u8,
     ) {
+        info!(" set_bit_fast_timing_values brp:{}", prescaler);
+        info!(" set_bit_fast_timing_values sjw:{}",sjw);
+        info!(" set_bit_fast_timing_values tseg1:{}",time_segment1);
+        info!(" set_bit_fast_timing_values tseg2:{}",time_segment2);
         unsafe {
             self.inner.dbtp().modify(|r| {
                 r.dsjw()
@@ -432,15 +487,13 @@ impl NewCanNode {
     //     let tmp = data_field_size;
     //     let data_field_size = tc37x_pac::can0::node::txesc::Tbds(data_field_size);
     //     unsafe { self.inner.txesc().modify(|r| r.tbds().set(data_field_size)) };
-    //     info!("Data field size (set) {}", tmp); 
+    //     info!("Data field size (set) {}", tmp);
     // }
     #[inline]
     pub fn set_tx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
-
-        
-        info!("Data field size: {}", data_field_size as u8); 
+        info!("Data field size: {}", data_field_size as u8);
         let tdbs = match data_field_size {
-            DataFieldSize::_8 =>  Tbds::TBDS_BUFFERSIZE8,
+            DataFieldSize::_8 => Tbds::TBDS_BUFFERSIZE8,
             DataFieldSize::_12 => Tbds::TBDS_BUFFERSIZE12,
             DataFieldSize::_16 => Tbds::TBDS_BUFFERSIZE16,
             DataFieldSize::_20 => Tbds::TBDS_BUFFERSIZE20,
@@ -448,17 +501,12 @@ impl NewCanNode {
             DataFieldSize::_32 => Tbds::TBDS_BUFFERSIZE32,
             DataFieldSize::_48 => Tbds::TBDS_BUFFERSIZE48,
             DataFieldSize::_64 => Tbds::TBDS_BUFFERSIZE64,
-        }; 
-        unsafe {
-            self.inner
-                .txesc()
-                .modify(|r| r.tbds().set(tdbs))
         };
+        unsafe { self.inner.txesc().modify(|r| r.tbds().set(tdbs)) };
         let txesc = unsafe {
-            self.inner
-                .txesc().read().get_raw();       
+            self.inner.txesc().read().get_raw();
         };
-        info!("txesc {:b} ", txesc); 
+        info!("txesc {:b} ", txesc);
     }
     fn set_tx_buffer_start_address(&self, address: u16) {
         unsafe { self.inner.txbc().modify(|r| r.tbsa().set(address >> 2)) };
@@ -568,17 +616,17 @@ impl NewCanNode {
 }
 
 impl CanNode {
-    pub fn transmit(&self, frame: &Frame) -> Result<(), ()> {
-        // TODO Call the right function depending on fifo mode
-        self.transmit_fifo(frame);
+    // pub fn transmit(&self, frame: &Frame) -> Result<(), ()> {
+    //     // TODO Call the right function depending on fifo mode
+    //     self.transmit_fifo(frame);
 
-        // while let None = dst_node.send_fifo(msg_id, &read_buf) {
-        //     wait_nop(10);
-        // }
+    //     // while let None = dst_node.send_fifo(msg_id, &read_buf) {
+    //     //     wait_nop(10);
+    //     // }
 
-        // TODO
-        Ok(())
-    }
+    //     // TODO
+    //     Ok(())
+    // }
 
     fn get_rx_fifo0_fill_level(&self) -> u8 {
         unsafe { self.inner.rxf0s().read() }.f0fl().get()
@@ -701,7 +749,6 @@ pub enum DataFieldSize {
     _48,
     _64,
 }
-
 
 #[derive(Clone, Copy)]
 pub struct DedicatedData {
@@ -1079,12 +1126,12 @@ impl TxdOut {
 pub type Priority = u8;
 
 impl CanNode {
-    fn transmit_fifo(&self, frame: &Frame) -> Result<(), ()>{
+   pub fn transmit(&self, frame: &Frame) -> Result<(), ()> {
         use embedded_can::Frame;
         let buffer_id = self.get_tx_fifo_queue_put_index();
         let id: MessageId = frame.id().into();
         let data = frame.data();
-        
+
         // TODO Handle error
         let _ = self.transmit_inner(buffer_id, id, false, false, false, data);
         Ok(())
@@ -1105,16 +1152,16 @@ impl CanNode {
         remote_transmit_request: bool,
         error_state_indicator: bool,
         data: &[u8],
-    ) -> Result<(), ()> { // Todo list errors 
+    ) -> Result<(), ()> {
+        // Todo list errors
         if self.is_tx_buffer_request_pending(buffer_id) {
             Err(())
         } else {
+            //dipending on the module 
             let module_addr: u32 = 0xf0200000u32;
-            self.module.registers();
-            //log::info!("addr {:p}", &module_addr);
-
+            // dependinf on module, node and buffer address
             let tx_start_addr: u16 = 1088; //self.tx.start_address
-                                           //todo!(); //not zero
+                                           //todo!()
 
             let tx_buf_el = self.get_tx_element_address(module_addr, tx_start_addr, buffer_id);
 
@@ -1130,14 +1177,16 @@ impl CanNode {
             if let FrameMode::FdLong | FrameMode::FdLongAndFast = self.frame_mode {
                 tx_buf_el.set_err_state_indicator(error_state_indicator)
             }
+            //self.tx.data_field_size.into();
+            //depends on message lenght (initialization phase also)
+            let data_lenght_code = DataLenghtCode::_0;
 
-           //tx_buf_el.set_data_length(self.tx.data_field_size.into());
-
-           // tx_buf_el.write_tx_buf_data(self.tx.data_field_size.into(), data.as_ptr());
-
-           // tx_buf_el.set_frame_mode_req(self.frame_mode);
-            //TODO
-           // self.set_tx_buffer_add_request(buffer_id);
+            tx_buf_el.set_data_length(data_lenght_code);
+            //tx_buf_el.set_data_length(self.tx.data_field_size.into());
+         
+            tx_buf_el.write_tx_buf_data(data_lenght_code, data.as_ptr());
+            tx_buf_el.set_frame_mode_req(self.frame_mode);
+            self.set_tx_buffer_add_request(buffer_id);
 
             Ok(())
         }
@@ -1150,10 +1199,8 @@ impl CanNode {
     }
 }
 
-
 // IfxLld_Can_Std_Rx_Element_Functions
 impl CanNode {
-
     pub fn get_rx_fifo0_get_index(&self) -> RxBufferId {
         let id = unsafe { self.inner.rxf0s().read() }.f0gi().get();
         RxBufferId::new_const(id)
@@ -1228,7 +1275,6 @@ impl CanNode {
         }
     }
 
-
     #[inline]
     pub fn set_tx_buffer_start_address(&self, address: u16) {
         unsafe { self.inner.txbc().modify(|r| r.tbsa().set(address >> 2)) };
@@ -1261,9 +1307,9 @@ impl CanNode {
         // TODO
         0
     }
-    
+
     pub fn get_tx_buffer_data_field_size(&self) -> u8 {
-        let size_code:u8 = (unsafe { self.inner.txesc().read() }.get_raw() & 0x2)as u8;
+        let size_code: u8 = (unsafe { self.inner.txesc().read() }.get_raw() & 0x2) as u8;
         if size_code < Tbds::TBDS_BUFFERSIZE32.0 {
             (size_code + 2) * 4
         } else {
@@ -1307,10 +1353,6 @@ impl CanNode {
     }
 }
 
-
-
-
-
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum MessageIdLenght {
     Standard,
@@ -1338,4 +1380,3 @@ impl From<embedded_can::Id> for MessageId {
         }
     }
 }
-
