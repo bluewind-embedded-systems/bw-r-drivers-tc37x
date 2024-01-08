@@ -3,6 +3,7 @@ use crate::can::{
     frame::DataLenghtCode,
     reg, TxBufferId,
 };
+use crate::log::debug;
 
 pub struct Tx {
     inner: reg::TxMsg,
@@ -81,8 +82,7 @@ impl Tx {
         let destination_address = self.inner.db().ptr() as _;
         let lenght = data_lenght_code.get_data_lenght_in_bytes();
 
-        #[cfg(feature = "log")]
-        defmt::debug!("writing {} bytes at {:x}", lenght, destination_address);
+        debug!("writing {} bytes at {:x}", lenght, destination_address);
 
         unsafe { core::ptr::copy_nonoverlapping(data, destination_address, lenght as _) };
     }

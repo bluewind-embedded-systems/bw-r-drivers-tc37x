@@ -4,6 +4,8 @@ use crate::can::{
     //types::{DataLenghtCode, FrameMode, MessageIdLenght},
     reg,
 };
+use crate::log::debug;
+
 // create RxMsg using pac structure and unsafe transmute
 
 pub struct Rx {
@@ -74,8 +76,7 @@ impl Rx {
         let source_address = self.inner.db().ptr() as _;
         let lenght = data_lenght_code.get_data_lenght_in_bytes();
 
-        #[cfg(feature = "log")]
-        defmt::debug!("reading {} bytes from {:x}", lenght, source_address);
+        debug!("reading {} bytes from {:x}", lenght, source_address);
 
         unsafe { core::ptr::copy_nonoverlapping(source_address, data, lenght as _) };
     }
