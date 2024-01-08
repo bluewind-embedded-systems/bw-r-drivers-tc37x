@@ -332,6 +332,15 @@ impl NewCanNode {
     fn configure_baud_rate(&self, calculate_bit_timing_values: bool, baud_rate: &BaudRate) {
         if calculate_bit_timing_values {
             let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
+
+            info!(
+                "module_freq: {}, baud_rate: {}, sample_point: {}, sync_jump_with: {}",
+                module_freq,
+                baud_rate.baud_rate,
+                baud_rate.sample_point,
+                baud_rate.sync_jump_with,
+            );
+
             let timing: BitTiming = calculate_bit_timing(
                 module_freq,
                 baud_rate.baud_rate,
@@ -377,10 +386,10 @@ impl NewCanNode {
     }
 
     fn set_bit_timing(&self, timing: BitTiming) {
-        info!(" set_FAST_bit_timing brp:{}", timing.brp);
-        info!(" set_FAST_bit_timing sjw:{}", timing.sjw);
-        info!(" set_FAST_bit_timing tseg1:{}", timing.tseg1);
-        info!(" set_FAST_bit_timing tseg2:{}", timing.tseg2);
+        info!(
+            "brp: {}, sjw: {}, tseg1: {}, tseg2: {}",
+            timing.brp, timing.sjw, timing.tseg1, timing.tseg2
+        );
         unsafe {
             self.inner.nbtp().modify(|r| {
                 r.nbrp()
