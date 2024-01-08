@@ -29,7 +29,7 @@ pub fn init(config: &Config) -> Result<(), InitError> {
     Ok(())
 }
 
-fn wait_lock() -> Result<(), ()> {
+fn wait_ccucon0_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
         unsafe { SCU.ccucon0().read() }.lck().get()
     })
@@ -49,7 +49,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     let endinit_sfty_pw = wdt::get_safety_watchdog_password();
     wdt::clear_safety_endinit_inline(endinit_sfty_pw);
 
-    wait_lock()?;
+    wait_ccucon0_lock()?;
 
     // TODO Should be an enum variant in the pac crate
     const CLKSEL_BACKUP: u8 = 0;
@@ -59,7 +59,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         SCU.ccucon0()
             .modify(|r| r.clksel().set(CLKSEL_BACKUP).up().set(true))
     };
-    wait_lock()?;
+    wait_ccucon0_lock()?;
 
     // disable SMU
     {
@@ -166,11 +166,11 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
             .up()
             .set(true);
 
-        wait_lock()?;
+        wait_ccucon0_lock()?;
 
         unsafe { SCU.ccucon0().write(ccucon0) };
 
-        wait_lock()?;
+        wait_ccucon0_lock()?;
     }
 
     wdt::set_safety_endinit_inline(endinit_sfty_pw);
