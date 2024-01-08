@@ -39,13 +39,14 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
 
     wait_lock()?;
 
-    let ccucon0 = SCU.ccucon0();
-
     // TODO Should be an enum variant in the pac crate
     const CLKSEL_BACKUP: u8 = 0;
 
     // TODO Explain this
-    unsafe { ccucon0.modify(|r| r.clksel().set(CLKSEL_BACKUP).up().set(true)) };
+    unsafe {
+        SCU.ccucon0()
+            .modify(|r| r.clksel().set(CLKSEL_BACKUP).up().set(true))
+    };
     wait_lock()?;
 
     // disable SMU
@@ -156,7 +157,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
 
     {
         // TODO Should be an enum variant in the pac crate
-        const CLKSEL_PLL : u8 = 1;
+        const CLKSEL_PLL: u8 = 1;
 
         let ccucon0 = unsafe { SCU.ccucon0().read() }
             .clksel()
