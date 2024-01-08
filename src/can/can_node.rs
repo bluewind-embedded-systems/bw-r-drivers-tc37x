@@ -7,12 +7,12 @@ use super::frame::{DataLenghtCode, Frame};
 use super::internals::{Rx, Tx};
 use super::msg::{ReadFrom, RxBufferId, TxBufferId};
 use super::CanModule;
-use crate::can::can_module::ClockSelect;
+
 use crate::log::info;
 use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
 use core::mem::transmute;
-use tc37x_pac::can0::node::txesc::{self, Tbds};
+use tc37x_pac::can0::node::txesc::{Tbds};
 use tc37x_pac::hidden::RegValue;
 use tc37x_pac::RegisterValue;
 
@@ -333,8 +333,8 @@ impl NewCanNode {
         while !unsafe { cccr.read() }.init().get() {}
 
         unsafe { cccr.modify(|r| r.cce().set(true).init().set(true)) };
-        let cce = unsafe { cccr.read().cce().get()}; 
-        let init = unsafe { cccr.read().init().get()}; 
+        let _cce = unsafe { cccr.read().cce().get()}; 
+        let _init = unsafe { cccr.read().init().get()}; 
 
         info!("cce {}", cce); 
         info!("init {}", init); 
@@ -502,7 +502,7 @@ impl NewCanNode {
             DataFieldSize::_64 => Tbds::TBDS_BUFFERSIZE64,
         };
         unsafe { self.inner.txesc().modify(|r| r.tbds().set(tdbs)) };
-        let txesc = unsafe {
+        unsafe {
             self.inner.txesc().read().get_raw();
         };
         info!("txesc {:b} ", txesc);
@@ -551,7 +551,7 @@ impl NewCanNode {
             _ => unreachable!(),
         };
 
-        let priority = priority.into();
+        let priority = priority;
         let tos = tos as u8;
 
         // Set priority and type of service
@@ -931,7 +931,7 @@ impl Port {
         unsafe {
             self.inner.omr().init(|mut r| {
                 let data = r.data_mut_ref();
-                *data = ((action as u32) << index).into();
+                *data = (action as u32) << index;
                 r
             })
         };
@@ -1211,7 +1211,7 @@ impl CanNode {
     }
 
     #[inline]
-    pub fn set_rx_buffer_data_field_size(&self, size: DataFieldSize) {
+    pub fn set_rx_buffer_data_field_size(&self, _size: DataFieldSize) {
         todo!()
         // unsafe { self.inner.rxesc().modify(|r| r.rbds().set(size.into())) };
     }
@@ -1289,7 +1289,7 @@ impl CanNode {
         }
     }
 
-    pub fn get_data_field_size(&self, from: ReadFrom) -> u8 {
+    pub fn get_data_field_size(&self, _from: ReadFrom) -> u8 {
         todo!();
         // let rx_esc = unsafe { self.inner.rxesc().read() };
         // let size_code:u32 = match from {
@@ -1373,7 +1373,7 @@ impl From<embedded_can::Id> for MessageId {
                 lenght: MessageIdLenght::Standard,
             },
             embedded_can::Id::Extended(id) => MessageId {
-                data: id.as_raw().into(),
+                data: id.as_raw(),
                 lenght: MessageIdLenght::Extended,
             },
         }

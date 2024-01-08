@@ -247,7 +247,7 @@ fn type_erasure_with_into() {
     let port = PORT_00.split();
     let output = port.p00_5.into_push_pull_output();
     let output = output.erase();
-    let _output: ErasedPin<_> = output.into();
+    let _output: ErasedPin<_> = output;
 }
 
 #[test]

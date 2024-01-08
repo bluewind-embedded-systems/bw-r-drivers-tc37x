@@ -43,7 +43,7 @@ impl Report {
         };
         let guard = TraceGuard::new(reporter);
         Self {
-            shared_data: data.clone(),
+            shared_data: data,
             _guard: guard,
         }
     }
