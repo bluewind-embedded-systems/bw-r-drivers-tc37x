@@ -8,13 +8,11 @@ use tc37x_pac::hidden::RegValue;
 use tc37x_pac::{RegisterValue, SCU, SMU};
 
 const SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT: usize = 0x3000;
-// const OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT: usize = 0x493E0;
-// const PLL_LOCK_TIMEOUT_COUNT: usize = 0x3000;
+const OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT: usize = 0x493E0;
+const PLL_LOCK_TIMEOUT_COUNT: usize = 0x3000;
 
 const CCUCON_LCK_BIT_TIMEOUT_COUNT: usize = 0x1000;
 const PLL_KRDY_TIMEOUT_COUNT: usize = 0x6000;
-
-const CLKSEL_BACKUP: u8 = 0;
 
 pub enum InitError {
     ConfigureCCUInitialStep,
@@ -42,6 +40,9 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     wait_lock()?;
 
     let ccucon0 = SCU.ccucon0();
+
+    // TODO Should be an enum variant in the pac crate
+    const CLKSEL_BACKUP: u8 = 0;
 
     // TODO Explain this
     unsafe { ccucon0.modify(|r| r.clksel().set(CLKSEL_BACKUP).up().set(true)) };
@@ -75,6 +76,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     if let PllInputClockSelection::F0sc0 | PllInputClockSelection::FSynclk =
         plls_params.pll_input_clock_selection
     {
+        // TODO Should be an enum variant in the pac crate
         const MODE_EXTERNALCRYSTAL: u8 = 0;
 
         let mode = MODE_EXTERNALCRYSTAL;
@@ -100,80 +102,76 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         })
     }
 
-    // /* Configure the initial steps for the peripheral PLL*/
-    // unsafe {
-    //     SCU.perpllcon0().modify(|r| {
-    //         r.divby()
-    //             .set(config.plls_parameters.per_pll.k3_divider_bypass != 0)
-    //             .pdiv()
-    //             .set(config.plls_parameters.per_pll.p_divider)
-    //             .ndiv()
-    //             .set(config.plls_parameters.per_pll.n_divider)
-    //     })
-    // }
-    //
-    // unsafe {
-    //     SCU.syspllcon0()
-    //         .modify(|r| r.pllpwd().set(scu::syspllcon0::Pllpwd::PLLPWD_NORMAL))
-    // };
-    // unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(true)) };
-    //
-    // wait_cond::<SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT>(&mut res, || {
-    //     unsafe { SCU.syspllstat().read() }.pwdstat().get()
-    //         || unsafe { SCU.perpllstat().read() }.pwdstat().get()
-    // });
-    //
-    // wait_cond::<PLL_KRDY_TIMEOUT_COUNT>(&mut res, || {
-    //     unsafe { SCU.syspllstat().read() }.k2rdy().get() || {
-    //         let stat = unsafe { SCU.perpllstat().read() };
-    //         stat.k2rdy().get() || stat.k3rdy().get()
-    //     }
-    // });
-    //
-    // wait_cond::<OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT>(&mut res, || {
-    //     let osccon = unsafe { SCU.osccon().read() };
-    //     !osccon.plllv().get() && !osccon.pllhv().get()
-    // });
-    //
-    // /* Now start PLL locking for latest set values*/
-    // {
-    //     unsafe { SCU.syspllcon0().modify(|r| r.resld().set(true)) };
-    //     unsafe { SCU.perpllcon0().modify(|r| r.resld().set(true)) };
-    //
-    //     wait_cond::<PLL_LOCK_TIMEOUT_COUNT>(&mut res, || {
-    //         !unsafe { SCU.syspllstat().read() }.lock().get()
-    //             || !unsafe { SCU.perpllstat().read() }.lock().get()
-    //     });
-    // }
-    //
-    // // enable SMU alarms
-    // {
-    //     unsafe { SMU.keys().write(RegValue::new(0xBC, 0)) };
-    //     unsafe { SMU.cmd().write(RegValue::new(0x00000005, 0)) };
-    //     unsafe { SMU.ag8().write(RegValue::new(0x1D, 0)) };
-    //     unsafe { SMU.keys().write(RegValue::new(0, 0)) };
-    // }
-    //
-    // {
-    //     let ccucon0 = unsafe { SCU.ccucon0().read() }
-    //         .clksel()
-    //         .set(Clksel::CLKSEL_PLL)
-    //         .up()
-    //         .set(true);
-    //
-    //     wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(&mut res, || {
-    //         unsafe { SCU.ccucon0().read() }.lck().get()
-    //     });
-    //
-    //     unsafe { SCU.ccucon0().write(ccucon0) };
-    //
-    //     wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(&mut res, || {
-    //         unsafe { SCU.ccucon0().read() }.lck().get()
-    //     });
-    // }
-    //
-    // wdt::set_safety_endinit_inline(endinit_sfty_pw);
-    // res
+    // Configure the initial steps for the peripheral PLL
+    unsafe {
+        SCU.perpllcon0().modify(|r| {
+            r.divby()
+                .set(plls_params.per_pll.k3_divider_bypass != 0)
+                .pdiv()
+                .set(plls_params.per_pll.p_divider)
+                .ndiv()
+                .set(plls_params.per_pll.n_divider)
+        })
+    }
+
+    unsafe { SCU.syspllcon0().modify(|r| r.pllpwd().set(true)) };
+    unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(true)) };
+
+    wait_cond::<SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT>(|| {
+        unsafe { SCU.syspllstat().read() }.pwdstat().get()
+            || unsafe { SCU.perpllstat().read() }.pwdstat().get()
+    })?;
+
+    wait_cond::<PLL_KRDY_TIMEOUT_COUNT>(|| {
+        unsafe { SCU.syspllstat().read() }.k2rdy().get() || {
+            let stat = unsafe { SCU.perpllstat().read() };
+            stat.k2rdy().get() || stat.k3rdy().get()
+        }
+    })?;
+
+    wait_cond::<OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT>(|| {
+        let osccon = unsafe { SCU.osccon().read() };
+        !osccon.plllv().get() && !osccon.pllhv().get()
+    })?;
+
+    // Now start PLL locking for latest set values
+    {
+        unsafe { SCU.syspllcon0().modify(|r| r.resld().set(true)) };
+        unsafe { SCU.perpllcon0().modify(|r| r.resld().set(true)) };
+
+        wait_cond::<PLL_LOCK_TIMEOUT_COUNT>(|| {
+            !unsafe { SCU.syspllstat().read() }.lock().get()
+                || !unsafe { SCU.perpllstat().read() }.lock().get()
+        })?;
+    }
+
+    // enable SMU alarms
+    {
+        // TODO Explain these magic numbers
+        unsafe { SMU.keys().write(RegValue::new(0xBC, 0)) };
+        unsafe { SMU.cmd().write(RegValue::new(0x00000005, 0)) };
+        unsafe { SMU.ag8().write(RegValue::new(0x1D, 0)) };
+        unsafe { SMU.keys().write(RegValue::new(0, 0)) };
+    }
+
+    {
+        // TODO Should be an enum variant in the pac crate
+        const CLKSEL_PLL : u8 = 1;
+
+        let ccucon0 = unsafe { SCU.ccucon0().read() }
+            .clksel()
+            .set(CLKSEL_PLL)
+            .up()
+            .set(true);
+
+        wait_lock()?;
+
+        unsafe { SCU.ccucon0().write(ccucon0) };
+
+        wait_lock()?;
+    }
+
+    wdt::set_safety_endinit_inline(endinit_sfty_pw);
 
     Ok(())
 }
