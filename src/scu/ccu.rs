@@ -30,17 +30,19 @@ pub fn init(config: &Config) -> Result<(), InitError> {
 }
 
 fn wait_lock() -> Result<(), ()> {
-    wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| unsafe { SCU.ccucon0().read() }.lck().get())
+    wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
+        unsafe { SCU.ccucon0().read() }.lck().get()
+    })
 }
 
 fn set_pll_power(power: bool) -> Result<(), ()> {
     unsafe { SCU.syspllcon0().modify(|r| r.pllpwd().set(power)) };
     unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(power)) };
 
-    wait_cond::<SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT>(|| {
+    wait_cond(SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT, || {
         power == unsafe { SCU.syspllstat().read() }.pwdstat().get()
             || power == unsafe { SCU.perpllstat().read() }.pwdstat().get()
-    })?;
+    })
 }
 
 pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
@@ -122,14 +124,14 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
 
     set_pll_power(true)?;
 
-    wait_cond::<PLL_KRDY_TIMEOUT_COUNT>(|| {
+    wait_cond(PLL_KRDY_TIMEOUT_COUNT, || {
         unsafe { SCU.syspllstat().read() }.k2rdy().get() || {
             let stat = unsafe { SCU.perpllstat().read() };
             stat.k2rdy().get() || stat.k3rdy().get()
         }
     })?;
 
-    wait_cond::<OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT>(|| {
+    wait_cond(OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT, || {
         let osccon = unsafe { SCU.osccon().read() };
         !osccon.plllv().get() && !osccon.pllhv().get()
     })?;
@@ -139,7 +141,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         unsafe { SCU.syspllcon0().modify(|r| r.resld().set(true)) };
         unsafe { SCU.perpllcon0().modify(|r| r.resld().set(true)) };
 
-        wait_cond::<PLL_LOCK_TIMEOUT_COUNT>(|| {
+        wait_cond(PLL_LOCK_TIMEOUT_COUNT, || {
             !unsafe { SCU.syspllstat().read() }.lock().get()
                 || !unsafe { SCU.perpllstat().read() }.lock().get()
         })?;
@@ -230,11 +232,15 @@ pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         *cuccon0.data_mut_ref() |=
             config.clock_distribution.ccucon0.mask & config.clock_distribution.ccucon0.value;
 
-        wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| unsafe { SCU.ccucon0().read() }.lck().get())?;
+        wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
+            unsafe { SCU.ccucon0().read() }.lck().get()
+        })?;
 
         unsafe { SCU.ccucon0().write(cuccon0) };
 
-        wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| unsafe { SCU.ccucon0().read() }.lck().get())?;
+        wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
+            unsafe { SCU.ccucon0().read() }.lck().get()
+        })?;
     }
     // CCUCON1 config
     {
@@ -256,11 +262,11 @@ pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
                 .clkselqspi()
                 .set(2 /*ccucon1::Clkselqspi::CLKSELQSPI_STOPPED*/);
 
-            wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| {
+            wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
                 unsafe { SCU.ccucon1().read() }.lck().get()
             })?;
             unsafe { SCU.ccucon1().write(ccucon1) };
-            wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| {
+            wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
                 unsafe { SCU.ccucon1().read() }.lck().get()
             })?;
         }
@@ -270,9 +276,13 @@ pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         *ccucon1.data_mut_ref() |=
             config.clock_distribution.ccucon1.mask & config.clock_distribution.ccucon1.value;
 
-        wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| unsafe { SCU.ccucon1().read() }.lck().get())?;
+        wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
+            unsafe { SCU.ccucon1().read() }.lck().get()
+        })?;
         unsafe { SCU.ccucon1().write(ccucon1) };
-        wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| unsafe { SCU.ccucon1().read() }.lck().get())?;
+        wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
+            unsafe { SCU.ccucon1().read() }.lck().get()
+        })?;
     }
 
     // CCUCON2 config
@@ -290,13 +300,13 @@ pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
                 0, /*scu::ccucon2::Clkselasclins::CLKSELASCLINS_STOPPED*/
             );
 
-            wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| {
+            wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
                 unsafe { SCU.ccucon2().read() }.lck().get()
             })?;
 
             unsafe { SCU.ccucon2().write(ccucon2) };
 
-            wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| {
+            wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
                 unsafe { SCU.ccucon2().read() }.lck().get()
             })?;
         }
@@ -306,9 +316,13 @@ pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         *ccucon2.data_mut_ref() |=
             config.clock_distribution.ccucon2.mask & config.clock_distribution.ccucon2.value;
 
-        wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| unsafe { SCU.ccucon2().read() }.lck().get())?;
+        wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
+            unsafe { SCU.ccucon2().read() }.lck().get()
+        })?;
         unsafe { SCU.ccucon2().write(ccucon2) };
-        wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| unsafe { SCU.ccucon2().read() }.lck().get())?;
+        wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
+            unsafe { SCU.ccucon2().read() }.lck().get()
+        })?;
     }
 
     // CUCCON5 config
@@ -319,11 +333,15 @@ pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
             config.clock_distribution.ccucon5.mask & config.clock_distribution.ccucon5.value;
         ccucon5 = ccucon5.up().set(true);
 
-        wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| unsafe { SCU.ccucon5().read() }.lck().get())?;
+        wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
+            unsafe { SCU.ccucon5().read() }.lck().get()
+        })?;
 
         unsafe { SCU.ccucon5().write(ccucon5) };
 
-        wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| unsafe { SCU.ccucon5().read() }.lck().get())?;
+        wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
+            unsafe { SCU.ccucon5().read() }.lck().get()
+        })?;
     }
 
     // CUCCON6 config
@@ -373,7 +391,9 @@ pub fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
     for pll_step_count in 0..config.sys_pll_throttle.len() {
         wdt::clear_safety_endinit_inline(endinit_sfty_pw);
 
-        wait_cond::<PLL_KRDY_TIMEOUT_COUNT>(|| !unsafe { SCU.syspllstat().read() }.k2rdy().get())?;
+        wait_cond(PLL_KRDY_TIMEOUT_COUNT, || {
+            !unsafe { SCU.syspllstat().read() }.k2rdy().get()
+        })?;
 
         unsafe {
             SCU.syspllcon1().modify(|r| {
@@ -388,8 +408,8 @@ pub fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
 }
 
 #[inline]
-pub fn wait_cond<const C: usize>(cond: impl Fn() -> bool) -> Result<(), ()> {
-    let mut timeout_cycle_count = C;
+pub fn wait_cond(timeout_cycle_count: usize, cond: impl Fn() -> bool) -> Result<(), ()> {
+    let mut timeout_cycle_count = timeout_cycle_count;
     while cond() {
         timeout_cycle_count -= 1;
         if timeout_cycle_count == 0 {
