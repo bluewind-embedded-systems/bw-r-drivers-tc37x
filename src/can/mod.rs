@@ -1,3 +1,6 @@
+// TODO Remove this once the module is more complete
+#![allow(dead_code)]
+
 mod baud_rate;
 mod can_module;
 mod can_node;

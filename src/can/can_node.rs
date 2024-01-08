@@ -1302,8 +1302,6 @@ impl CanNode {
         // } else {
         //     (size_code - 3) * 16
         // }
-        // TODO
-        0
     }
 
     pub fn get_tx_buffer_data_field_size(&self) -> u8 {
