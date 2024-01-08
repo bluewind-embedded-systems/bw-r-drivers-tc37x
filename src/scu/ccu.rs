@@ -3,15 +3,18 @@
 #![allow(clippy::result_unit_err)]
 
 use super::wdt;
+use crate::log::info;
 use tc37x_pac::hidden::RegValue;
-use tc37x_pac::SCU;
+use tc37x_pac::{SCU, SMU};
 
-// const SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT: usize = 0x3000;
+const SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT: usize = 0x3000;
 // const OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT: usize = 0x493E0;
 // const PLL_LOCK_TIMEOUT_COUNT: usize = 0x3000;
 
 const CCUCON_LCK_BIT_TIMEOUT_COUNT: usize = 0x1000;
 const PLL_KRDY_TIMEOUT_COUNT: usize = 0x6000;
+
+const CLKSEL_BACKUP: u8 = 0;
 
 pub enum InitError {
     ConfigureCCUInitialStep,
@@ -28,12 +31,142 @@ pub fn init(config: &Config) -> Result<(), InitError> {
     Ok(())
 }
 
-pub fn configure_ccu_initial_step(_config: &Config) -> Result<(), ()> {
-    // TODO Use config
+fn wait_lock() -> Result<(), ()> {
+    wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| unsafe { SCU.ccucon0().read() }.lck().get())
+}
+
+pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     let endinit_sfty_pw = wdt::get_safety_watchdog_password();
     wdt::clear_safety_endinit_inline(endinit_sfty_pw);
 
-    wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| unsafe { SCU.ccucon0().read() }.lck().get())?;
+    wait_lock()?;
+
+    let ccucon0 = SCU.ccucon0();
+
+    // TODO Explain this
+    unsafe { ccucon0.modify(|r| r.clksel().set(CLKSEL_BACKUP).up().set(true)) };
+    wait_lock()?;
+
+    // disable SMU
+    {
+        // TODO Explain this or use field accessors
+        unsafe { SMU.keys().write(RegValue::new(0xBC, 0)) };
+        unsafe { SMU.ag8cf0().modify(|r| *r & !0x1D) };
+        unsafe { SMU.ag8cf1().modify(|r| *r & !0x1D) };
+        unsafe { SMU.ag8cf2().modify(|r| *r & !0x1D) };
+        unsafe { SMU.keys().write(RegValue::new(0, 0)) };
+    }
+
+    /* Power down the both the PLLs before configuring registers*/
+    /* Both the PLLs are powered down to be sure for asynchronous PLL registers update cause no glitches */
+    unsafe { SCU.syspllcon0().modify(|r| r.pllpwd().set(false)) };
+    unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(false)) };
+
+    wait_cond::<SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT>(|| {
+        !unsafe { SCU.syspllstat().read() }.pwdstat().get()
+            || !unsafe { SCU.perpllstat().read() }.pwdstat().get()
+    })?;
+
+    /* Now configure the oscillator, required oscillator mode is external crystal */
+    // if let PllInputClockSelection::F0sc0 | PllInputClockSelection::FSynclk =
+    //     config.plls_parameters.pll_input_clock_selection
+    // {
+    //     unsafe {
+    //         SCU.osccon().modify(|r| {
+    //             r.mode()
+    //                 .set(Mode::MODE_EXTERNALCRYSTAL)
+    //                 .oscval()
+    //                 .set(((config.plls_parameters.xtal_frequency / 1000000) - 15) as u8)
+    //         })
+    //     };
+    // }
+
+    // /* Configure the initial steps for the peripheral PLL*/
+    // unsafe {
+    //     SCU.syspllcon0().modify(|r| {
+    //         r.pdiv()
+    //             .set(config.plls_parameters.sys_pll.p_divider)
+    //             .ndiv()
+    //             .set(config.plls_parameters.sys_pll.n_divider)
+    //             .insel()
+    //             .set(Insel(config.plls_parameters.pll_input_clock_selection as _))
+    //     })
+    // }
+    //
+    // /* Configure the initial steps for the peripheral PLL*/
+    // unsafe {
+    //     SCU.perpllcon0().modify(|r| {
+    //         r.divby()
+    //             .set(config.plls_parameters.per_pll.k3_divider_bypass != 0)
+    //             .pdiv()
+    //             .set(config.plls_parameters.per_pll.p_divider)
+    //             .ndiv()
+    //             .set(config.plls_parameters.per_pll.n_divider)
+    //     })
+    // }
+    //
+    // unsafe {
+    //     SCU.syspllcon0()
+    //         .modify(|r| r.pllpwd().set(scu::syspllcon0::Pllpwd::PLLPWD_NORMAL))
+    // };
+    // unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(true)) };
+    //
+    // wait_cond::<SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT>(&mut res, || {
+    //     unsafe { SCU.syspllstat().read() }.pwdstat().get()
+    //         || unsafe { SCU.perpllstat().read() }.pwdstat().get()
+    // });
+    //
+    // wait_cond::<PLL_KRDY_TIMEOUT_COUNT>(&mut res, || {
+    //     unsafe { SCU.syspllstat().read() }.k2rdy().get() || {
+    //         let stat = unsafe { SCU.perpllstat().read() };
+    //         stat.k2rdy().get() || stat.k3rdy().get()
+    //     }
+    // });
+    //
+    // wait_cond::<OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT>(&mut res, || {
+    //     let osccon = unsafe { SCU.osccon().read() };
+    //     !osccon.plllv().get() && !osccon.pllhv().get()
+    // });
+    //
+    // /* Now start PLL locking for latest set values*/
+    // {
+    //     unsafe { SCU.syspllcon0().modify(|r| r.resld().set(true)) };
+    //     unsafe { SCU.perpllcon0().modify(|r| r.resld().set(true)) };
+    //
+    //     wait_cond::<PLL_LOCK_TIMEOUT_COUNT>(&mut res, || {
+    //         !unsafe { SCU.syspllstat().read() }.lock().get()
+    //             || !unsafe { SCU.perpllstat().read() }.lock().get()
+    //     });
+    // }
+    //
+    // // enable SMU alarms
+    // {
+    //     unsafe { SMU.keys().write(RegValue::new(0xBC, 0)) };
+    //     unsafe { SMU.cmd().write(RegValue::new(0x00000005, 0)) };
+    //     unsafe { SMU.ag8().write(RegValue::new(0x1D, 0)) };
+    //     unsafe { SMU.keys().write(RegValue::new(0, 0)) };
+    // }
+    //
+    // {
+    //     let ccucon0 = unsafe { SCU.ccucon0().read() }
+    //         .clksel()
+    //         .set(Clksel::CLKSEL_PLL)
+    //         .up()
+    //         .set(true);
+    //
+    //     wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(&mut res, || {
+    //         unsafe { SCU.ccucon0().read() }.lck().get()
+    //     });
+    //
+    //     unsafe { SCU.ccucon0().write(ccucon0) };
+    //
+    //     wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(&mut res, || {
+    //         unsafe { SCU.ccucon0().read() }.lck().get()
+    //     });
+    // }
+    //
+    // wdt::set_safety_endinit_inline(endinit_sfty_pw);
+    // res
 
     Ok(())
 }
