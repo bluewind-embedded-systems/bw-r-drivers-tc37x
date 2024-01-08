@@ -33,6 +33,16 @@ fn wait_lock() -> Result<(), ()> {
     wait_cond::<CCUCON_LCK_BIT_TIMEOUT_COUNT>(|| unsafe { SCU.ccucon0().read() }.lck().get())
 }
 
+fn set_pll_power(power: bool) -> Result<(), ()> {
+    unsafe { SCU.syspllcon0().modify(|r| r.pllpwd().set(power)) };
+    unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(power)) };
+
+    wait_cond::<SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT>(|| {
+        power == unsafe { SCU.syspllstat().read() }.pwdstat().get()
+            || power == unsafe { SCU.perpllstat().read() }.pwdstat().get()
+    })?;
+}
+
 pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     let endinit_sfty_pw = wdt::get_safety_watchdog_password();
     wdt::clear_safety_endinit_inline(endinit_sfty_pw);
@@ -61,19 +71,14 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         unsafe { SMU.keys().write(RegValue::new(0, 0)) };
     }
 
-    /* Power down the both the PLLs before configuring registers*/
-    /* Both the PLLs are powered down to be sure for asynchronous PLL registers update cause no glitches */
-    unsafe { SCU.syspllcon0().modify(|r| r.pllpwd().set(false)) };
-    unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(false)) };
-
-    wait_cond::<SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT>(|| {
-        !unsafe { SCU.syspllstat().read() }.pwdstat().get()
-            || !unsafe { SCU.perpllstat().read() }.pwdstat().get()
-    })?;
+    // Power down the both the PLLs before configuring registers
+    // Both the PLLs are powered down to be sure for asynchronous PLL registers
+    // update cause no glitches.
+    set_pll_power(false)?;
 
     let plls_params = &config.pll_initial_step.plls_parameters;
 
-    /* Now configure the oscillator, required oscillator mode is external crystal */
+    // Configure the oscillator, required oscillator mode is external crystal
     if let PllInputClockSelection::F0sc0 | PllInputClockSelection::FSynclk =
         plls_params.pll_input_clock_selection
     {
@@ -115,13 +120,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         })
     }
 
-    unsafe { SCU.syspllcon0().modify(|r| r.pllpwd().set(true)) };
-    unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(true)) };
-
-    wait_cond::<SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT>(|| {
-        unsafe { SCU.syspllstat().read() }.pwdstat().get()
-            || unsafe { SCU.perpllstat().read() }.pwdstat().get()
-    })?;
+    set_pll_power(true)?;
 
     wait_cond::<PLL_KRDY_TIMEOUT_COUNT>(|| {
         unsafe { SCU.syspllstat().read() }.k2rdy().get() || {
@@ -135,7 +134,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         !osccon.plllv().get() && !osccon.pllhv().get()
     })?;
 
-    // Now start PLL locking for latest set values
+    // Start PLL locking for latest set values
     {
         unsafe { SCU.syspllcon0().modify(|r| r.resld().set(true)) };
         unsafe { SCU.perpllcon0().modify(|r| r.resld().set(true)) };
