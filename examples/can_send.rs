@@ -21,7 +21,11 @@ fn setup_can() -> Result<CanNode, ()> {
     let mut can_module = can_module.enable()?;
 
     let can_node = can_module.take_node(NodeId::new(0))?;
-    let can_node_config = CanNodeConfig::default();
+    let mut can_node_config = CanNodeConfig::default();
+    can_node_config.calculate_bit_timing_values = true;
+    can_node_config.baud_rate.baud_rate = 1_000_000;
+    can_node_config.baud_rate.sync_jump_with = 3;
+    can_node_config.baud_rate.sample_point = 8_000;
     let can_node = can_node.configure(can_node_config)?;
 
     Ok(can_node)
