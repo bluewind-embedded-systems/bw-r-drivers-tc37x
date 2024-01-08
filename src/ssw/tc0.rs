@@ -9,6 +9,6 @@ pub fn init_software() {
         // TODO Handle error
         let _ = ccu::init(&ccu::DEFAULT_CLOCK_CONFIG);
     } else {
-        debug!("application reset")
+        debug!("application reset");
     }
 }
