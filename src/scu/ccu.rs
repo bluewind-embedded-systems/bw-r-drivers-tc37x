@@ -69,17 +69,18 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
             || !unsafe { SCU.perpllstat().read() }.pwdstat().get()
     })?;
 
+    let plls_params = &config.pll_initial_step.plls_parameters;
+
     /* Now configure the oscillator, required oscillator mode is external crystal */
-    if let PllInputClockSelection::F0sc0 | PllInputClockSelection::FSynclk = config
-        .pll_initial_step
-        .plls_parameters
-        .pll_input_clock_selection
+    if let PllInputClockSelection::F0sc0 | PllInputClockSelection::FSynclk =
+        plls_params.pll_input_clock_selection
     {
         const MODE_EXTERNALCRYSTAL: u8 = 0;
 
         let mode = MODE_EXTERNALCRYSTAL;
-        let oscval: u8 =
-            ((config.pll_initial_step.plls_parameters.xtal_frequency / 1000000) - 15).try_into()?;
+        let oscval: u8 = ((plls_params.xtal_frequency / 1000000) - 15)
+            .try_into()
+            .map_err(|_| ())?;
 
         unsafe {
             SCU.osccon()
@@ -87,18 +88,18 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         };
     }
 
-    // /* Configure the initial steps for the peripheral PLL*/
-    // unsafe {
-    //     SCU.syspllcon0().modify(|r| {
-    //         r.pdiv()
-    //             .set(config.plls_parameters.sys_pll.p_divider)
-    //             .ndiv()
-    //             .set(config.plls_parameters.sys_pll.n_divider)
-    //             .insel()
-    //             .set(Insel(config.plls_parameters.pll_input_clock_selection as _))
-    //     })
-    // }
-    //
+    /* Configure the initial steps for the peripheral PLL*/
+    unsafe {
+        SCU.syspllcon0().modify(|r| {
+            r.pdiv()
+                .set(plls_params.sys_pll.p_divider)
+                .ndiv()
+                .set(plls_params.sys_pll.n_divider)
+                .insel()
+                .set(plls_params.pll_input_clock_selection as u8)
+        })
+    }
+
     // /* Configure the initial steps for the peripheral PLL*/
     // unsafe {
     //     SCU.perpllcon0().modify(|r| {
