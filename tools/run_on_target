@@ -5,7 +5,9 @@ ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && cd ../ && pwd
 main() {
   cd "${ROOT_DIR}" || exit
   ./tools/set_build_profile target
-  docker rm tricore-probe &>/dev/null && sleep 1
+  docker stop tricore-probe &>/dev/null
+  docker rm tricore-probe &>/dev/null
+  while docker ps | grep tricore-probe &>/dev/null; do sleep 1; done
   cargo run --features=example,log_with_defmt --example=$1
 }
 
