@@ -58,8 +58,6 @@ fn main() -> ! {
         Err(_) => loop {},
     };
 
-    info!("Sending message ... ");
-
     let mut count = 0;
 
     loop {
@@ -70,6 +68,7 @@ fn main() -> ! {
         }
         data[0] = count;
 
+        info!("Sending message...");
         if can.transmit(&test_frame).is_err() {
             info!("Cannot send frame");
         }
