@@ -56,7 +56,6 @@ fn main() -> ! {
 
     info!("Sending message ... ");
 
-
     let mut count = 0;
 
     loop {

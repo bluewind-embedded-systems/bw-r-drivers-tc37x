@@ -111,7 +111,7 @@ impl From<NodeId> for ClockSelect {
 
 #[derive(Default)]
 pub enum ClockSource {
-    //TODO remove NoClock 
+    //TODO remove NoClock
     //NoClock,
     Asynchronous,
     Synchronous,

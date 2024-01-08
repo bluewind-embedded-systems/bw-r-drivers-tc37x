@@ -5,15 +5,15 @@ use embedded_can::{Id, StandardId};
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, PartialOrd, Debug)]
 pub enum DataLenghtCode {
-    _0 ,
-    _1 ,
-    _2 ,
-    _3 ,
-    _4 ,
-    _5 ,
-    _6 ,
-    _7 ,
-    _8 ,
+    _0,
+    _1,
+    _2,
+    _3,
+    _4,
+    _5,
+    _6,
+    _7,
+    _8,
     _12,
     _16,
     _20,
@@ -22,7 +22,6 @@ pub enum DataLenghtCode {
     _48,
     _64,
 }
-
 
 impl TryFrom<u8> for DataLenghtCode {
     type Error = ();
@@ -83,7 +82,7 @@ impl embedded_can::Frame for Frame {
 
     fn is_extended(&self) -> bool {
         false
-        //TODO 
+        //TODO
     }
 
     fn is_remote_frame(&self) -> bool {
@@ -105,8 +104,6 @@ impl embedded_can::Frame for Frame {
         &[1, 2, 3, 4, 5, 6, 7, 8]
     }
 }
-
-
 
 #[cfg(test)]
 mod test {
@@ -172,4 +169,3 @@ mod test {
         }
     }
 }
-

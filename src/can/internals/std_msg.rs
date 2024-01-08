@@ -1,4 +1,7 @@
-use crate::can::{reg, msg::{FilterElementConfiguration, FilterType, RxBufferId}};
+use crate::can::{
+    msg::{FilterElementConfiguration, FilterType, RxBufferId},
+    reg,
+};
 
 pub struct StdMsg {
     inner: reg::StdMsg,

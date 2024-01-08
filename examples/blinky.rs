@@ -6,8 +6,8 @@
 #[cfg(target_arch = "tricore")]
 tc37x_rt::entry!(main);
 
-use embedded_hal::digital::StatefulOutputPin;
 use core::time::Duration;
+use embedded_hal::digital::StatefulOutputPin;
 use tc37x_hal::gpio::GpioExt;
 use tc37x_hal::log::info;
 use tc37x_hal::pac;

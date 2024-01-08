@@ -103,7 +103,6 @@ pub enum FrameType {
     RemoteAnswer,
 }
 
-
 #[derive(Clone, Copy, Debug)]
 #[repr(transparent)]
 pub struct TxBufferId(pub u8);

@@ -1,6 +1,8 @@
 use crate::can::{
-    reg, can_node::{MessageIdLenght, FrameMode}, frame::DataLenghtCode,
-   //types::{DataLenghtCode, FrameMode, MessageIdLenght},
+    can_node::{FrameMode, MessageIdLenght},
+    frame::DataLenghtCode,
+    //types::{DataLenghtCode, FrameMode, MessageIdLenght},
+    reg,
 };
 // create RxMsg using pac structure and unsafe transmute
 

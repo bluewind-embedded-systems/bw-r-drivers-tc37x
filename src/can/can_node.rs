@@ -12,7 +12,7 @@ use crate::log::info;
 use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
 use core::mem::transmute;
-use tc37x_pac::can0::node::txesc::{Tbds};
+use tc37x_pac::can0::node::txesc::Tbds;
 use tc37x_pac::hidden::RegValue;
 use tc37x_pac::RegisterValue;
 
@@ -25,8 +25,8 @@ use tc37x_pac::RegisterValue;
 //     fn get_prescalar() -> u32;
 //     fn get_time_segment_1() -> u32;
 //     fn get_time_segment_2() -> u32;
-//     fn recalculate_value() -> bool; 
-//     fn transceiver_delay_offset() -> Option<u8>; 
+//     fn recalculate_value() -> bool;
+//     fn transceiver_delay_offset() -> Option<u8>;
 // }
 #[derive(Default)]
 pub struct BaudRate {
@@ -59,7 +59,6 @@ pub struct FastBaudRate {
 //         todo!()
 //     }
 // }
-
 
 #[derive(PartialEq, Debug, Default, Copy, Clone)]
 pub enum FrameMode {
@@ -112,7 +111,7 @@ pub struct CanNodeConfig {
     pub frame_type: FrameType,
     pub tx_mode: TxMode,
     pub rx_mode: RxMode,
-    pub tx_buffer_data_field_size: DataFieldSize, 
+    pub tx_buffer_data_field_size: DataFieldSize,
     pub message_ram_tx_buffers_start_address: u16,
 }
 
@@ -165,14 +164,14 @@ impl NewCanNode {
 
         self.enable_configuration_change();
 
-
         // for CAN FD frames, set fast baud rate
-        if config.frame_mode ==FrameMode::Standard {
-            info!("configure_baud_rate FrameMode::Standard calculate? {}",config.calculate_bit_timing_values );
+        if config.frame_mode == FrameMode::Standard {
+            info!(
+                "configure_baud_rate FrameMode::Standard calculate? {}",
+                config.calculate_bit_timing_values
+            );
             self.configure_baud_rate(config.calculate_bit_timing_values, &config.baud_rate);
-
-        }
-        else {
+        } else {
             info!("configure_baud_rate FrameMode::Extended");
             self.configure_fast_baud_rate(
                 config.calculate_bit_timing_values,
@@ -325,7 +324,7 @@ impl NewCanNode {
             while unsafe { cccr.read() }.cce().get() {}
 
             unsafe { cccr.modify(|r| r.init().set(false)) };
-            
+
             while unsafe { cccr.read() }.init().get() {}
         }
 
@@ -333,11 +332,11 @@ impl NewCanNode {
         while !unsafe { cccr.read() }.init().get() {}
 
         unsafe { cccr.modify(|r| r.cce().set(true).init().set(true)) };
-        let _cce = unsafe { cccr.read().cce().get()}; 
-        let _init = unsafe { cccr.read().init().get()}; 
+        let _cce = unsafe { cccr.read().cce().get() };
+        let _init = unsafe { cccr.read().init().get() };
 
-        info!("cce {}", cce); 
-        info!("init {}", init); 
+        info!("cce {}", cce);
+        info!("init {}", init);
     }
 
     fn disable_configuration_change(&self) {
@@ -401,9 +400,9 @@ impl NewCanNode {
 
     fn set_bit_timing(&self, timing: BitTiming) {
         info!(" set_FAST_bit_timing brp:{}", timing.brp);
-        info!(" set_FAST_bit_timing sjw:{}",timing.sjw);
-        info!(" set_FAST_bit_timing tseg1:{}",timing.tseg1);
-        info!(" set_FAST_bit_timing tseg2:{}",timing.tseg2);
+        info!(" set_FAST_bit_timing sjw:{}", timing.sjw);
+        info!(" set_FAST_bit_timing tseg1:{}", timing.tseg1);
+        info!(" set_FAST_bit_timing tseg2:{}", timing.tseg2);
         unsafe {
             self.inner.nbtp().modify(|r| {
                 r.nbrp()
@@ -420,9 +419,9 @@ impl NewCanNode {
 
     fn set_bit_timing_values(&self, sjw: u8, time_segment2: u8, time_segment1: u8, prescaler: u16) {
         info!(" set_bit_timing_values brp:{}", prescaler);
-        info!(" set_bit_timing_values sjw:{}",sjw);
-        info!(" set_bit_timing_values tseg1:{}",time_segment1);
-        info!(" set_bit_timing_values tseg2:{}",time_segment2);
+        info!(" set_bit_timing_values sjw:{}", sjw);
+        info!(" set_bit_timing_values tseg1:{}", time_segment1);
+        info!(" set_bit_timing_values tseg2:{}", time_segment2);
         unsafe {
             self.inner.nbtp().modify(|r| {
                 r.nsjw()
@@ -440,9 +439,9 @@ impl NewCanNode {
     fn set_fast_bit_timing(&self, module_freq: f32, baudrate: u32, sample_point: u16, sjw: u16) {
         let timing = calculate_fast_bit_timing(module_freq, baudrate, sample_point, sjw);
         info!(" set_FAST_bit_timing brp:{}", timing.brp);
-        info!(" set_FAST_bit_timing sjw:{}",timing.sjw);
-        info!(" set_FAST_bit_timing tseg1:{}",timing.tseg1);
-        info!(" set_FAST_bit_timing tseg2:{}",timing.tseg2);
+        info!(" set_FAST_bit_timing sjw:{}", timing.sjw);
+        info!(" set_FAST_bit_timing tseg1:{}", timing.tseg1);
+        info!(" set_FAST_bit_timing tseg2:{}", timing.tseg2);
         unsafe {
             self.inner.dbtp().modify(|r| {
                 r.dbrp()
@@ -465,9 +464,9 @@ impl NewCanNode {
         prescaler: u8,
     ) {
         info!(" set_bit_fast_timing_values brp:{}", prescaler);
-        info!(" set_bit_fast_timing_values sjw:{}",sjw);
-        info!(" set_bit_fast_timing_values tseg1:{}",time_segment1);
-        info!(" set_bit_fast_timing_values tseg2:{}",time_segment2);
+        info!(" set_bit_fast_timing_values sjw:{}", sjw);
+        info!(" set_bit_fast_timing_values tseg1:{}", time_segment1);
+        info!(" set_bit_fast_timing_values tseg2:{}", time_segment2);
         unsafe {
             self.inner.dbtp().modify(|r| {
                 r.dsjw()
@@ -1125,7 +1124,7 @@ impl TxdOut {
 pub type Priority = u8;
 
 impl CanNode {
-   pub fn transmit(&self, frame: &Frame) -> Result<(), ()> {
+    pub fn transmit(&self, frame: &Frame) -> Result<(), ()> {
         use embedded_can::Frame;
         let buffer_id = self.get_tx_fifo_queue_put_index();
         let id: MessageId = frame.id().into();
@@ -1156,7 +1155,7 @@ impl CanNode {
         if self.is_tx_buffer_request_pending(buffer_id) {
             Err(())
         } else {
-            //dipending on the module 
+            //dipending on the module
             let module_addr: u32 = 0xf0200000u32;
             // dependinf on module, node and buffer address
             let tx_start_addr: u16 = 1088; //self.tx.start_address
@@ -1182,7 +1181,7 @@ impl CanNode {
 
             tx_buf_el.set_data_length(data_lenght_code);
             //tx_buf_el.set_data_length(self.tx.data_field_size.into());
-         
+
             tx_buf_el.write_tx_buf_data(data_lenght_code, data.as_ptr());
             tx_buf_el.set_frame_mode_req(self.frame_mode);
             self.set_tx_buffer_add_request(buffer_id);

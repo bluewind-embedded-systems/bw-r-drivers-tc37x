@@ -1,9 +1,7 @@
 // no_std is required for the target
 #![cfg_attr(target_arch = "tricore", no_std)]
-
 // Deny implicit unsafe blocks
 #![deny(unsafe_op_in_unsafe_fn)]
-
 // Catch usage of `print!` and `println!`
 #![deny(clippy::print_stdout)]
 
