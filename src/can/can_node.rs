@@ -17,31 +17,17 @@ use tc37x_pac::hidden::RegValue;
 use tc37x_pac::RegisterValue;
 
 // TODO Default values are not valid
-
-// pub trait BaudrateConfg{
-//     fn get_baud_rate() -> u32;
-//     fn get_sample_point() -> u32;
-//     fn get_sync_jump_with() -> u32;
-//     fn get_prescalar() -> u32;
-//     fn get_time_segment_1() -> u32;
-//     fn get_time_segment_2() -> u32;
-//     fn recalculate_value() -> bool;
-//     fn transceiver_delay_offset() -> Option<u8>;
-// }
 #[derive(Default)]
 pub struct BaudRate {
     pub baud_rate: u32,
     pub sample_point: u16,
+    // TODO fix typo (sync_jump_width)
     pub sync_jump_with: u16,
     pub prescalar: u16,
     pub time_segment_1: u8,
     pub time_segment_2: u8,
 }
-// impl Default for Baudrate{
-//     fn default() -> Self {
-//         todo!()
-//     }
-// }
+
 // TODO Default values are not valid
 #[derive(Default)]
 pub struct FastBaudRate {
@@ -53,12 +39,6 @@ pub struct FastBaudRate {
     pub time_segment_2: u8,
     pub transceiver_delay_offset: u8,
 }
-
-// impl Default for FastBaudRate{
-//     fn default() -> Self {
-//         todo!()
-//     }
-// }
 
 #[derive(PartialEq, Debug, Default, Copy, Clone)]
 pub enum FrameMode {
@@ -332,11 +312,9 @@ impl NewCanNode {
         while !unsafe { cccr.read() }.init().get() {}
 
         unsafe { cccr.modify(|r| r.cce().set(true).init().set(true)) };
-        let _cce = unsafe { cccr.read().cce().get() };
-        let _init = unsafe { cccr.read().init().get() };
 
-        info!("cce {}", cce);
-        info!("init {}", init);
+        info!("cce {}", unsafe { cccr.read().cce().get() });
+        info!("init {}", unsafe { cccr.read().init().get() });
     }
 
     fn disable_configuration_change(&self) {
@@ -501,10 +479,9 @@ impl NewCanNode {
             DataFieldSize::_64 => Tbds::TBDS_BUFFERSIZE64,
         };
         unsafe { self.inner.txesc().modify(|r| r.tbds().set(tdbs)) };
-        unsafe {
-            self.inner.txesc().read().get_raw();
-        };
-        info!("txesc {:b} ", txesc);
+        info!("txesc {:b} ", unsafe {
+            self.inner.txesc().read().get_raw()
+        });
     }
     fn set_tx_buffer_start_address(&self, address: u16) {
         unsafe { self.inner.txbc().modify(|r| r.tbsa().set(address >> 2)) };
