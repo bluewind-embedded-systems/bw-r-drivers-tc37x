@@ -3,9 +3,9 @@
 #![allow(clippy::result_unit_err)]
 
 use super::wdt;
-use crate::log::info;
+use crate::log::{debug, info};
 use tc37x_pac::hidden::RegValue;
-use tc37x_pac::{SCU, SMU};
+use tc37x_pac::{RegisterValue, SCU, SMU};
 
 const SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT: usize = 0x3000;
 // const OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT: usize = 0x493E0;
@@ -51,9 +51,11 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     {
         // TODO Explain this or use field accessors
         unsafe { SMU.keys().write(RegValue::new(0xBC, 0)) };
-        unsafe { SMU.ag8cf0().modify(|r| *r & !0x1D) };
-        unsafe { SMU.ag8cf1().modify(|r| *r & !0x1D) };
-        unsafe { SMU.ag8cf2().modify(|r| *r & !0x1D) };
+
+        unsafe { SMU.ag8cf0().modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        unsafe { SMU.ag8cf1().modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        unsafe { SMU.ag8cf2().modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+
         unsafe { SMU.keys().write(RegValue::new(0, 0)) };
     }
 
@@ -636,16 +638,21 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
 
 pub(crate) fn get_mcan_frequency() -> u32 {
     let ccucon1 = unsafe { SCU.ccucon1().read() };
+    let clkselmcan = ccucon1.clkselmcan().get();
+    let mcandiv = ccucon1.mcandiv().get();
+
+    info!("clkselmcan: {}, mcandiv: {}", clkselmcan, mcandiv);
 
     const CLKSELMCAN_USEMCANI: u8 = 1;
     const CLKSELMCAN_USEOSCILLATOR: u8 = 2;
     const MCANDIV_STOPPED: u8 = 0;
 
-    match ccucon1.clkselmcan().get() {
+    match clkselmcan {
         CLKSELMCAN_USEMCANI => {
             let source = get_source_frequency(1);
-            if ccucon1.mcandiv().get() != MCANDIV_STOPPED {
-                let div: u32 = ccucon1.mcandiv().get().into();
+            debug!("source: {}", source);
+            if mcandiv != MCANDIV_STOPPED {
+                let div: u32 = mcandiv.into();
                 source / div
             } else {
                 source
@@ -660,7 +667,10 @@ fn get_source_frequency(source: u32) -> u32 {
     const CLKSEL_BACKUP: u8 = 0;
     const CLKSEL_PLL: u8 = 1;
 
-    match unsafe { SCU.ccucon0().read() }.clksel().get() {
+    let clksel = unsafe { SCU.ccucon0().read() }.clksel().get();
+    info!("clksel: {}", clksel);
+
+    match clksel {
         CLKSEL_BACKUP => get_evr_frequency(),
         CLKSEL_PLL => match source {
             0 => get_pll_frequency(),
