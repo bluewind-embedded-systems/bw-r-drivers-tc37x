@@ -70,18 +70,22 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     })?;
 
     /* Now configure the oscillator, required oscillator mode is external crystal */
-    // if let PllInputClockSelection::F0sc0 | PllInputClockSelection::FSynclk =
-    //     config.plls_parameters.pll_input_clock_selection
-    // {
-    //     unsafe {
-    //         SCU.osccon().modify(|r| {
-    //             r.mode()
-    //                 .set(Mode::MODE_EXTERNALCRYSTAL)
-    //                 .oscval()
-    //                 .set(((config.plls_parameters.xtal_frequency / 1000000) - 15) as u8)
-    //         })
-    //     };
-    // }
+    if let PllInputClockSelection::F0sc0 | PllInputClockSelection::FSynclk = config
+        .pll_initial_step
+        .plls_parameters
+        .pll_input_clock_selection
+    {
+        const MODE_EXTERNALCRYSTAL: u8 = 0;
+
+        let mode = MODE_EXTERNALCRYSTAL;
+        let oscval: u8 =
+            ((config.pll_initial_step.plls_parameters.xtal_frequency / 1000000) - 15).try_into()?;
+
+        unsafe {
+            SCU.osccon()
+                .modify(|r| r.mode().set(mode).oscval().set(oscval))
+        };
+    }
 
     // /* Configure the initial steps for the peripheral PLL*/
     // unsafe {
