@@ -158,11 +158,10 @@ impl NewCanNode {
         // TODO Document why this is needed
         wait_nop_cycles(10);
 
-        info!("assert 1");
-        defmt::assert_eq!(
-            unsafe { tc37x_pac::CAN0.mcr().read() }.clksel0().get() as u8,
-            3
-        ); 
+        // TODO Document why this is needed
+        if unsafe { tc37x_pac::CAN0.mcr().read() }.clksel0().get() != 3 {
+            return Err(());
+        }
 
         self.enable_configuration_change();
 
