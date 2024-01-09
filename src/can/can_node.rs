@@ -1141,11 +1141,11 @@ impl CanNode {
         if self.is_tx_buffer_request_pending(buffer_id) {
             Err(())
         } else {
-            //dipending on the module
+            // FIXME use the actual module address
             let module_addr: u32 = 0xf0200000u32;
-            // dependinf on module, node and buffer address
-            let tx_start_addr: u16 = 1088; //self.tx.start_address
-                                           //todo!()
+
+            // FIXME use the actual tx start address (module, node, buffer)
+            let tx_start_addr: u16 = 1088;
 
             let tx_buf_el = self.get_tx_element_address(module_addr, tx_start_addr, buffer_id);
 
