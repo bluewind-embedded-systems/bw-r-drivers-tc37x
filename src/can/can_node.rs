@@ -1114,8 +1114,6 @@ impl CanNode {
         let id: MessageId = frame.id().into();
         let data = frame.data();
 
-        info!("transmit {}#{}", id.data, HexSlice::from(data));
-
         // TODO Handle error
         let _ = self.transmit_inner(buffer_id, id, false, false, false, data);
         Ok(())
