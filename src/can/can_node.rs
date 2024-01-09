@@ -144,15 +144,10 @@ impl NewCanNode {
 
         self.enable_configuration_change();
 
+        self.configure_baud_rate(config.calculate_bit_timing_values, &config.baud_rate);
+
         // for CAN FD frames, set fast baud rate
-        if config.frame_mode == FrameMode::Standard {
-            info!(
-                "configure_baud_rate FrameMode::Standard calculate? {}",
-                config.calculate_bit_timing_values
-            );
-            self.configure_baud_rate(config.calculate_bit_timing_values, &config.baud_rate);
-        } else {
-            info!("configure_baud_rate FrameMode::Extended");
+        if config.frame_mode != FrameMode::Standard {
             self.configure_fast_baud_rate(
                 config.calculate_bit_timing_values,
                 &config.fast_baud_rate,
