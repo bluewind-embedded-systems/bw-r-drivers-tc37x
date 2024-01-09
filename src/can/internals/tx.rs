@@ -34,7 +34,7 @@ impl Tx {
 
     #[inline]
     pub fn set_msg_id(&self, message_id: MessageId) {
-        let shift = if message_id.lenght == MessageIdLenght::Standard {
+        let shift = if message_id.length == MessageIdLenght::Standard {
             18
         } else {
             0
@@ -43,7 +43,7 @@ impl Tx {
         unsafe {
             self.inner.t0().modify(|r| {
                 r.xtd()
-                    .set(message_id.lenght == MessageIdLenght::Extended)
+                    .set(message_id.length == MessageIdLenght::Extended)
                     .id()
                     .set(id)
             })
@@ -70,20 +70,20 @@ impl Tx {
     }
 
     #[inline]
-    pub fn set_data_length(&self, data_lenght_code: DataLenghtCode) {
+    pub fn set_data_length(&self, data_length_code: DataLenghtCode) {
         unsafe {
             self.inner
                 .t1()
-                .modify(|r| r.dlc().set(data_lenght_code as u8))
+                .modify(|r| r.dlc().set(data_length_code as u8))
         };
     }
 
-    pub fn write_tx_buf_data(&self, data_lenght_code: DataLenghtCode, data: *const u8) {
+    pub fn write_tx_buf_data(&self, data_length_code: DataLenghtCode, data: *const u8) {
         let destination_address = self.inner.db().ptr() as _;
-        let lenght = data_lenght_code.get_data_lenght_in_bytes();
+        let length = data_length_code.get_data_length_in_bytes();
 
-        debug!("writing {} bytes at {:x}", lenght, destination_address);
+        debug!("writing {} bytes at {:x}", length, destination_address);
 
-        unsafe { core::ptr::copy_nonoverlapping(data, destination_address, lenght as _) };
+        unsafe { core::ptr::copy_nonoverlapping(data, destination_address, length as _) };
     }
 }

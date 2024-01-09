@@ -45,7 +45,7 @@ pub enum MessageIdLenght {
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct MessageId {
     pub data: u32,
-    pub lenght: MessageIdLenght,
+    pub length: MessageIdLenght,
 }
 
 #[derive(PartialEq, Clone, Copy, Debug)]
@@ -59,7 +59,7 @@ pub enum FrameMode {
 pub struct RxMessage {
     pub buffer_id: RxBufferId,
     pub id: MessageId,
-    pub data_lenght_code: DataLenghtCode,
+    pub data_length_code: DataLenghtCode,
     pub from: ReadFrom,
     pub frame_mode: FrameMode,
 }
@@ -71,7 +71,7 @@ pub struct TxMessage {
     pub remote_transmit_request: bool,
     pub error_state_indicator: bool,
     pub tx_event_fifo_control: bool,
-    pub data_lenght_code: DataLenghtCode,
+    pub data_length_code: DataLenghtCode,
     pub frame_mode: FrameMode,
     pub from: ReadFrom,
 }
@@ -81,13 +81,13 @@ impl Default for TxMessage {
         Self {
             id: MessageId {
                 data: 0,
-                lenght: MessageIdLenght::Standard,
+                length: MessageIdLenght::Standard,
             },
             buffer_id: Some(TxBufferId(0)),
             remote_transmit_request: false,
             error_state_indicator: false,
             tx_event_fifo_control: false,
-            data_lenght_code: DataLenghtCode::_8,
+            data_length_code: DataLenghtCode::_8,
             frame_mode: FrameMode::Standard,
             from: ReadFrom::Buffer(RxBufferId(0)),
         }

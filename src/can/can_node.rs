@@ -1162,13 +1162,13 @@ impl CanNode {
                 tx_buf_el.set_err_state_indicator(error_state_indicator)
             }
             //self.tx.data_field_size.into();
-            //depends on message lenght (initialization phase also)
-            let data_lenght_code = DataLenghtCode::_0;
+            //depends on message length (initialization phase also)
+            let data_length_code = DataLenghtCode::_0;
 
-            tx_buf_el.set_data_length(data_lenght_code);
+            tx_buf_el.set_data_length(data_length_code);
             //tx_buf_el.set_data_length(self.tx.data_field_size.into());
 
-            tx_buf_el.write_tx_buf_data(data_lenght_code, data.as_ptr());
+            tx_buf_el.write_tx_buf_data(data_length_code, data.as_ptr());
             tx_buf_el.set_frame_mode_req(self.frame_mode);
             self.set_tx_buffer_add_request(buffer_id);
 
@@ -1345,7 +1345,7 @@ pub enum MessageIdLenght {
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct MessageId {
     pub data: u32,
-    pub lenght: MessageIdLenght,
+    pub length: MessageIdLenght,
 }
 
 impl From<embedded_can::Id> for MessageId {
@@ -1353,11 +1353,11 @@ impl From<embedded_can::Id> for MessageId {
         match id {
             embedded_can::Id::Standard(id) => MessageId {
                 data: id.as_raw().into(),
-                lenght: MessageIdLenght::Standard,
+                length: MessageIdLenght::Standard,
             },
             embedded_can::Id::Extended(id) => MessageId {
                 data: id.as_raw(),
-                lenght: MessageIdLenght::Extended,
+                length: MessageIdLenght::Extended,
             },
         }
     }

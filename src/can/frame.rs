@@ -50,7 +50,7 @@ impl TryFrom<u8> for DataLenghtCode {
 }
 
 impl DataLenghtCode {
-    pub fn get_data_lenght_in_bytes(&self) -> u32 {
+    pub fn get_data_length_in_bytes(&self) -> u32 {
         match *self {
             n if n <= Self::_8 => n as u32,
             n if n <= Self::_24 => (n as u32 - 6) << 2,
@@ -58,7 +58,7 @@ impl DataLenghtCode {
         }
     }
 
-    pub fn get_data_lenght_int32(&self) -> u32 {
+    pub fn get_data_length_int32(&self) -> u32 {
         let num_byts = match *self {
             n if n <= Self::_8 => n as u32,
             n if n <= Self::_24 => (n as u32 - 6) << 2,
@@ -110,10 +110,10 @@ mod test {
     use super::DataLenghtCode;
 
     #[test]
-    pub fn test_data_lenght_code() {
+    pub fn test_data_length_code() {
         let test = |code: DataLenghtCode| {
             assert_eq!(
-                code.get_data_lenght_in_bytes(),
+                code.get_data_length_in_bytes(),
                 match code {
                     DataLenghtCode::_0 => 0,
                     DataLenghtCode::_1 => 1,
@@ -140,10 +140,10 @@ mod test {
     }
 
     #[test]
-    pub fn test_data_lenght_int32() {
+    pub fn test_data_length_int32() {
         let test = |code: DataLenghtCode| {
             assert_eq!(
-                code.get_data_lenght_int32(),
+                code.get_data_length_int32(),
                 match code {
                     DataLenghtCode::_0 => 0,
                     DataLenghtCode::_1 => 1,

@@ -28,14 +28,14 @@ impl Rx {
     #[inline]
     pub fn get_message_id(&self) -> u32 {
         let r0 = unsafe { self.inner.r0().read() };
-        let message_lenght = if r0.xtd().get() {
+        let message_length = if r0.xtd().get() {
             MessageIdLenght::Extended
         } else {
             MessageIdLenght::Standard
         };
 
         let id = r0.id().get();
-        let shift = if message_lenght == MessageIdLenght::Standard {
+        let shift = if message_length == MessageIdLenght::Standard {
             18
         } else {
             0
@@ -44,7 +44,7 @@ impl Rx {
     }
 
     #[inline]
-    pub fn get_message_id_lenght(&self) -> MessageIdLenght {
+    pub fn get_message_id_length(&self) -> MessageIdLenght {
         if unsafe { self.inner.r0().read() }.xtd().get() {
             MessageIdLenght::Extended
         } else {
@@ -53,7 +53,7 @@ impl Rx {
     }
 
     #[inline]
-    pub fn get_data_lenght(&self) -> DataLenghtCode {
+    pub fn get_data_length(&self) -> DataLenghtCode {
         let d = unsafe { self.inner.r1().read() }.dlc().get();
         DataLenghtCode::try_from(d).unwrap()
     }
@@ -72,12 +72,12 @@ impl Rx {
         }
     }
 
-    pub fn read_data(&self, data_lenght_code: DataLenghtCode, data: *mut u8) {
+    pub fn read_data(&self, data_length_code: DataLenghtCode, data: *mut u8) {
         let source_address = self.inner.db().ptr() as _;
-        let lenght = data_lenght_code.get_data_lenght_in_bytes();
+        let length = data_length_code.get_data_length_in_bytes();
 
-        debug!("reading {} bytes from {:x}", lenght, source_address);
+        debug!("reading {} bytes from {:x}", length, source_address);
 
-        unsafe { core::ptr::copy_nonoverlapping(source_address, data, lenght as _) };
+        unsafe { core::ptr::copy_nonoverlapping(source_address, data, length as _) };
     }
 }
