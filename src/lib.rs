@@ -4,6 +4,8 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 // Catch usage of `print!` and `println!`
 #![deny(clippy::print_stdout)]
+// TODO Remove this once log module correctly handles ignored arguments
+#![allow(unused_imports)]
 
 #[cfg(target_arch = "tricore")]
 mod runtime;
