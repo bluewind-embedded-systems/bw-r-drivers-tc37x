@@ -9,7 +9,10 @@ tc37x_rt::entry!(main);
 
 use core::time::Duration;
 use embedded_can::{ExtendedId, Frame};
-use tc37x_hal::can::{CanModule, CanModuleId, CanNode, CanNodeConfig, NodeId};
+use tc37x_hal::can::{
+    CanModule, CanModuleId, CanNode, CanNodeConfig, DataFieldSize, NodeId, TxConfig,
+    TxMode,
+};
 use tc37x_hal::cpu::asm::enable_interrupts;
 use tc37x_hal::gpio::GpioExt;
 use tc37x_hal::log::info;
@@ -26,6 +29,13 @@ fn setup_can() -> Result<CanNode, ()> {
     cfg.baud_rate.baud_rate = 1_000_000;
     cfg.baud_rate.sync_jump_with = 3;
     cfg.baud_rate.sample_point = 8_000;
+    cfg.tx = Some(TxConfig {
+        mode: TxMode::DedicatedBuffers,
+        dedicated_tx_buffers_number: 2,
+        fifo_queue_size: 0,
+        buffer_data_field_size: DataFieldSize::_8,
+        event_fifo_size: 1,
+    });
     let can_node = can_node.configure(cfg)?;
 
     Ok(can_node)
