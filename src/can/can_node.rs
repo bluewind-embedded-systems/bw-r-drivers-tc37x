@@ -89,7 +89,6 @@ pub struct CanNodeConfig {
     pub baud_rate: BaudRate,
     pub fast_baud_rate: FastBaudRate,
     pub frame_mode: FrameMode,
-    pub frame_type: FrameType,
     pub tx: Option<TxConfig>,
     pub rx_mode: RxMode,
     pub message_ram: MessageRAM,
@@ -155,14 +154,7 @@ impl NewCanNode {
         }
 
         // transmit frame configuration
-        if let (
-            FrameType::Transmit
-            | FrameType::TransmitAndReceive
-            | FrameType::RemoteRequest
-            | FrameType::RemoteAnswer,
-            Some(tx_config),
-        ) = (config.frame_type, &config.tx)
-        {
+        if let Some(tx_config) = &config.tx {
             self.set_tx_buffer_data_field_size(tx_config.buffer_data_field_size);
             self.set_tx_buffer_start_address(config.message_ram.tx_buffers_start_address);
 
