@@ -186,6 +186,7 @@ impl NewCanNode {
             4,
         );
 
+        // TODO Interrupt from config
         self.set_interrupt(
             InterruptGroup::Rxf0n,
             Interrupt::RxFifo0newMessage,
@@ -194,12 +195,14 @@ impl NewCanNode {
             Tos::Cpu0,
         );
 
+        // TODO Connect pins from config
         self.connect_pin_rx(
             RXD00B_P20_7_IN,
             InputMode::PULL_UP,
             PadDriver::CmosAutomotiveSpeed3,
         );
 
+        // TODO Connect pins from config
         self.connect_pin_tx(
             TXD00_P20_8_OUT,
             OutputMode::PUSH_PULL,
