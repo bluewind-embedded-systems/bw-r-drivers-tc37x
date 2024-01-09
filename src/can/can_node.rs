@@ -15,6 +15,7 @@ use core::mem::transmute;
 use tc37x_pac::can0::node::txesc::Tbds;
 use tc37x_pac::hidden::RegValue;
 use tc37x_pac::RegisterValue;
+use crate::log::HexSlice;
 
 // TODO Default values are not valid
 #[derive(Default)]
@@ -1115,6 +1116,8 @@ impl CanNode {
         let buffer_id = self.get_tx_fifo_queue_put_index();
         let id: MessageId = frame.id().into();
         let data = frame.data();
+
+        info!("transmit {}#{}", id.data, HexSlice::from(data));
 
         // TODO Handle error
         let _ = self.transmit_inner(buffer_id, id, false, false, false, data);
