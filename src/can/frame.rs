@@ -73,6 +73,7 @@ pub struct Frame;
 
 impl embedded_can::Frame for Frame {
     fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
+        // TODO Use id and data parameters
         Some(Self)
     }
 
