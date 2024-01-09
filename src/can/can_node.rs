@@ -84,6 +84,7 @@ pub enum RxMode {
 #[derive(Default)]
 pub struct CanNodeConfig {
     pub clock_source: ClockSource,
+    // TODO Use an enum instead of bool+struct (eg: AutoBitTiming and BitTiming)
     pub calculate_bit_timing_values: bool,
     pub baud_rate: BaudRate,
     pub fast_baud_rate: FastBaudRate,
