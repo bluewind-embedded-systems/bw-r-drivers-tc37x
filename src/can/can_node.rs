@@ -1137,43 +1137,43 @@ impl CanNode {
         error_state_indicator: bool,
         data: &[u8],
     ) -> Result<(), ()> {
-        // Todo list errors
+        // TODO list errors
         if self.is_tx_buffer_request_pending(buffer_id) {
-            Err(())
-        } else {
-            // FIXME use the actual module address
-            let module_addr: u32 = 0xf0200000u32;
-
-            // FIXME use the actual tx start address (module, node, buffer)
-            let tx_start_addr: u16 = 1088;
-
-            let tx_buf_el = self.get_tx_element_address(module_addr, tx_start_addr, buffer_id);
-
-            tx_buf_el.set_msg_id(id);
-
-            if tx_event_fifo_control {
-                tx_buf_el.set_tx_event_fifo_ctrl(tx_event_fifo_control);
-                tx_buf_el.set_message_marker(buffer_id);
-            }
-
-            tx_buf_el.set_remote_transmit_req(remote_transmit_request);
-
-            if let FrameMode::FdLong | FrameMode::FdLongAndFast = self.frame_mode {
-                tx_buf_el.set_err_state_indicator(error_state_indicator)
-            }
-            //self.tx.data_field_size.into();
-            //depends on message length (initialization phase also)
-            let data_length_code = DataLenghtCode::_0;
-
-            tx_buf_el.set_data_length(data_length_code);
-            //tx_buf_el.set_data_length(self.tx.data_field_size.into());
-
-            tx_buf_el.write_tx_buf_data(data_length_code, data.as_ptr());
-            tx_buf_el.set_frame_mode_req(self.frame_mode);
-            self.set_tx_buffer_add_request(buffer_id);
-
-            Ok(())
+            return Err(());
         }
+
+        // FIXME use the actual module address
+        let module_addr: u32 = 0xf0200000u32;
+
+        // FIXME use the actual tx start address (module, node, buffer)
+        let tx_start_addr: u16 = 1088;
+
+        let tx_buf_el = self.get_tx_element_address(module_addr, tx_start_addr, buffer_id);
+
+        tx_buf_el.set_msg_id(id);
+
+        if tx_event_fifo_control {
+            tx_buf_el.set_tx_event_fifo_ctrl(tx_event_fifo_control);
+            tx_buf_el.set_message_marker(buffer_id);
+        }
+
+        tx_buf_el.set_remote_transmit_req(remote_transmit_request);
+
+        if let FrameMode::FdLong | FrameMode::FdLongAndFast = self.frame_mode {
+            tx_buf_el.set_err_state_indicator(error_state_indicator)
+        }
+        //self.tx.data_field_size.into();
+        //depends on message length (initialization phase also)
+        let data_length_code = DataLenghtCode::_0;
+
+        tx_buf_el.set_data_length(data_length_code);
+        //tx_buf_el.set_data_length(self.tx.data_field_size.into());
+
+        tx_buf_el.write_tx_buf_data(data_length_code, data.as_ptr());
+        tx_buf_el.set_frame_mode_req(self.frame_mode);
+        self.set_tx_buffer_add_request(buffer_id);
+
+        Ok(())
     }
 
     fn is_tx_buffer_request_pending(&self, tx_buffer_id: TxBufferId) -> bool {
