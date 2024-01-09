@@ -82,8 +82,6 @@ impl Tx {
         let destination_address = self.inner.db().ptr() as _;
         let length = data_length_code.get_data_length_in_bytes();
 
-        debug!("writing {} bytes at {:x}", length, destination_address);
-
         unsafe { core::ptr::copy_nonoverlapping(data, destination_address, length as _) };
     }
 }
