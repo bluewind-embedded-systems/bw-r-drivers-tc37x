@@ -90,10 +90,9 @@ pub struct CanNodeConfig {
     pub fast_baud_rate: FastBaudRate,
     pub frame_mode: FrameMode,
     pub frame_type: FrameType,
-    pub tx_mode: TxMode,
+    pub tx: Option<TxConfig>,
     pub rx_mode: RxMode,
-    pub tx_buffer_data_field_size: DataFieldSize,
-    pub message_ram_tx_buffers_start_address: u16,
+    pub message_ram: MessageRAM,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -156,16 +155,55 @@ impl NewCanNode {
         }
 
         // transmit frame configuration
-        if let FrameType::Transmit
-        | FrameType::TransmitAndReceive
-        | FrameType::RemoteRequest
-        | FrameType::RemoteAnswer = config.frame_type
+        if let (
+            FrameType::Transmit
+            | FrameType::TransmitAndReceive
+            | FrameType::RemoteRequest
+            | FrameType::RemoteAnswer,
+            Some(tx_config),
+        ) = (config.frame_type, &config.tx)
         {
-            self.set_tx_buffer_data_field_size(config.tx_buffer_data_field_size);
-            self.set_tx_buffer_start_address(config.message_ram_tx_buffers_start_address);
-        }
+            self.set_tx_buffer_data_field_size(tx_config.buffer_data_field_size);
+            self.set_tx_buffer_start_address(config.message_ram.tx_buffers_start_address);
 
-        self.set_frame_mode(config.frame_mode);
+            let mode = tx_config.mode;
+
+            match mode {
+                TxMode::DedicatedBuffers | TxMode::SharedFifo | TxMode::SharedQueue => {
+                    self.set_dedicated_tx_buffers_number(tx_config.dedicated_tx_buffers_number);
+                    if let TxMode::SharedFifo | TxMode::SharedQueue = mode {
+                        if let TxMode::SharedFifo = mode {
+                            self.set_transmit_fifo_queue_mode(TxMode::Fifo);
+                        }
+                        if let TxMode::SharedQueue = mode {
+                            self.set_transmit_fifo_queue_mode(TxMode::Queue);
+                        }
+                        self.set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
+                    }
+                    for id in 0..tx_config.dedicated_tx_buffers_number + tx_config.fifo_queue_size {
+                        self.enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+                    }
+                }
+                TxMode::Fifo | TxMode::Queue => {
+                    self.set_transmit_fifo_queue_mode(mode);
+                    self.set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
+                    for id in 0..tx_config.fifo_queue_size {
+                        self.enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+                    }
+                }
+            }
+
+            if (1..=32).contains(&tx_config.event_fifo_size) {
+                self.set_tx_event_fifo_start_address(
+                    config.message_ram.tx_event_fifo_start_address,
+                );
+                self.set_tx_event_fifo_size(tx_config.event_fifo_size);
+            } else {
+                crate::log::error!("Invalid event fifo size: {}", tx_config.event_fifo_size);
+            }
+
+            self.set_frame_mode(config.frame_mode);
+        }
 
         self.disable_configuration_change();
 
@@ -280,6 +318,21 @@ impl NewCanNode {
                 r
             })
         };
+    }
+
+    #[inline]
+    pub fn set_dedicated_tx_buffers_number(&self, number: u8) {
+        unsafe { self.inner.txbc().modify(|r| r.ndtb().set(number)) };
+    }
+
+    #[inline]
+    pub fn set_tx_event_fifo_start_address(&self, address: u16) {
+        unsafe { self.inner.txefc().modify(|r| r.efsa().set(address >> 2)) };
+    }
+
+    #[inline]
+    pub fn set_tx_event_fifo_size(&self, size: u8) {
+        unsafe { self.inner.txefc().modify(|r| r.efs().set(size)) };
     }
 
     fn set_transmit_fifo_queue_mode(&self, mode: TxMode) {
@@ -1356,6 +1409,40 @@ impl From<embedded_can::Id> for MessageId {
                 data: id.as_raw(),
                 length: MessageIdLenght::Extended,
             },
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct TxConfig {
+    pub mode: TxMode,
+    pub dedicated_tx_buffers_number: u8,
+    pub fifo_queue_size: u8,
+    pub buffer_data_field_size: DataFieldSize,
+    pub event_fifo_size: u8,
+}
+
+#[derive(Clone, Copy)]
+pub struct MessageRAM {
+    pub standard_filter_list_start_address: u16,
+    pub extended_filter_list_start_address: u16,
+    pub rx_fifo0_start_address: u16,
+    pub rx_fifo1_start_address: u16,
+    pub rx_buffers_start_address: u16,
+    pub tx_event_fifo_start_address: u16,
+    pub tx_buffers_start_address: u16,
+}
+
+impl Default for MessageRAM {
+    fn default() -> Self {
+        Self {
+            standard_filter_list_start_address: 0x0,
+            extended_filter_list_start_address: 0x80,
+            rx_fifo0_start_address: 0x100,
+            rx_fifo1_start_address: 0x200,
+            rx_buffers_start_address: 0x300,
+            tx_event_fifo_start_address: 0x400,
+            tx_buffers_start_address: 0x440,
         }
     }
 }
