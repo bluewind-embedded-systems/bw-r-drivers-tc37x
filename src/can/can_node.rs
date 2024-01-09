@@ -8,8 +8,7 @@ use super::internals::{Rx, Tx};
 use super::msg::{ReadFrom, RxBufferId, TxBufferId};
 use super::CanModule;
 
-use crate::log::info;
-use crate::log::HexSlice;
+use crate::log::{info, HexSlice};
 use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
 use core::mem::transmute;
@@ -1140,8 +1139,11 @@ impl CanNode {
             return Err(());
         }
 
-        let ram_base_address = 0xF0200000u32; // FIXME
-        let tx_buffers_start_address = 0x0440u16; // FIXME
+        // FIXME Use real base address
+        let ram_base_address = 0xF0200000u32;
+
+        // FIXME Use real start address
+        let tx_buffers_start_address = 0x0440u16;
 
         let tx_buf_el =
             self.get_tx_element_address(ram_base_address, tx_buffers_start_address, buffer_id);
