@@ -1126,7 +1126,7 @@ impl CanNode {
         TxBufferId::new_const(id)
     }
 
-    // TODO Change return type from Option to Result with a description of the error
+    // TODO Use a meaningful error type
     #[allow(unused_variables)]
     fn transmit_inner(
         &self,
@@ -1142,13 +1142,11 @@ impl CanNode {
             return Err(());
         }
 
-        // FIXME use the actual module address
-        let module_addr: u32 = 0xf0200000u32;
+        let ram_base_address = 0xF0200000u32; // FIXME
+        let tx_buffers_start_address = 0x0440u16; // FIXME
 
-        // FIXME use the actual tx start address (module, node, buffer)
-        let tx_start_addr: u16 = 1088;
-
-        let tx_buf_el = self.get_tx_element_address(module_addr, tx_start_addr, buffer_id);
+        let tx_buf_el =
+            self.get_tx_element_address(ram_base_address, tx_buffers_start_address, buffer_id);
 
         tx_buf_el.set_msg_id(id);
 
@@ -1162,16 +1160,16 @@ impl CanNode {
         if let FrameMode::FdLong | FrameMode::FdLongAndFast = self.frame_mode {
             tx_buf_el.set_err_state_indicator(error_state_indicator)
         }
-        //self.tx.data_field_size.into();
-        //depends on message length (initialization phase also)
-        let data_length_code = DataLenghtCode::_0;
 
-        tx_buf_el.set_data_length(data_length_code);
-        //tx_buf_el.set_data_length(self.tx.data_field_size.into());
+        let data_len: u8 = data.len().try_into().map_err(|_| ())?;
+        let dlc = DataLenghtCode::try_from(data_len)?;
 
-        tx_buf_el.write_tx_buf_data(data_length_code, data.as_ptr());
+        tx_buf_el.set_data_length(dlc);
+        tx_buf_el.write_tx_buf_data(dlc, data.as_ptr());
         tx_buf_el.set_frame_mode_req(self.frame_mode);
         self.set_tx_buffer_add_request(buffer_id);
+
+        info!("transmit {}#{}", id.data, HexSlice::from(data));
 
         Ok(())
     }
