@@ -14,7 +14,7 @@ use tc37x_hal::cpu::asm::enable_interrupts;
 use tc37x_hal::gpio::GpioExt;
 use tc37x_hal::log::info;
 use tc37x_hal::util::wait_nop;
-use tc37x_hal::{pac, ssw};
+use tc37x_hal::{can, pac, ssw};
 
 fn setup_can() -> Result<CanNode, ()> {
     let can_module = CanModule::new(CanModuleId::Can0);
@@ -51,7 +51,7 @@ fn main() -> ! {
 
     let can_id: ExtendedId = ExtendedId::new(0x0CFE6E00).unwrap();
     let mut data: [u8; 8] = [0; 8];
-    let test_frame = Frame::new(can_id, &data).unwrap();
+    let test_frame = can::Frame::new(can_id, &data).unwrap();
 
     let can = match setup_can() {
         Ok(can) => can,
