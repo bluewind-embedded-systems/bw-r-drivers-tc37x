@@ -9,13 +9,13 @@ use super::msg::{ReadFrom, RxBufferId, TxBufferId};
 use super::CanModule;
 
 use crate::log::info;
+use crate::log::HexSlice;
 use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
 use core::mem::transmute;
 use tc37x_pac::can0::node::txesc::Tbds;
 use tc37x_pac::hidden::RegValue;
 use tc37x_pac::RegisterValue;
-use crate::log::HexSlice;
 
 // TODO Default values are not valid
 #[derive(Default)]
@@ -336,10 +336,7 @@ impl NewCanNode {
 
             info!(
                 "module_freq: {}, baud_rate: {}, sample_point: {}, sync_jump_with: {}",
-                module_freq,
-                baud_rate.baud_rate,
-                baud_rate.sample_point,
-                baud_rate.sync_jump_with,
+                module_freq, baud_rate.baud_rate, baud_rate.sample_point, baud_rate.sync_jump_with,
             );
 
             let timing: BitTiming = calculate_bit_timing(

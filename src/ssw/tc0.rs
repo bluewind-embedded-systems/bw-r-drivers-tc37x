@@ -1,5 +1,5 @@
-use crate::scu::ccu;
 use crate::log::debug;
+use crate::scu::ccu;
 
 use super::infra::is_application_reset;
 
