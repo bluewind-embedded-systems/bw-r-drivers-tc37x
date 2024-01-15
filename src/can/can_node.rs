@@ -1191,6 +1191,8 @@ impl CanNode {
         error_state_indicator: bool,
         data: &[u8],
     ) -> Result<(), ()> {
+        info!("transmit_inner");
+
         // TODO list errors
         if self.is_tx_buffer_request_pending(buffer_id) {
             return Err(());
