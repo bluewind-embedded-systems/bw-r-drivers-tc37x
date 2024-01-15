@@ -56,8 +56,11 @@ fn main() -> ! {
 
     info!("Start example: can_send");
 
-    info!("Enable interrupts");
-    ssw::init_software();
+    if let Err(_) = ssw::init_software() {
+        info!("Error in ssw init");
+        loop {}
+    }
+
     enable_interrupts();
 
     let gpio00 = pac::PORT_00.split();
