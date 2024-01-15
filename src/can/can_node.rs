@@ -1172,9 +1172,7 @@ impl CanNode {
         let id: MessageId = frame.id().into();
         let data = frame.data();
 
-        // TODO Handle error
-        let _ = self.transmit_inner(buffer_id, id, false, false, false, data);
-        Ok(())
+        self.transmit_inner(buffer_id, id, false, false, false, data)
     }
 
     pub fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
