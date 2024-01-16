@@ -235,9 +235,9 @@ impl NewCanNode {
 
         // TODO Connect pins from config
         self.connect_pin_tx(
-            TXD00_P20_8_OUT,
-            OutputMode::PUSH_PULL,
-            PadDriver::CmosAutomotiveSpeed3,
+        TXD00_P20_8_OUT,
+        OutputMode::PUSH_PULL,
+        PadDriver::CmosAutomotiveSpeed3,
         );
 
         self.connect_pin_tx(
@@ -643,6 +643,7 @@ impl NewCanNode {
         let port = Port::new(txd.port);
         port.set_pin_mode_output(txd.pin_index, mode, txd.select);
         port.set_pin_pad_driver(txd.pin_index, pad_driver);
+        port.set_pin_low(txd.pin_index); 
     }
 }
 
