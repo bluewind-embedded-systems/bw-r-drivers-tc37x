@@ -41,6 +41,12 @@ fn setup_can() -> Result<CanNode, ()> {
     Ok(can_node)
 }
 
+pub fn init_can_stb_pin() {
+    let gpio20 = pac::PORT_20.split();
+    let mut stb = gpio20.p20_6.into_push_pull_output();
+    stb.set_low();
+}
+
 fn main() -> ! {
     #[cfg(not(target_arch = "tricore"))]
     let _report = tc37x_hal::tracing::print::Report::new();
@@ -62,6 +68,8 @@ fn main() -> ! {
     let can_id: ExtendedId = ExtendedId::new(0x0CFE6E00).unwrap();
     let mut data: [u8; 8] = [0; 8];
     let test_frame = can::Frame::new(can_id, &data).unwrap();
+
+    init_can_stb_pin();
 
     let can = match setup_can() {
         Ok(can) => can,

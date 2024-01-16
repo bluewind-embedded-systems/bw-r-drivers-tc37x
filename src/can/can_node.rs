@@ -240,6 +240,12 @@ impl NewCanNode {
             PadDriver::CmosAutomotiveSpeed3,
         );
 
+        self.connect_pin_tx(
+            TXD00_P20_6_OUT,
+            OutputMode::PUSH_PULL,
+            PadDriver::CmosAutomotiveSpeed1,
+        );
+
         Ok(CanNode {
             frame_mode: config.frame_mode,
             module: self.module,
@@ -857,6 +863,14 @@ const TXD00_P20_8_OUT: TxdOut = TxdOut::new(
     PortNumber::_20,
     8,
     OutputIdx::ALT5,
+);
+
+const TXD00_P20_6_OUT: TxdOut = TxdOut::new(
+    CanModuleId::Can0,
+    NodeId(0),
+    PortNumber::_20,
+    6,
+    OutputIdx::GENERAL,
 );
 
 #[derive(Clone, Copy)]
