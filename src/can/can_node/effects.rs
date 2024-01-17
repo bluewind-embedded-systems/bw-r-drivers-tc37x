@@ -4,7 +4,6 @@ use crate::can::can_node::{
 };
 use crate::can::msg::{ReadFrom, RxBufferId, TxBufferId};
 use crate::can::{DataFieldSize, ModuleId, TxMode};
-use core::intrinsics::transmute;
 use tc37x_pac::can0::node::txesc::Tbds;
 use tc37x_pac::hidden::RegValue;
 use tc37x_pac::RegisterValue;
@@ -318,6 +317,7 @@ impl NodeEffects {
         }
     }
 
+    // TODO The original code does not work with current PAC
     pub(super) fn get_data_field_size(&self, _from: ReadFrom) -> u8 {
         todo!();
         // let rx_esc = unsafe { self.reg.rxesc().read() };
