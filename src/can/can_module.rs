@@ -1,35 +1,34 @@
-use super::can_node::{CanNode, NodeId};
-use crate::can::NewCanNode;
+use super::can_node::{NewCanNode, Node, NodeId};
 use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
 use tc37x_pac::can0::Mcr;
 
 #[derive(Clone, Copy)]
-pub enum CanModuleId {
+pub enum ModuleId {
     Can0,
     Can1,
 }
 
 #[derive(Default)]
-pub struct CanModuleConfig {}
+pub struct ModuleConfig {}
 
 pub struct NewCanModule {
-    id: CanModuleId,
+    id: ModuleId,
     inner: pac::can0::Can0,
 }
 
-pub struct CanModule {
-    id: CanModuleId,
+pub struct Module {
+    id: ModuleId,
     inner: pac::can0::Can0,
 }
 
 impl NewCanModule {
-    pub fn enable(self) -> Result<CanModule, ()> {
+    pub fn enable(self) -> Result<Module, ()> {
         if !self.is_enabled() {
             self.enable_module();
         }
 
-        Ok(CanModule {
+        Ok(Module {
             inner: self.inner,
             id: self.id,
         })
@@ -51,8 +50,8 @@ impl NewCanModule {
     }
 }
 
-impl CanModule {
-    pub const fn new(id: CanModuleId) -> NewCanModule {
+impl Module {
+    pub const fn new(id: ModuleId) -> NewCanModule {
         // TODO Use id to select the correct CAN module
         NewCanModule {
             inner: pac::CAN0,
@@ -64,14 +63,14 @@ impl CanModule {
         // Instead of dealing with lifetimes, we just create a new instance of CanModule
         // TODO This is not ideal, but it works for now
         // TODO Remember the node has been taken and return None on next call
-        let module = CanModule {
+        let module = Module {
             inner: self.inner,
             id: self.id,
         };
-        Ok(CanNode::new(module, node_id))
+        Ok(Node::new(module, node_id))
     }
 
-    pub fn id(&self) -> CanModuleId {
+    pub fn id(&self) -> ModuleId {
         self.id
     }
 

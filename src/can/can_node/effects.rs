@@ -3,7 +3,7 @@ use crate::can::can_node::{
     FrameMode, Interrupt, InterruptGroup, InterruptLine, Priority, RxFifoMode, RxSel, Tos,
 };
 use crate::can::msg::{ReadFrom, RxBufferId};
-use crate::can::{CanModuleId, DataFieldSize, TxBufferId, TxMode};
+use crate::can::{ModuleId, DataFieldSize, TxBufferId, TxMode};
 use core::intrinsics::transmute;
 use tc37x_pac::can0::node::txesc::Tbds;
 use tc37x_pac::hidden::RegValue;

@@ -10,7 +10,7 @@ mod msg;
 mod reg;
 
 pub use baud_rate::{AutoBitTiming, BitTiming, BitTimingConfig};
-pub use can_module::{CanModule, CanModuleConfig, CanModuleId};
-pub use can_node::{CanNode, CanNodeConfig, DataFieldSize, NewCanNode, NodeId, TxConfig, TxMode};
+pub use can_module::{Module, ModuleConfig, ModuleId};
+pub use can_node::{Node, NodeConfig, DataFieldSize, NodeId, TxConfig, TxMode};
 pub use frame::Frame;
 pub use msg::TxBufferId;

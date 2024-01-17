@@ -4,11 +4,11 @@
 mod effects;
 
 use super::baud_rate::*;
-use super::can_module::{CanModuleId, ClockSource};
+use super::can_module::{ModuleId, ClockSource};
 use super::frame::{DataLenghtCode, Frame};
 use super::internals::{Rx, Tx};
 use super::msg::{ReadFrom, RxBufferId, TxBufferId};
-use super::CanModule;
+use super::Module;
 
 use crate::can::can_node::effects::NodeEffects;
 use crate::log::{info, HexSlice};
@@ -61,7 +61,7 @@ pub enum RxMode {
 }
 
 #[derive(Default)]
-pub struct CanNodeConfig {
+pub struct NodeConfig {
     pub clock_source: ClockSource,
     pub baud_rate: BitTimingConfig,
     pub fast_baud_rate: FastBitTimingConfig,
@@ -82,21 +82,21 @@ impl NodeId {
 }
 
 pub struct NewCanNode {
-    module: CanModule,
+    module: Module,
     node_id: NodeId,
     effects: NodeEffects,
 }
 
-pub struct CanNode {
-    module: CanModule,
+pub struct Node {
+    module: Module,
     node_id: NodeId,
     effects: NodeEffects,
     frame_mode: FrameMode,
 }
 
-impl CanNode {
+impl Node {
     /// Only a module can create a node. This function is only accessible from within this crate.
-    pub(crate) fn new(module: CanModule, node_id: NodeId) -> NewCanNode {
+    pub(crate) fn new(module: Module, node_id: NodeId) -> NewCanNode {
         let effects = NodeEffects::new(module.registers().node(node_id.0.into()));
         NewCanNode {
             module,
@@ -107,7 +107,7 @@ impl CanNode {
 }
 
 impl NewCanNode {
-    pub fn configure(self, config: CanNodeConfig) -> Result<CanNode, ()> {
+    pub fn configure(self, config: NodeConfig) -> Result<Node, ()> {
         self.module
             .set_clock_source(self.node_id.into(), config.clock_source)?;
 
@@ -220,7 +220,7 @@ impl NewCanNode {
             PadDriver::CmosAutomotiveSpeed3,
         );
 
-        Ok(CanNode {
+        Ok(Node {
             frame_mode: config.frame_mode,
             module: self.module,
             node_id: self.node_id,
@@ -347,8 +347,8 @@ impl NewCanNode {
 
         let can_int: Reg<Can0Int0, RW> = match (self.module.id(), line) {
             // TODO Add other lines and can modules
-            (CanModuleId::Can0, InterruptLine(0)) => unsafe { transmute(src.can0int0()) },
-            (CanModuleId::Can0, InterruptLine(1)) => unsafe { transmute(src.can0int1()) },
+            (ModuleId::Can0, InterruptLine(0)) => unsafe { transmute(src.can0int0()) },
+            (ModuleId::Can0, InterruptLine(1)) => unsafe { transmute(src.can0int1()) },
             _ => unreachable!(),
         };
 
@@ -399,7 +399,7 @@ impl NewCanNode {
     }
 }
 
-impl CanNode {}
+impl Node {}
 
 #[derive(Clone, Copy)]
 pub struct FifoData {
@@ -504,10 +504,10 @@ pub enum Tos {
 }
 
 const RXD00B_P20_7_IN: RxdIn =
-    RxdIn::new(CanModuleId::Can0, NodeId(0), PortNumber::_20, 7, RxSel::_B);
+    RxdIn::new(ModuleId::Can0, NodeId(0), PortNumber::_20, 7, RxSel::_B);
 
 const TXD00_P20_8_OUT: TxdOut = TxdOut::new(
-    CanModuleId::Can0,
+    ModuleId::Can0,
     NodeId(0),
     PortNumber::_20,
     8,
@@ -515,7 +515,7 @@ const TXD00_P20_8_OUT: TxdOut = TxdOut::new(
 );
 
 const TXD00_P20_6_OUT: TxdOut = TxdOut::new(
-    CanModuleId::Can0,
+    ModuleId::Can0,
     NodeId(0),
     PortNumber::_20,
     6,
@@ -747,7 +747,7 @@ impl OutputIdx {
 
 #[derive(Clone, Copy)]
 struct RxdIn {
-    module: CanModuleId,
+    module: ModuleId,
     node_id: NodeId,
     port: PortNumber,
     pin_index: u8,
@@ -756,7 +756,7 @@ struct RxdIn {
 
 impl RxdIn {
     pub const fn new(
-        module: CanModuleId,
+        module: ModuleId,
         node_id: NodeId,
         port: PortNumber,
         pin_index: u8,
@@ -786,7 +786,7 @@ pub enum RxSel {
 
 #[derive(Clone, Copy)]
 struct TxdOut {
-    module: CanModuleId,
+    module: ModuleId,
     node_id: NodeId,
     port: PortNumber,
     pin_index: u8,
@@ -795,7 +795,7 @@ struct TxdOut {
 
 impl TxdOut {
     pub const fn new(
-        module: CanModuleId,
+        module: ModuleId,
         node_id: NodeId,
         port: PortNumber,
         pin_index: u8,
@@ -813,7 +813,7 @@ impl TxdOut {
 
 pub type Priority = u8;
 
-impl CanNode {
+impl Node {
     pub fn transmit(&self, frame: &Frame) -> Result<(), ()> {
         let buffer_id = self.get_tx_fifo_queue_put_index();
         self.transmit_inner(buffer_id, frame.id, false, false, false, frame.data)
@@ -879,7 +879,7 @@ impl CanNode {
 }
 
 // IfxLld_Can_Std_Rx_Element_Functions
-impl CanNode {
+impl Node {
     pub fn get_rx_fifo0_get_index(&self) -> RxBufferId {
         let id = self.effects.get_rx_fifo0_get_index();
         RxBufferId::new_const(id)
@@ -901,7 +901,7 @@ impl CanNode {
 }
 
 // IfxLld_Can_Std_Tx_Element_Functions
-impl CanNode {
+impl Node {
     #[inline]
     pub fn is_tx_buffer_cancellation_finished(&self, tx_buffer_id: TxBufferId) -> bool {
         self.is_tx_buffer_transmission_occured(tx_buffer_id)
