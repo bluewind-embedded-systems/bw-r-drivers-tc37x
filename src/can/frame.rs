@@ -23,6 +23,30 @@ pub enum DataLenghtCode {
     _64,
 }
 
+impl DataLenghtCode {
+    fn from_length(length: usize) -> Option<Self> {
+        match length {
+            0 => Some(Self::_0),
+            1 => Some(Self::_1),
+            2 => Some(Self::_2),
+            3 => Some(Self::_3),
+            4 => Some(Self::_4),
+            5 => Some(Self::_5),
+            6 => Some(Self::_6),
+            7 => Some(Self::_7),
+            8 => Some(Self::_8),
+            12 => Some(Self::_12),
+            16 => Some(Self::_16),
+            20 => Some(Self::_20),
+            24 => Some(Self::_24),
+            32 => Some(Self::_32),
+            48 => Some(Self::_48),
+            64 => Some(Self::_64),
+            _ => None,
+        }
+    }
+}
+
 impl TryFrom<u8> for DataLenghtCode {
     type Error = ();
 
