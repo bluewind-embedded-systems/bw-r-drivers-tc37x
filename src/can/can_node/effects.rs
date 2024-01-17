@@ -5,7 +5,6 @@ use crate::can::can_node::{
 use crate::can::msg::{ReadFrom, RxBufferId};
 use crate::can::{CanModuleId, DataFieldSize, TxBufferId, TxMode};
 use core::intrinsics::transmute;
-use crate::log::info;
 use tc37x_pac::can0::node::txesc::Tbds;
 use tc37x_pac::hidden::RegValue;
 use tc37x_pac::RegisterValue;
@@ -93,9 +92,6 @@ impl NodeEffects {
         while !unsafe { cccr.read() }.init().get() {}
 
         unsafe { cccr.modify(|r| r.cce().set(true).init().set(true)) };
-
-        info!("cce {}", unsafe { cccr.read().cce().get() });
-        info!("init {}", unsafe { cccr.read().init().get() });
     }
 
     pub(super) fn disable_configuration_change(&self) {
@@ -111,10 +107,6 @@ impl NodeEffects {
     }
 
     pub(super) fn set_bit_timing(&self, timing: BitTiming) {
-        info!(
-            "brp: {}, sjw: {}, tseg1: {}, tseg2: {}",
-            timing.brp, timing.sjw, timing.tseg1, timing.tseg2
-        );
         unsafe {
             self.reg.nbtp().modify(|r| {
                 r.nbrp()
@@ -130,10 +122,6 @@ impl NodeEffects {
     }
 
     pub(super) fn set_bit_timing_values(&self, sjw: u8, time_segment2: u8, time_segment1: u8, prescaler: u16) {
-        info!(" set_bit_timing_values brp:{}", prescaler);
-        info!(" set_bit_timing_values sjw:{}", sjw);
-        info!(" set_bit_timing_values tseg1:{}", time_segment1);
-        info!(" set_bit_timing_values tseg2:{}", time_segment2);
         unsafe {
             self.reg.nbtp().modify(|r| {
                 r.nsjw()
@@ -149,10 +137,6 @@ impl NodeEffects {
     }
     pub(super) fn set_fast_bit_timing(&self, module_freq: f32, baudrate: u32, sample_point: u16, sjw: u16) {
         let timing = calculate_fast_bit_timing(module_freq, baudrate, sample_point, sjw);
-        info!(" set_FAST_bit_timing brp:{}", timing.brp);
-        info!(" set_FAST_bit_timing sjw:{}", timing.sjw);
-        info!(" set_FAST_bit_timing tseg1:{}", timing.tseg1);
-        info!(" set_FAST_bit_timing tseg2:{}", timing.tseg2);
         unsafe {
             self.reg.dbtp().modify(|r| {
                 r.dbrp()
@@ -174,10 +158,6 @@ impl NodeEffects {
         time_segment1: u8,
         prescaler: u8,
     ) {
-        info!(" set_bit_fast_timing_values brp:{}", prescaler);
-        info!(" set_bit_fast_timing_values sjw:{}", sjw);
-        info!(" set_bit_fast_timing_values tseg1:{}", time_segment1);
-        info!(" set_bit_fast_timing_values tseg2:{}", time_segment2);
         unsafe {
             self.reg.dbtp().modify(|r| {
                 r.dsjw()
