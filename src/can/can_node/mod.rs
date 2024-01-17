@@ -268,14 +268,6 @@ impl NewCanNode {
         let bit_timing: BitTiming = match baud_rate {
             BitTimingConfig::Auto(baud_rate) => {
                 let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
-                info!(
-                    "module_freq: {}, baud_rate: {}, sample_point: {}, sync_jump_with: {}",
-                    module_freq,
-                    baud_rate.baud_rate,
-                    baud_rate.sample_point,
-                    baud_rate.sync_jump_width,
-                );
-
                 calculate_bit_timing(
                     module_freq,
                     baud_rate.baud_rate,

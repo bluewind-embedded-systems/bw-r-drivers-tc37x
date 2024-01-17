@@ -1,6 +1,7 @@
 // Many integer and float conversions are done in this file, we want to get rid of them
 #![deny(clippy::as_conversions, clippy::float_cmp)]
 
+use crate::log::info;
 // The following import is needed when f32::abs is not available (tricore toolchain)
 #[allow(unused_imports)]
 use crate::util::F32Abs;
@@ -200,6 +201,8 @@ pub(super) fn calculate_bit_timing(
     sample_point: u16,
     sjw: u16,
 ) -> BitTiming {
+    info!("module_freq: {module_freq}, baud_rate: {baud_rate}, sample_point: {sample_point}, sync_jump_with: {sjw}");
+
     /* Set values into node */
     let best = get_best_baud_rate(
         NBTP_NBRP_MSK,
