@@ -10,12 +10,12 @@ tc37x_rt::entry!(main);
 use core::time::Duration;
 use embedded_can::ExtendedId;
 use tc37x_hal::can::{
-    CanModule, CanModuleId, CanNode, CanNodeConfig, DataFieldSize, NodeId, TxConfig, TxMode,
+    CanModule, CanModuleId, CanNode, CanNodeConfig, DataFieldSize, Frame, NodeId, TxConfig, TxMode,
 };
 use tc37x_hal::cpu::asm::enable_interrupts;
 use tc37x_hal::gpio::GpioExt;
 use tc37x_hal::log::info;
-use tc37x_hal::{can, pac, ssw};
+use tc37x_hal::{pac, ssw};
 
 fn setup_can() -> Result<CanNode, ()> {
     let can_module = CanModule::new(CanModuleId::Can0);
@@ -79,14 +79,14 @@ fn main() -> ! {
     let mut tx_msg_data: [u8; 8] = [0, 1, 2, 3, 4, 5, 6, 7];
 
     loop {
+        led1.set_high();
+
         // Transmit a different message each time (changing the first byte)
         tx_msg_data[0] = tx_msg_data[0].wrapping_add(1);
 
-        let test_frame = can::Frame::new(tx_msg_id, tx_msg_data.as_slice()).unwrap();
+        let tx_frame = Frame::new(tx_msg_id, tx_msg_data.as_slice()).unwrap();
 
-        led1.set_high();
-
-        if can.transmit(&test_frame).is_err() {
+        if can.transmit(&tx_frame).is_err() {
             info!("Cannot send frame");
         }
 
