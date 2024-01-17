@@ -8,14 +8,13 @@
 tc37x_rt::entry!(main);
 
 use core::time::Duration;
-use embedded_can::{ExtendedId, Frame};
+use embedded_can::ExtendedId;
 use tc37x_hal::can::{
     CanModule, CanModuleId, CanNode, CanNodeConfig, DataFieldSize, NodeId, TxConfig, TxMode,
 };
 use tc37x_hal::cpu::asm::enable_interrupts;
 use tc37x_hal::gpio::GpioExt;
 use tc37x_hal::log::info;
-use tc37x_hal::util::wait_nop_cycles;
 use tc37x_hal::{can, pac, ssw};
 
 fn setup_can() -> Result<CanNode, ()> {
@@ -41,7 +40,7 @@ fn setup_can() -> Result<CanNode, ()> {
 }
 
 /// Initialize the STB pin for the CAN transceiver.
-pub fn init_can_stb_pin() {
+fn init_can_stb_pin() {
     let gpio20 = pac::PORT_20.split();
     let mut stb = gpio20.p20_6.into_push_pull_output();
     stb.set_low();
@@ -68,10 +67,6 @@ fn main() -> ! {
 
     info!("Create can module ... ");
 
-    let can_id: ExtendedId = ExtendedId::new(0x0CFE6E00).unwrap();
-    let mut data: [u8; 8] = [0; 8];
-    let test_frame = can::Frame::new(can_id, &data).unwrap();
-
     init_can_stb_pin();
 
     let can = match setup_can() {
@@ -79,19 +74,18 @@ fn main() -> ! {
         Err(_) => loop {},
     };
 
-    let mut count = 0;
+    let tx_msg_id: ExtendedId = ExtendedId::new(0x0CFE6E00).unwrap().into();
+    let tx_msg_id = tx_msg_id.into();
+    let mut tx_msg_data: [u8; 8] = [0, 1, 2, 3, 4, 5, 6, 7];
 
     loop {
-        if count < 255 {
-            count += 1;
-        } else {
-            count = 0;
-        }
-        data[0] = count;
+        // Transmit a different message each time (changing the first byte)
+        tx_msg_data[0] = tx_msg_data[0].wrapping_add(1);
+
+        let test_frame = can::Frame::new(tx_msg_id, tx_msg_data.as_slice()).unwrap();
 
         led1.set_high();
 
-        info!("Sending message...");
         if can.transmit(&test_frame).is_err() {
             info!("Cannot send frame");
         }
@@ -107,6 +101,7 @@ fn main() -> ! {
 pub fn wait_nop(period: Duration) {
     #[cfg(target_arch = "tricore")]
     {
+        use tc37x_hal::util::wait_nop_cycles;
         let ns = period.as_nanos() as u32;
         let n_cycles = ns / 920;
         wait_nop_cycles(n_cycles);

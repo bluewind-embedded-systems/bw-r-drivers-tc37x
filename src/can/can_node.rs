@@ -1161,12 +1161,8 @@ pub type Priority = u8;
 
 impl CanNode {
     pub fn transmit(&self, frame: &Frame) -> Result<(), ()> {
-        use embedded_can::Frame;
         let buffer_id = self.get_tx_fifo_queue_put_index();
-        let id: MessageId = frame.id().into();
-        let data = frame.data();
-
-        self.transmit_inner(buffer_id, id, false, false, false, data)
+        self.transmit_inner(buffer_id, frame.id, false, false, false, frame.data)
     }
 
     pub fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
@@ -1402,14 +1398,26 @@ pub struct MessageId {
 impl From<embedded_can::Id> for MessageId {
     fn from(id: embedded_can::Id) -> Self {
         match id {
-            embedded_can::Id::Standard(id) => MessageId {
-                data: id.as_raw().into(),
-                length: MessageIdLenght::Standard,
-            },
-            embedded_can::Id::Extended(id) => MessageId {
-                data: id.as_raw(),
-                length: MessageIdLenght::Extended,
-            },
+            embedded_can::Id::Standard(id) => id.into(),
+            embedded_can::Id::Extended(id) => id.into(),
+        }
+    }
+}
+
+impl From<embedded_can::StandardId> for MessageId {
+    fn from(id: embedded_can::StandardId) -> Self {
+        MessageId {
+            data: id.as_raw().into(),
+            length: MessageIdLenght::Standard,
+        }
+    }
+}
+
+impl From<embedded_can::ExtendedId> for MessageId {
+    fn from(id: embedded_can::ExtendedId) -> Self {
+        MessageId {
+            data: id.as_raw(),
+            length: MessageIdLenght::Extended,
         }
     }
 }

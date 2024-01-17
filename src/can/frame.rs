@@ -1,5 +1,6 @@
 #![allow(unused_variables)]
 
+use crate::can::can_node::MessageId;
 use embedded_can::{Id, StandardId};
 
 #[repr(u8)]
@@ -93,40 +94,18 @@ impl DataLenghtCode {
     }
 }
 
-pub struct Frame;
+pub struct Frame<'a> {
+    pub id: MessageId,
+    pub data: &'a [u8],
+}
 
-impl embedded_can::Frame for Frame {
-    fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
-        // TODO Use id and data parameters
-        Some(Self)
-    }
-
-    fn new_remote(id: impl Into<Id>, dlc: usize) -> Option<Self> {
-        todo!()
-    }
-
-    fn is_extended(&self) -> bool {
-        false
-        //TODO
-    }
-
-    fn is_remote_frame(&self) -> bool {
-        false
-        //TODO
-    }
-
-    fn id(&self) -> Id {
-        Id::Standard(StandardId::new(123).unwrap())
-        //TODO
-    }
-
-    fn dlc(&self) -> usize {
-        8
-        //TODO
-    }
-
-    fn data(&self) -> &[u8] {
-        &[1, 2, 3, 4, 5, 6, 7, 8]
+impl<'a> Frame<'a> {
+    pub fn new(id: MessageId, data: &'a [u8]) -> Option<Self> {
+        if data.len() > 64 {
+            None
+        } else {
+            Some(Self { id, data })
+        }
     }
 }
 
