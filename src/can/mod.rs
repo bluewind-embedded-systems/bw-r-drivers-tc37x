@@ -13,4 +13,3 @@ pub use baud_rate::{AutoBitTiming, BitTiming, BitTimingConfig};
 pub use can_module::{Module, ModuleConfig, ModuleId};
 pub use can_node::{Node, NodeConfig, DataFieldSize, NodeId, TxConfig, TxMode};
 pub use frame::Frame;
-pub use msg::TxBufferId;

@@ -2,8 +2,8 @@ use crate::can::baud_rate::{calculate_fast_bit_timing, BitTiming};
 use crate::can::can_node::{
     FrameMode, Interrupt, InterruptGroup, InterruptLine, Priority, RxFifoMode, RxSel, Tos,
 };
-use crate::can::msg::{ReadFrom, RxBufferId};
-use crate::can::{ModuleId, DataFieldSize, TxBufferId, TxMode};
+use crate::can::msg::{ReadFrom, RxBufferId, TxBufferId};
+use crate::can::{DataFieldSize, ModuleId, TxMode};
 use core::intrinsics::transmute;
 use tc37x_pac::can0::node::txesc::Tbds;
 use tc37x_pac::hidden::RegValue;
