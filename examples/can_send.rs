@@ -10,13 +10,12 @@ tc37x_rt::entry!(main);
 use core::time::Duration;
 use embedded_can::{ExtendedId, Frame};
 use tc37x_hal::can::{
-    CanModule, CanModuleId, CanNode, CanNodeConfig, DataFieldSize, NodeId, TxConfig,
-    TxMode,
+    CanModule, CanModuleId, CanNode, CanNodeConfig, DataFieldSize, NodeId, TxConfig, TxMode,
 };
 use tc37x_hal::cpu::asm::enable_interrupts;
 use tc37x_hal::gpio::GpioExt;
 use tc37x_hal::log::info;
-use tc37x_hal::util::wait_nop;
+use tc37x_hal::util::wait_nop_cycles;
 use tc37x_hal::{can, pac, ssw};
 
 fn setup_can() -> Result<CanNode, ()> {
@@ -89,14 +88,29 @@ fn main() -> ! {
         }
         data[0] = count;
 
+        led1.set_high();
+
         info!("Sending message...");
         if can.transmit(&test_frame).is_err() {
             info!("Cannot send frame");
         }
 
-        led1.set_high();
-        wait_nop(Duration::from_millis(500));
+        wait_nop(Duration::from_millis(100));
         led1.set_low();
-        wait_nop(Duration::from_millis(500));
+        wait_nop(Duration::from_millis(900));
     }
+}
+
+/// Wait for a number of cycles roughly calculated from a duration.
+#[inline(always)]
+pub fn wait_nop(period: Duration) {
+    #[cfg(target_arch = "tricore")]
+    {
+        let ns = period.as_nanos() as u32;
+        let n_cycles = ns / 920;
+        wait_nop_cycles(n_cycles);
+    }
+
+    #[cfg(not(target_arch = "tricore"))]
+    std::thread::sleep(period);
 }
