@@ -21,8 +21,7 @@ impl Default for BitTimingConfig {
 pub struct AutoBitTiming {
     pub baud_rate: u32,
     pub sample_point: u16,
-    // TODO fix typo (sync_jump_width)
-    pub sync_jump_with: u16,
+    pub sync_jump_width: u16,
 }
 
 // TODO Default values are not valid

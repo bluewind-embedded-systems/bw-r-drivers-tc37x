@@ -273,14 +273,14 @@ impl NewCanNode {
                     module_freq,
                     baud_rate.baud_rate,
                     baud_rate.sample_point,
-                    baud_rate.sync_jump_with,
+                    baud_rate.sync_jump_width,
                 );
 
                 calculate_bit_timing(
                     module_freq,
                     baud_rate.baud_rate,
                     baud_rate.sample_point,
-                    baud_rate.sync_jump_with,
+                    baud_rate.sync_jump_width,
                 )
             }
             BitTimingConfig::Manual(baud_rate) => *baud_rate,

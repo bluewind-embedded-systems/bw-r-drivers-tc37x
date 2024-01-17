@@ -28,7 +28,7 @@ fn setup_can() -> Result<CanNode, ()> {
     cfg.baud_rate = BitTimingConfig::Auto(AutoBitTiming {
         baud_rate: 1_000_000,
         sample_point: 8_000,
-        sync_jump_with: 3,
+        sync_jump_width: 3,
     });
 
     cfg.tx = Some(TxConfig {
