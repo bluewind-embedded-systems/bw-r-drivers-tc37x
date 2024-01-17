@@ -1,5 +1,6 @@
 use super::can_node::{CanNode, NodeId};
 use crate::can::NewCanNode;
+use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
 
 #[derive(Clone, Copy)]
@@ -73,7 +74,11 @@ impl CanModule {
         self.id
     }
 
-    pub(crate) fn set_clock_source(&self, clock_select: ClockSelect, clock_source: ClockSource) {
+    pub(crate) fn set_clock_source(
+        &self,
+        clock_select: ClockSelect,
+        clock_source: ClockSource,
+    ) -> Result<(), ()> {
         let mcr = unsafe { self.inner.mcr().read() };
 
         // Enable CCCE and CI
@@ -94,6 +99,28 @@ impl CanModule {
         // Disable CCCE and CI
         let mcr = mcr.ccce().set(false).ci().set(false);
         unsafe { self.inner.mcr().write(mcr) };
+
+        // Wait for clock switch
+        wait_nop_cycles(10);
+
+        // Check if clock switch was successful
+        {
+            let mcr = unsafe { self.inner.mcr().read() };
+
+            let actual_clock_source = match clock_select.0 {
+                0 => mcr.clksel0().get(),
+                1 => mcr.clksel1().get(),
+                2 => mcr.clksel2().get(),
+                3 => mcr.clksel3().get(),
+                _ => unreachable!(),
+            };
+
+            if actual_clock_source != clock_source.into() {
+                return Err(());
+            }
+        }
+
+        Ok(())
     }
 
     pub(crate) fn registers(&self) -> &pac::can0::Can0 {
@@ -109,7 +136,7 @@ impl From<NodeId> for ClockSelect {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub enum ClockSource {
     //TODO remove NoClock
     //NoClock,

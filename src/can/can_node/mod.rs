@@ -1,6 +1,8 @@
 // TODO Remove asap
 #![allow(dead_code)]
 
+mod effects;
+
 use super::baud_rate::*;
 use super::can_module::{CanModuleId, ClockSource};
 use super::frame::{DataLenghtCode, Frame};
@@ -131,15 +133,7 @@ impl CanNode {
 impl NewCanNode {
     pub fn configure(self, config: CanNodeConfig) -> Result<CanNode, ()> {
         self.module
-            .set_clock_source(self.node_id.into(), config.clock_source);
-
-        // TODO Document why this is needed
-        wait_nop_cycles(10);
-
-        // TODO Document why this is needed
-        if unsafe { tc37x_pac::CAN0.mcr().read() }.clksel0().get() != 3 {
-            return Err(());
-        }
+            .set_clock_source(self.node_id.into(), config.clock_source)?;
 
         self.enable_configuration_change();
 
