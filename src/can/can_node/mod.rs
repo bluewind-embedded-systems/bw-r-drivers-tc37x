@@ -10,6 +10,7 @@ use super::internals::{Rx, Tx};
 use super::msg::{ReadFrom, RxBufferId, TxBufferId};
 use super::CanModule;
 
+use crate::can::can_node::effects::NodeEffects;
 use crate::log::{info, HexSlice};
 use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
@@ -108,24 +109,24 @@ impl NodeId {
 pub struct NewCanNode {
     module: CanModule,
     node_id: NodeId,
-    inner: tc37x_pac::can0::Node,
+    effects: NodeEffects,
 }
 
 pub struct CanNode {
     module: CanModule,
     node_id: NodeId,
-    inner: tc37x_pac::can0::Node,
+    effects: NodeEffects,
     frame_mode: FrameMode,
 }
 
 impl CanNode {
     /// Only a module can create a node. This function is only accessible from within this crate.
     pub(crate) fn new(module: CanModule, node_id: NodeId) -> NewCanNode {
-        let inner: tc37x_pac::can0::Node = module.registers().node(node_id.0.into());
+        let effects = NodeEffects::new(module.registers().node(node_id.0.into()));
         NewCanNode {
             module,
             node_id,
-            inner,
+            effects,
         }
     }
 }
@@ -135,7 +136,7 @@ impl NewCanNode {
         self.module
             .set_clock_source(self.node_id.into(), config.clock_source)?;
 
-        self.enable_configuration_change();
+        self.effects.enable_configuration_change();
 
         self.configure_baud_rate(config.calculate_bit_timing_values, &config.baud_rate);
 
@@ -150,13 +151,13 @@ impl NewCanNode {
         // transmit frame configuration
         if let Some(tx_config) = &config.tx {
             self.set_tx_buffer_data_field_size(tx_config.buffer_data_field_size);
-            self.set_tx_buffer_start_address(config.message_ram.tx_buffers_start_address);
+            self.effects.set_tx_buffer_start_address(config.message_ram.tx_buffers_start_address);
 
             let mode = tx_config.mode;
 
             match mode {
                 TxMode::DedicatedBuffers | TxMode::SharedFifo | TxMode::SharedQueue => {
-                    self.set_dedicated_tx_buffers_number(tx_config.dedicated_tx_buffers_number);
+                    self.effects.set_dedicated_tx_buffers_number(tx_config.dedicated_tx_buffers_number);
                     if let TxMode::SharedFifo | TxMode::SharedQueue = mode {
                         if let TxMode::SharedFifo = mode {
                             self.set_transmit_fifo_queue_mode(TxMode::Fifo);
@@ -164,26 +165,26 @@ impl NewCanNode {
                         if let TxMode::SharedQueue = mode {
                             self.set_transmit_fifo_queue_mode(TxMode::Queue);
                         }
-                        self.set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
+                        self.effects.set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
                     }
                     for id in 0..tx_config.dedicated_tx_buffers_number + tx_config.fifo_queue_size {
-                        self.enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+                        self.effects.enable_tx_buffer_transmission_interrupt(TxBufferId(id));
                     }
                 }
                 TxMode::Fifo | TxMode::Queue => {
                     self.set_transmit_fifo_queue_mode(mode);
-                    self.set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
+                    self.effects.set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
                     for id in 0..tx_config.fifo_queue_size {
-                        self.enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+                        self.effects.enable_tx_buffer_transmission_interrupt(TxBufferId(id));
                     }
                 }
             }
 
             if (1..=32).contains(&tx_config.event_fifo_size) {
-                self.set_tx_event_fifo_start_address(
+                self.effects.set_tx_event_fifo_start_address(
                     config.message_ram.tx_event_fifo_start_address,
                 );
-                self.set_tx_event_fifo_size(tx_config.event_fifo_size);
+                self.effects.set_tx_event_fifo_size(tx_config.event_fifo_size);
             } else {
                 crate::log::error!("Invalid event fifo size: {}", tx_config.event_fifo_size);
             }
@@ -191,7 +192,7 @@ impl NewCanNode {
             self.set_frame_mode(config.frame_mode);
         }
 
-        self.disable_configuration_change();
+        self.effects.disable_configuration_change();
 
         // TODO FifoData from config
         self.set_rx_fifo0(FifoData {
@@ -238,41 +239,16 @@ impl NewCanNode {
             frame_mode: config.frame_mode,
             module: self.module,
             node_id: self.node_id,
-            inner: self.inner,
+            effects: self.effects,
         })
     }
 
     fn set_rx_fifo0(&self, data: FifoData) {
-        self.set_rx_fifo0_data_field_size(data.field_size);
-        self.set_rx_fifo0_start_address(data.start_address);
-        self.set_rx_fifo0_size(data.size);
-        self.set_rx_fifo0_operating_mode(data.operation_mode);
-        self.set_rx_fifo0_watermark_level(data.watermark_level);
-    }
-
-    fn set_rx_fifo0_data_field_size(&self, size: DataFieldSize) {
-        let size = tc37x_pac::can0::node::rxesc::F0Ds(size as u8);
-        unsafe { self.inner.rxesc().modify(|r| r.f0ds().set(size)) };
-    }
-
-    fn set_rx_fifo0_start_address(&self, address: u16) {
-        unsafe { self.inner.rxf0c().modify(|r| r.f0sa().set(address >> 2)) };
-    }
-
-    fn set_rx_fifo0_size(&self, size: u8) {
-        unsafe { self.inner.rxf0c().modify(|r| r.f0s().set(size)) };
-    }
-
-    fn set_rx_fifo0_watermark_level(&self, level: u8) {
-        unsafe { self.inner.rxf0c().modify(|r| r.f0wm().set(level)) };
-    }
-
-    fn set_rx_fifo0_operating_mode(&self, mode: RxFifoMode) {
-        unsafe {
-            self.inner
-                .rxf0c()
-                .modify(|r| r.f0om().set(mode == RxFifoMode::Overwrite))
-        };
+        self.effects.set_rx_fifo0_data_field_size(data.field_size);
+        self.effects.set_rx_fifo0_start_address(data.start_address);
+        self.effects.set_rx_fifo0_size(data.size);
+        self.effects.set_rx_fifo0_operating_mode(data.operation_mode);
+        self.effects.set_rx_fifo0_watermark_level(data.watermark_level);
     }
 
     fn set_tx_fifo(&self, buffers: DedicatedData, fifo_size: u8) {
@@ -283,88 +259,27 @@ impl NewCanNode {
 
     fn set_inner_tx_buffers(&self, dedicated: DedicatedData) {
         self.set_tx_buffer_data_field_size(dedicated.field_size);
-        self.set_tx_buffer_start_address(dedicated.start_address);
+        self.effects.set_tx_buffer_start_address(dedicated.start_address);
     }
 
     fn set_inner_tx_fifo_queue(&self, mode: TxMode, size: u8) {
-        self.set_transmit_fifo_queue_mode(mode);
-        self.set_transmit_fifo_queue_size(size);
+        self.effects.set_transmit_fifo_queue_mode(mode);
+        self.effects.set_transmit_fifo_queue_size(size);
     }
 
     fn set_inner_tx_int(&self, size: u8) {
         for id in 0..size {
-            self.enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+            self.effects.enable_tx_buffer_transmission_interrupt(TxBufferId(id));
         }
-    }
-
-    fn enable_tx_buffer_transmission_interrupt(&self, tx_buffer_id: TxBufferId) {
-        unsafe {
-            self.inner.txbtie().modify(|mut r| {
-                *r.data_mut_ref() |= 1 << tx_buffer_id.0;
-                r
-            })
-        };
-    }
-
-    #[inline]
-    pub fn set_dedicated_tx_buffers_number(&self, number: u8) {
-        unsafe { self.inner.txbc().modify(|r| r.ndtb().set(number)) };
-    }
-
-    #[inline]
-    pub fn set_tx_event_fifo_start_address(&self, address: u16) {
-        unsafe { self.inner.txefc().modify(|r| r.efsa().set(address >> 2)) };
-    }
-
-    #[inline]
-    pub fn set_tx_event_fifo_size(&self, size: u8) {
-        unsafe { self.inner.txefc().modify(|r| r.efs().set(size)) };
     }
 
     fn set_transmit_fifo_queue_mode(&self, mode: TxMode) {
         if let TxMode::Fifo | TxMode::Queue = mode {
-            let val = (mode as u8) != 0;
-            unsafe { self.inner.txbc().modify(|r| r.tfqm().set(val)) };
+            self.effects.set_transmit_fifo_queue_mode(mode);
         } else {
+            // TODO Avoid panic
             panic!("invalid fifo queue mode");
         }
-    }
-
-    fn set_transmit_fifo_queue_size(&self, number: u8) {
-        unsafe { self.inner.txbc().modify(|r| r.tfqs().set(number)) };
-    }
-
-    fn enable_configuration_change(&self) {
-        let cccr = self.inner.cccr();
-
-        if unsafe { cccr.read() }.init().get() {
-            unsafe { cccr.modify(|r| r.cce().set(false)) };
-            while unsafe { cccr.read() }.cce().get() {}
-
-            unsafe { cccr.modify(|r| r.init().set(false)) };
-
-            while unsafe { cccr.read() }.init().get() {}
-        }
-
-        unsafe { cccr.modify(|r| r.init().set(true)) };
-        while !unsafe { cccr.read() }.init().get() {}
-
-        unsafe { cccr.modify(|r| r.cce().set(true).init().set(true)) };
-
-        info!("cce {}", unsafe { cccr.read().cce().get() });
-        info!("init {}", unsafe { cccr.read().init().get() });
-    }
-
-    fn disable_configuration_change(&self) {
-        let cccr = self.inner.cccr();
-
-        unsafe { cccr.modify(|r| r.cce().set(false)) };
-
-        while unsafe { cccr.read() }.cce().get() {}
-
-        unsafe { cccr.modify(|r| r.init().set(false)) };
-
-        while unsafe { cccr.read() }.init().get() {}
     }
 
     fn configure_baud_rate(&self, calculate_bit_timing_values: bool, baud_rate: &BaudRate) {
@@ -382,9 +297,9 @@ impl NewCanNode {
                 baud_rate.sample_point,
                 baud_rate.sync_jump_with,
             );
-            self.set_bit_timing(timing);
+            self.effects.set_bit_timing(timing);
         } else {
-            self.set_bit_timing_values(
+            self.effects.set_bit_timing_values(
                 baud_rate.sync_jump_with as u8,
                 baud_rate.time_segment_2,
                 baud_rate.time_segment_1,
@@ -400,14 +315,14 @@ impl NewCanNode {
     ) {
         if calculate_bit_timing_values {
             let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
-            self.set_fast_bit_timing(
+            self.effects.set_fast_bit_timing(
                 module_freq,
                 baud_rate.baud_rate,
                 baud_rate.sample_point,
                 baud_rate.sync_jump_with,
             );
         } else {
-            self.set_fast_bit_timing_values(
+            self.effects.set_fast_bit_timing_values(
                 baud_rate.sync_jump_with as u8,
                 baud_rate.time_segment_2,
                 baud_rate.time_segment_1,
@@ -416,99 +331,10 @@ impl NewCanNode {
         }
 
         if baud_rate.transceiver_delay_offset != 0 {
-            self.set_transceiver_delay_compensation_offset(baud_rate.transceiver_delay_offset);
+            self.effects.set_transceiver_delay_compensation_offset(baud_rate.transceiver_delay_offset);
         }
     }
 
-    fn set_bit_timing(&self, timing: BitTiming) {
-        info!(
-            "brp: {}, sjw: {}, tseg1: {}, tseg2: {}",
-            timing.brp, timing.sjw, timing.tseg1, timing.tseg2
-        );
-        unsafe {
-            self.inner.nbtp().modify(|r| {
-                r.nbrp()
-                    .set(timing.brp)
-                    .nsjw()
-                    .set(timing.sjw)
-                    .ntseg1()
-                    .set(timing.tseg1)
-                    .ntseg2()
-                    .set(timing.tseg2)
-            })
-        }
-    }
-
-    fn set_bit_timing_values(&self, sjw: u8, time_segment2: u8, time_segment1: u8, prescaler: u16) {
-        info!(" set_bit_timing_values brp:{}", prescaler);
-        info!(" set_bit_timing_values sjw:{}", sjw);
-        info!(" set_bit_timing_values tseg1:{}", time_segment1);
-        info!(" set_bit_timing_values tseg2:{}", time_segment2);
-        unsafe {
-            self.inner.nbtp().modify(|r| {
-                r.nsjw()
-                    .set(sjw)
-                    .ntseg1()
-                    .set(time_segment1)
-                    .ntseg2()
-                    .set(time_segment2)
-                    .nbrp()
-                    .set(prescaler)
-            })
-        };
-    }
-
-    fn set_fast_bit_timing(&self, module_freq: f32, baudrate: u32, sample_point: u16, sjw: u16) {
-        let timing = calculate_fast_bit_timing(module_freq, baudrate, sample_point, sjw);
-        info!(" set_FAST_bit_timing brp:{}", timing.brp);
-        info!(" set_FAST_bit_timing sjw:{}", timing.sjw);
-        info!(" set_FAST_bit_timing tseg1:{}", timing.tseg1);
-        info!(" set_FAST_bit_timing tseg2:{}", timing.tseg2);
-        unsafe {
-            self.inner.dbtp().modify(|r| {
-                r.dbrp()
-                    .set(timing.brp.try_into().unwrap())
-                    .dsjw()
-                    .set(timing.sjw)
-                    .dtseg1()
-                    .set(timing.tseg1)
-                    .dtseg2()
-                    .set(timing.tseg2)
-            })
-        }
-    }
-
-    fn set_fast_bit_timing_values(
-        &self,
-        sjw: u8,
-        time_segment2: u8,
-        time_segment1: u8,
-        prescaler: u8,
-    ) {
-        info!(" set_bit_fast_timing_values brp:{}", prescaler);
-        info!(" set_bit_fast_timing_values sjw:{}", sjw);
-        info!(" set_bit_fast_timing_values tseg1:{}", time_segment1);
-        info!(" set_bit_fast_timing_values tseg2:{}", time_segment2);
-        unsafe {
-            self.inner.dbtp().modify(|r| {
-                r.dsjw()
-                    .set(sjw)
-                    .dtseg1()
-                    .set(time_segment1)
-                    .dtseg2()
-                    .set(time_segment2)
-                    .dbrp()
-                    .set(prescaler)
-            })
-        };
-    }
-
-    // fn set_tx_buffer_data_field_size(&self, data_field_size: u8) {
-    //     let tmp = data_field_size;
-    //     let data_field_size = tc37x_pac::can0::node::txesc::Tbds(data_field_size);
-    //     unsafe { self.inner.txesc().modify(|r| r.tbds().set(data_field_size)) };
-    //     info!("Data field size (set) {}", tmp);
-    // }
     #[inline]
     pub fn set_tx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
         info!("Data field size: {}", data_field_size as u8);
@@ -522,13 +348,7 @@ impl NewCanNode {
             DataFieldSize::_48 => Tbds::TBDS_BUFFERSIZE48,
             DataFieldSize::_64 => Tbds::TBDS_BUFFERSIZE64,
         };
-        unsafe { self.inner.txesc().modify(|r| r.tbds().set(tdbs)) };
-        info!("txesc {:b} ", unsafe {
-            self.inner.txesc().read().get_raw()
-        });
-    }
-    fn set_tx_buffer_start_address(&self, address: u16) {
-        unsafe { self.inner.txbc().modify(|r| r.tbsa().set(address >> 2)) };
+        self.effects.set_tx_buffer_data_field_size(tdbs);
     }
 
     fn set_frame_mode(&self, frame_mode: FrameMode) {
@@ -538,16 +358,7 @@ impl NewCanNode {
             FrameMode::FdLongAndFast => (true, true),
         };
 
-        unsafe {
-            self.inner
-                .cccr()
-                .modify(|r| r.fdoe().set(fdoe).brse().set(brse))
-        };
-    }
-
-    fn set_transceiver_delay_compensation_offset(&self, delay: u8) {
-        unsafe { self.inner.dbtp().modify(|r| r.tdc().set(true)) };
-        unsafe { self.inner.tdcr().modify(|r| r.tdco().set(delay)) };
+        self.effects.set_frame_mode(fdoe, brse);
     }
 
     fn set_interrupt(
@@ -584,12 +395,7 @@ impl NewCanNode {
         unsafe { can_int.modify(|r| r.sre().set(true)) };
 
         // Enable interrupt
-        unsafe {
-            self.inner.ie().modify(|mut r| {
-                *r.data_mut_ref() |= 1 << interrupt as u32;
-                r
-            })
-        };
+        self.effects.enable_interrupt(interrupt);
     }
 
     fn set_group_interrupt_line(
@@ -597,21 +403,14 @@ impl NewCanNode {
         interrupt_group: InterruptGroup,
         interrupt_line: InterruptLine,
     ) {
+        let line = interrupt_line.0 as u32;
+
         if interrupt_group <= InterruptGroup::Loi {
-            unsafe {
-                self.inner.grint1().modify(|mut r| {
-                    *r.data_mut_ref() |= (interrupt_line.0 as u32) << (interrupt_group as u32 * 4);
-                    r
-                })
-            };
+            let group = interrupt_group as u32 * 4;
+            self.effects.set_interrupt_routing_group_1(line, group);
         } else {
-            unsafe {
-                self.inner.grint2().modify(|mut r| {
-                    *r.data_mut_ref() |=
-                        (interrupt_line.0 as u32) << ((interrupt_group as u32 % 8) * 4);
-                    r
-                })
-            };
+            let group = (interrupt_group as u32 % 8) * 4;
+            self.effects.set_interrupt_routing_group_2(line, group);
         }
     }
 
@@ -619,12 +418,7 @@ impl NewCanNode {
         let port = Port::new(rxd.port);
         port.set_pin_mode_input(rxd.pin_index, mode);
         port.set_pin_pad_driver(rxd.pin_index, pad_driver);
-
-        unsafe {
-            self.inner
-                .npcr()
-                .modify(|r| r.rxsel().set(rxd.select as u8))
-        };
+        self.effects.connect_pin_rx(rxd.select);
     }
 
     fn connect_pin_tx(&self, txd: TxdOut, mode: OutputMode, pad_driver: PadDriver) {
@@ -635,111 +429,7 @@ impl NewCanNode {
     }
 }
 
-impl CanNode {
-    // pub fn transmit(&self, frame: &Frame) -> Result<(), ()> {
-    //     // TODO Call the right function depending on fifo mode
-    //     self.transmit_fifo(frame);
-
-    //     // while let None = dst_node.send_fifo(msg_id, &read_buf) {
-    //     //     wait_nop(10);
-    //     // }
-
-    //     // TODO
-    //     Ok(())
-    // }
-
-    fn get_rx_fifo0_fill_level(&self) -> u8 {
-        unsafe { self.inner.rxf0s().read() }.f0fl().get()
-    }
-
-    fn get_rx_fifo1_fill_level(&self) -> u8 {
-        unsafe { self.inner.rxf1s().read() }.f1fl().get()
-    }
-
-    fn set_rx_buffers_start_address(&self, address: u16) {
-        unsafe { self.inner.rxbc().modify(|r| r.rbsa().set(address >> 2)) };
-    }
-
-    fn set_rx_fifo0_size(&self, size: u8) {
-        unsafe { self.inner.rxf0c().modify(|r| r.f0s().set(size)) };
-    }
-
-    fn set_rx_fifo0_start_address(&self, address: u16) {
-        unsafe { self.inner.rxf0c().modify(|r| r.f0sa().set(address >> 2)) };
-    }
-
-    fn set_rx_fifo0_watermark_level(&self, level: u8) {
-        unsafe { self.inner.rxf0c().modify(|r| r.f0wm().set(level)) };
-    }
-
-    fn set_rx_fifo1_size(&self, size: u8) {
-        unsafe { self.inner.rxf1c().modify(|r| r.f1s().set(size)) };
-    }
-
-    fn set_rx_fifo1_start_address(&self, address: u16) {
-        unsafe { self.inner.rxf1c().modify(|r| r.f1sa().set(address >> 2)) };
-    }
-
-    fn set_rx_fifo1_watermark_level(&self, level: u8) {
-        unsafe { self.inner.rxf1c().modify(|r| r.f1wm().set(level)) };
-    }
-
-    fn is_tx_event_fifo_element_lost(&self) -> bool {
-        unsafe { self.inner.txefs().read() }.tefl().get()
-    }
-
-    fn is_tx_event_fifo_full(&self) -> bool {
-        unsafe { self.inner.txefs().read() }.eff().get()
-    }
-
-    fn is_tx_fifo_queue_full(&self) -> bool {
-        unsafe { self.inner.txfqs().read() }.tfqf().get()
-    }
-
-    fn pause_trasmission(&self, enable: bool) {
-        unsafe { self.inner.cccr().modify(|r| r.txp().set(enable)) };
-    }
-
-    fn set_dedicated_tx_buffers_number(&self, number: u8) {
-        unsafe { self.inner.txbc().modify(|r| r.ndtb().set(number)) };
-    }
-
-    fn set_transmit_fifo_queue_size(&self, number: u8) {
-        unsafe { self.inner.txbc().modify(|r| r.tfqs().set(number)) };
-    }
-
-    fn set_tx_event_fifo_start_address(&self, address: u16) {
-        unsafe { self.inner.txefc().modify(|r| r.efsa().set(address >> 2)) };
-    }
-
-    fn set_tx_event_fifo_size(&self, size: u8) {
-        unsafe { self.inner.txefc().modify(|r| r.efs().set(size)) };
-    }
-
-    fn set_standard_filter_list_start_address(&self, address: u16) {
-        unsafe { self.inner.sidfc().modify(|r| r.flssa().set(address >> 2)) };
-    }
-
-    fn set_standard_filter_list_size(&self, size: u8) {
-        unsafe { self.inner.sidfc().modify(|r| r.lss().set(size)) };
-    }
-
-    fn reject_remote_frames_with_standard_id(&self) {
-        unsafe { self.inner.gfc().modify(|r| r.rrfs().set(true)) };
-    }
-
-    fn set_extended_filter_list_start_address(&self, address: u16) {
-        unsafe { self.inner.xidfc().modify(|r| r.flesa().set(address >> 2)) };
-    }
-
-    fn set_extended_filter_list_size(&self, size: u8) {
-        unsafe { self.inner.xidfc().modify(|r| r.lse().set(size)) };
-    }
-
-    fn reject_remote_frames_with_extended_id(&self) {
-        unsafe { self.inner.gfc().modify(|r| r.rrfe().set(true)) };
-    }
-}
+impl CanNode {}
 
 #[derive(Clone, Copy)]
 pub struct FifoData {
@@ -1160,7 +850,7 @@ impl CanNode {
     }
 
     pub fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
-        let id = unsafe { self.inner.txfqs().read() }.tfqpi().get();
+        let id = self.effects.get_tx_fifo_queue_put_index();
         TxBufferId::new_const(id)
     }
 
@@ -1178,7 +868,7 @@ impl CanNode {
         info!("transmit_inner");
 
         // TODO list errors
-        if self.is_tx_buffer_request_pending(buffer_id) {
+        if self.effects.is_tx_buffer_request_pending(buffer_id) {
             return Err(());
         }
 
@@ -1210,71 +900,34 @@ impl CanNode {
         tx_buf_el.set_data_length(dlc);
         tx_buf_el.write_tx_buf_data(dlc, data.as_ptr());
         tx_buf_el.set_frame_mode_req(self.frame_mode);
-        self.set_tx_buffer_add_request(buffer_id);
+        self.effects.set_tx_buffer_add_request(buffer_id);
 
         info!("transmit {}#{}", id.data, HexSlice::from(data));
 
         Ok(())
-    }
-
-    fn is_tx_buffer_request_pending(&self, tx_buffer_id: TxBufferId) -> bool {
-        unsafe { self.inner.txbrp().read() }
-            .trp(tx_buffer_id.into())
-            .get()
     }
 }
 
 // IfxLld_Can_Std_Rx_Element_Functions
 impl CanNode {
     pub fn get_rx_fifo0_get_index(&self) -> RxBufferId {
-        let id = unsafe { self.inner.rxf0s().read() }.f0gi().get();
+        let id = self.effects.get_rx_fifo0_get_index();
         RxBufferId::new_const(id)
     }
 
     pub fn get_rx_fifo1_get_index(&self) -> RxBufferId {
-        let id = unsafe { self.inner.rxf1s().read() }.f1gi().get();
+        let id = self.effects.get_rx_fifo1_get_index();
         RxBufferId::new_const(id)
     }
 
     #[inline]
-    pub fn set_rx_buffer_data_field_size(&self, _size: DataFieldSize) {
-        todo!()
-        // unsafe { self.inner.rxesc().modify(|r| r.rbds().set(size.into())) };
+    pub fn set_rx_buffer_data_field_size(&self, size: DataFieldSize) {
+        self.effects.set_rx_buffer_data_field_size(size);
     }
 
     pub fn is_rx_buffer_new_data_updated(&self, rx_buffer_id: RxBufferId) -> bool {
-        let (data, mask) = if rx_buffer_id < RxBufferId::new_const(32) {
-            let data = unsafe { self.inner.ndat1().read() }.data();
-            let mask = 1 << u8::from(rx_buffer_id);
-            (data, mask)
-        } else {
-            let data = unsafe { self.inner.ndat2().read() }.data();
-            let mask = 1 << (u8::from(rx_buffer_id) - 32);
-            (data, mask)
-        };
-        (data & mask) != 0
+        self.effects.is_rx_buffer_new_data_updated(rx_buffer_id.0)
     }
-
-    #[inline]
-    pub fn set_rx_fifo0_acknowledge_index(&self, rx_buffer_id: RxBufferId) {
-        unsafe {
-            self.inner
-                .rxf0a()
-                .modify(|r| r.f0ai().set(rx_buffer_id.into()))
-        };
-    }
-
-    #[inline]
-    pub fn set_rx_fifo1_acknowledge_index(&self, rx_buffer_id: RxBufferId) {
-        unsafe {
-            self.inner
-                .rxf1a()
-                .modify(|r| r.f1ai().set(rx_buffer_id.into()))
-        };
-    }
-
-    #[inline]
-    pub fn _a(&self) {}
 }
 
 // IfxLld_Can_Std_Tx_Element_Functions
@@ -1286,58 +939,7 @@ impl CanNode {
 
     #[inline]
     pub fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: TxBufferId) -> bool {
-        let data = unsafe { self.inner.txbto().read() }.data();
-        let mask = 1u32 << u32::from(tx_buffer_id);
-        (data & mask) != 0
-    }
-
-    #[inline]
-    pub fn set_tx_buffer_add_request(&self, tx_buffer_id: TxBufferId) {
-        unsafe {
-            self.inner
-                .txbar()
-                .modify(|r| r.ar(tx_buffer_id.into()).set(true))
-        }
-    }
-
-    #[inline]
-    pub fn set_tx_buffer_start_address(&self, address: u16) {
-        unsafe { self.inner.txbc().modify(|r| r.tbsa().set(address >> 2)) };
-    }
-
-    #[inline]
-    pub fn set_transmit_fifo_queue_mode(&self, mode: TxMode) {
-        if let TxMode::Fifo | TxMode::Queue = mode {
-            let val = (mode as u8) != 0;
-            unsafe { self.inner.txbc().modify(|r| r.tfqm().set(val)) };
-        } else {
-            panic!("invalid fifo queue mode");
-        }
-    }
-
-    pub fn get_data_field_size(&self, _from: ReadFrom) -> u8 {
-        todo!();
-        // let rx_esc = unsafe { self.inner.rxesc().read() };
-        // let size_code:u32 = match from {
-        //     ReadFrom::Buffer(_) => rx_esc.rbds().get().0,
-        //     ReadFrom::RxFifo0 => rx_esc.f0ds().get().0,
-        //     ReadFrom::RxFifo1 => rx_esc.f1ds().get().0,
-        // };
-
-        // if size_code < DataFieldSize::_32.into() {
-        //     (size_code + 2) * 4
-        // } else {
-        //     (size_code - 3) * 16
-        // }
-    }
-
-    pub fn get_tx_buffer_data_field_size(&self) -> u8 {
-        let size_code: u8 = (unsafe { self.inner.txesc().read() }.get_raw() & 0x2) as u8;
-        if size_code < Tbds::TBDS_BUFFERSIZE32.0 {
-            (size_code + 2) * 4
-        } else {
-            (size_code - 3) * 16
-        }
+        self.effects.is_tx_buffer_transmission_occured(tx_buffer_id.0)
     }
 
     pub fn get_rx_element_address(
@@ -1348,7 +950,7 @@ impl CanNode {
         buffer_number: RxBufferId,
     ) -> Rx {
         let num_of_config_bytes = 8u32;
-        let num_of_data_bytes = self.get_data_field_size(buf_from) as u32;
+        let num_of_data_bytes = self.effects.get_data_field_size(buf_from) as u32;
         let tx_buffer_size = num_of_config_bytes + num_of_data_bytes;
         let tx_buffer_index = tx_buffer_size * u32::from(buffer_number);
 
@@ -1365,7 +967,7 @@ impl CanNode {
         buffer_number: TxBufferId,
     ) -> Tx {
         let num_of_config_bytes = 8u32;
-        let num_of_data_bytes = self.get_tx_buffer_data_field_size() as u32;
+        let num_of_data_bytes = self.effects.get_tx_buffer_data_field_size() as u32;
         let tx_buffer_size = num_of_config_bytes + num_of_data_bytes;
         let tx_buffer_index = tx_buffer_size * u32::from(buffer_number);
 

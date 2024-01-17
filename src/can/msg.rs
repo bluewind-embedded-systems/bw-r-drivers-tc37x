@@ -117,6 +117,8 @@ impl TxBufferId {
         }
     }
 
+    // TODO Despite the constness, this panics at runtime
+    // TODO This can probably be fixed with const generics
     pub const fn new_const(n: u8) -> Self {
         match n {
             ..=Self::MAX => Self(n),
