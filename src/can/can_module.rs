@@ -100,6 +100,7 @@ impl Module {
         let mcr = mcr.ccce().set(false).ci().set(false);
         self.write_mcr(mcr);
 
+        // TODO Is this enough or we need to wait until actual_clock_source == clock_source
         // Wait for clock switch
         wait_nop_cycles(10);
 
