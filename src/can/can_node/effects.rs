@@ -106,7 +106,7 @@ impl NodeEffects {
         while unsafe { cccr.read() }.init().get() {}
     }
 
-    pub(super) fn set_bit_timing(&self, timing: BitTiming) {
+    pub(super) fn set_bit_timing(&self, timing: &BitTiming) {
         unsafe {
             self.reg.nbtp().modify(|r| {
                 r.nbrp()

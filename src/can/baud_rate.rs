@@ -5,6 +5,39 @@
 #[allow(unused_imports)]
 use crate::util::F32Abs;
 
+pub enum BitTimingConfig {
+    Auto(AutoBitTiming),
+    Manual(BitTiming),
+}
+
+impl Default for BitTimingConfig {
+    fn default() -> Self {
+        Self::Auto(AutoBitTiming::default())
+    }
+}
+
+// TODO Default values are not valid
+#[derive(Default)]
+pub struct AutoBitTiming {
+    pub baud_rate: u32,
+    pub sample_point: u16,
+    // TODO fix typo (sync_jump_width)
+    pub sync_jump_with: u16,
+}
+
+// TODO Default values are not valid
+#[derive(Default)]
+pub struct FastBitTimingConfig {
+    pub calculate_bit_timing_values: bool,
+    pub baud_rate: u32,
+    pub sample_point: u16,
+    pub sync_jump_with: u16,
+    pub prescalar: u16,
+    pub time_segment_1: u8,
+    pub time_segment_2: u8,
+    pub transceiver_delay_offset: u8,
+}
+
 pub(super) const NBTP_NBRP_MSK: usize = 0x1ff;
 pub(super) const NBTP_NTSEG1_MSK: usize = 0xff;
 pub(super) const NBTP_NTSEG2_MSK: usize = 0x7f;
@@ -154,7 +187,8 @@ pub(super) fn get_best_sjw(best_tbaud: u32, best_tseg2: u32, sync_jump_width: u1
     best_sjw
 }
 
-pub(super) struct BitTiming {
+#[derive(Debug, Clone, Copy)]
+pub struct BitTiming {
     pub(super) brp: u16,
     pub(super) sjw: u8,
     pub(super) tseg1: u8,

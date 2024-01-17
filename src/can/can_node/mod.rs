@@ -19,32 +19,6 @@ use tc37x_pac::can0::node::txesc::Tbds;
 use tc37x_pac::hidden::RegValue;
 use tc37x_pac::RegisterValue;
 
-// TODO Default values are not valid
-#[derive(Default)]
-pub struct BitTimingConfig {
-    pub calculate_bit_timing_values: bool,
-    pub baud_rate: u32,
-    pub sample_point: u16,
-    // TODO fix typo (sync_jump_width)
-    pub sync_jump_with: u16,
-    pub prescalar: u16,
-    pub time_segment_1: u8,
-    pub time_segment_2: u8,
-}
-
-// TODO Default values are not valid
-#[derive(Default)]
-pub struct FastBitTimingConfig {
-    pub calculate_bit_timing_values: bool,
-    pub baud_rate: u32,
-    pub sample_point: u16,
-    pub sync_jump_with: u16,
-    pub prescalar: u16,
-    pub time_segment_1: u8,
-    pub time_segment_2: u8,
-    pub transceiver_delay_offset: u8,
-}
-
 #[derive(PartialEq, Debug, Default, Copy, Clone)]
 pub enum FrameMode {
     // TODO refactor (annabo)
@@ -291,29 +265,28 @@ impl NewCanNode {
     }
 
     fn configure_baud_rate(&self, baud_rate: &BitTimingConfig) {
-        if baud_rate.calculate_bit_timing_values {
-            let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
+        let bit_timing: BitTiming = match baud_rate {
+            BitTimingConfig::Auto(baud_rate) => {
+                let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
+                info!(
+                    "module_freq: {}, baud_rate: {}, sample_point: {}, sync_jump_with: {}",
+                    module_freq,
+                    baud_rate.baud_rate,
+                    baud_rate.sample_point,
+                    baud_rate.sync_jump_with,
+                );
 
-            info!(
-                "module_freq: {}, baud_rate: {}, sample_point: {}, sync_jump_with: {}",
-                module_freq, baud_rate.baud_rate, baud_rate.sample_point, baud_rate.sync_jump_with,
-            );
+                calculate_bit_timing(
+                    module_freq,
+                    baud_rate.baud_rate,
+                    baud_rate.sample_point,
+                    baud_rate.sync_jump_with,
+                )
+            }
+            BitTimingConfig::Manual(baud_rate) => *baud_rate,
+        };
 
-            let timing: BitTiming = calculate_bit_timing(
-                module_freq,
-                baud_rate.baud_rate,
-                baud_rate.sample_point,
-                baud_rate.sync_jump_with,
-            );
-            self.effects.set_bit_timing(timing);
-        } else {
-            self.effects.set_bit_timing_values(
-                baud_rate.sync_jump_with as u8,
-                baud_rate.time_segment_2,
-                baud_rate.time_segment_1,
-                baud_rate.prescalar,
-            )
-        }
+        self.effects.set_bit_timing(&bit_timing);
     }
 
     fn configure_fast_baud_rate(&self, baud_rate: &FastBitTimingConfig) {

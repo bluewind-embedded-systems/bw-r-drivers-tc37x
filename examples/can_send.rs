@@ -10,7 +10,8 @@ tc37x_rt::entry!(main);
 use core::time::Duration;
 use embedded_can::ExtendedId;
 use tc37x_hal::can::{
-    CanModule, CanModuleId, CanNode, CanNodeConfig, DataFieldSize, Frame, NodeId, TxConfig, TxMode,
+    AutoBitTiming, BitTimingConfig, CanModule, CanModuleId, CanNode, CanNodeConfig, DataFieldSize,
+    Frame, NodeId, TxConfig, TxMode,
 };
 use tc37x_hal::cpu::asm::enable_interrupts;
 use tc37x_hal::gpio::GpioExt;
@@ -23,10 +24,13 @@ fn setup_can() -> Result<CanNode, ()> {
 
     let can_node = can_module.take_node(NodeId::new(0))?;
     let mut cfg = CanNodeConfig::default();
-    cfg.baud_rate.calculate_bit_timing_values = true;
-    cfg.baud_rate.baud_rate = 1_000_000;
-    cfg.baud_rate.sync_jump_with = 3;
-    cfg.baud_rate.sample_point = 8_000;
+
+    cfg.baud_rate = BitTimingConfig::Auto(AutoBitTiming {
+        baud_rate: 1_000_000,
+        sample_point: 8_000,
+        sync_jump_with: 3,
+    });
+
     cfg.tx = Some(TxConfig {
         mode: TxMode::DedicatedBuffers,
         dedicated_tx_buffers_number: 2,
@@ -34,6 +38,7 @@ fn setup_can() -> Result<CanNode, ()> {
         buffer_data_field_size: DataFieldSize::_8,
         event_fifo_size: 1,
     });
+
     let can_node = can_node.configure(cfg)?;
 
     Ok(can_node)
@@ -90,9 +95,9 @@ fn main() -> ! {
             info!("Cannot send frame");
         }
 
-        wait_nop(Duration::from_millis(100));
+        wait_nop(Duration::from_millis(10));
         led1.set_low();
-        wait_nop(Duration::from_millis(900));
+        wait_nop(Duration::from_millis(90));
     }
 }
 
