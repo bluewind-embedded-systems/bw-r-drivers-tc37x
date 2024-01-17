@@ -21,7 +21,7 @@ use tc37x_pac::RegisterValue;
 
 // TODO Default values are not valid
 #[derive(Default)]
-pub struct BaudRate {
+pub struct BitTimingConfig {
     pub calculate_bit_timing_values: bool,
     pub baud_rate: u32,
     pub sample_point: u16,
@@ -34,7 +34,7 @@ pub struct BaudRate {
 
 // TODO Default values are not valid
 #[derive(Default)]
-pub struct FastBaudRate {
+pub struct FastBitTimingConfig {
     pub calculate_bit_timing_values: bool,
     pub baud_rate: u32,
     pub sample_point: u16,
@@ -89,9 +89,8 @@ pub enum RxMode {
 #[derive(Default)]
 pub struct CanNodeConfig {
     pub clock_source: ClockSource,
-    // TODO Use an enum instead of bool+struct (eg: AutoBitTiming and BitTiming)
-    pub baud_rate: BaudRate,
-    pub fast_baud_rate: FastBaudRate,
+    pub baud_rate: BitTimingConfig,
+    pub fast_baud_rate: FastBitTimingConfig,
     pub frame_mode: FrameMode,
     pub tx: Option<TxConfig>,
     pub rx_mode: RxMode,
@@ -291,7 +290,7 @@ impl NewCanNode {
         }
     }
 
-    fn configure_baud_rate(&self, baud_rate: &BaudRate) {
+    fn configure_baud_rate(&self, baud_rate: &BitTimingConfig) {
         if baud_rate.calculate_bit_timing_values {
             let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
 
@@ -317,7 +316,7 @@ impl NewCanNode {
         }
     }
 
-    fn configure_fast_baud_rate(&self, baud_rate: &FastBaudRate) {
+    fn configure_fast_baud_rate(&self, baud_rate: &FastBitTimingConfig) {
         if baud_rate.calculate_bit_timing_values {
             let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
             self.effects.set_fast_bit_timing(
