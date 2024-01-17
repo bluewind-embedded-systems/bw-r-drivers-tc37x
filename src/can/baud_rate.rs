@@ -17,25 +17,23 @@ impl Default for BitTimingConfig {
     }
 }
 
+pub enum FastBitTimingConfig {
+    Auto(AutoBitTiming),
+    Manual(BitTiming),
+}
+
+impl Default for FastBitTimingConfig {
+    fn default() -> Self {
+        Self::Auto(AutoBitTiming::default())
+    }
+}
+
 // TODO Default values are not valid
 #[derive(Default)]
 pub struct AutoBitTiming {
     pub baud_rate: u32,
     pub sample_point: u16,
     pub sync_jump_width: u16,
-}
-
-// TODO Default values are not valid
-#[derive(Default)]
-pub struct FastBitTimingConfig {
-    pub calculate_bit_timing_values: bool,
-    pub baud_rate: u32,
-    pub sample_point: u16,
-    pub sync_jump_with: u16,
-    pub prescalar: u16,
-    pub time_segment_1: u8,
-    pub time_segment_2: u8,
-    pub transceiver_delay_offset: u8,
 }
 
 pub(super) const NBTP_NBRP_MSK: usize = 0x1ff;
@@ -201,7 +199,10 @@ pub(super) fn calculate_bit_timing(
     sample_point: u16,
     sjw: u16,
 ) -> BitTiming {
-    info!("module_freq: {module_freq}, baud_rate: {baud_rate}, sample_point: {sample_point}, sync_jump_with: {sjw}");
+    info!(
+        "module_freq: {}, baud_rate: {}, sample_point: {}, sync_jump_with: {}",
+        module_freq, baud_rate, sample_point, sjw
+    );
 
     /* Set values into node */
     let best = get_best_baud_rate(

@@ -106,7 +106,7 @@ impl NodeEffects {
         while unsafe { cccr.read() }.init().get() {}
     }
 
-    pub(super) fn set_bit_timing(&self, timing: &BitTiming) {
+    pub(super) fn set_nominal_bit_timing(&self, timing: &BitTiming) {
         unsafe {
             self.reg.nbtp().modify(|r| {
                 r.nbrp()
@@ -121,22 +121,8 @@ impl NodeEffects {
         }
     }
 
-    pub(super) fn set_bit_timing_values(&self, sjw: u8, time_segment2: u8, time_segment1: u8, prescaler: u16) {
-        unsafe {
-            self.reg.nbtp().modify(|r| {
-                r.nsjw()
-                    .set(sjw)
-                    .ntseg1()
-                    .set(time_segment1)
-                    .ntseg2()
-                    .set(time_segment2)
-                    .nbrp()
-                    .set(prescaler)
-            })
-        };
-    }
-    pub(super) fn set_fast_bit_timing(&self, module_freq: f32, baudrate: u32, sample_point: u16, sjw: u16) {
-        let timing = calculate_fast_bit_timing(module_freq, baudrate, sample_point, sjw);
+    pub(super) fn set_data_bit_timing(&self, timing: &BitTiming) {
+        // TODO Remove unwrap
         unsafe {
             self.reg.dbtp().modify(|r| {
                 r.dbrp()
@@ -149,27 +135,6 @@ impl NodeEffects {
                     .set(timing.tseg2)
             })
         }
-    }
-
-    pub(super) fn set_fast_bit_timing_values(
-        &self,
-        sjw: u8,
-        time_segment2: u8,
-        time_segment1: u8,
-        prescaler: u8,
-    ) {
-        unsafe {
-            self.reg.dbtp().modify(|r| {
-                r.dsjw()
-                    .set(sjw)
-                    .dtseg1()
-                    .set(time_segment1)
-                    .dtseg2()
-                    .set(time_segment2)
-                    .dbrp()
-                    .set(prescaler)
-            })
-        };
     }
 
     pub(super) fn set_tx_buffer_data_field_size(&self, tdbs: Tbds) {

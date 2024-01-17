@@ -65,6 +65,7 @@ pub struct CanNodeConfig {
     pub clock_source: ClockSource,
     pub baud_rate: BitTimingConfig,
     pub fast_baud_rate: FastBitTimingConfig,
+    pub transceiver_delay_offset: u8,
     pub frame_mode: FrameMode,
     pub tx: Option<TxConfig>,
     pub rx_mode: RxMode,
@@ -117,6 +118,12 @@ impl NewCanNode {
         // for CAN FD frames, set fast baud rate
         if config.frame_mode != FrameMode::Standard {
             self.configure_fast_baud_rate(&config.fast_baud_rate);
+        }
+
+        // TODO Check if transceiver_delay_offset is needed only for CAN FD
+        if config.transceiver_delay_offset != 0 {
+            self.effects
+                .set_transceiver_delay_compensation_offset(config.transceiver_delay_offset);
         }
 
         // transmit frame configuration
@@ -278,31 +285,24 @@ impl NewCanNode {
             BitTimingConfig::Manual(baud_rate) => *baud_rate,
         };
 
-        self.effects.set_bit_timing(&bit_timing);
+        self.effects.set_nominal_bit_timing(&bit_timing);
     }
 
     fn configure_fast_baud_rate(&self, baud_rate: &FastBitTimingConfig) {
-        if baud_rate.calculate_bit_timing_values {
-            let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
-            self.effects.set_fast_bit_timing(
-                module_freq,
-                baud_rate.baud_rate,
-                baud_rate.sample_point,
-                baud_rate.sync_jump_with,
-            );
-        } else {
-            self.effects.set_fast_bit_timing_values(
-                baud_rate.sync_jump_with as u8,
-                baud_rate.time_segment_2,
-                baud_rate.time_segment_1,
-                baud_rate.prescalar as u8,
-            );
-        }
+        let bit_timing: BitTiming = match baud_rate {
+            FastBitTimingConfig::Auto(baud_rate) => {
+                let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
+                calculate_fast_bit_timing(
+                    module_freq,
+                    baud_rate.baud_rate,
+                    baud_rate.sample_point,
+                    baud_rate.sync_jump_width,
+                )
+            }
+            FastBitTimingConfig::Manual(baud_rate) => *baud_rate,
+        };
 
-        if baud_rate.transceiver_delay_offset != 0 {
-            self.effects
-                .set_transceiver_delay_compensation_offset(baud_rate.transceiver_delay_offset);
-        }
+        self.effects.set_data_bit_timing(&bit_timing);
     }
 
     #[inline]
