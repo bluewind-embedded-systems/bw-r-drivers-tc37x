@@ -22,6 +22,7 @@ use tc37x_pac::RegisterValue;
 // TODO Default values are not valid
 #[derive(Default)]
 pub struct BaudRate {
+    pub calculate_bit_timing_values: bool,
     pub baud_rate: u32,
     pub sample_point: u16,
     // TODO fix typo (sync_jump_width)
@@ -34,6 +35,7 @@ pub struct BaudRate {
 // TODO Default values are not valid
 #[derive(Default)]
 pub struct FastBaudRate {
+    pub calculate_bit_timing_values: bool,
     pub baud_rate: u32,
     pub sample_point: u16,
     pub sync_jump_with: u16,
@@ -88,7 +90,6 @@ pub enum RxMode {
 pub struct CanNodeConfig {
     pub clock_source: ClockSource,
     // TODO Use an enum instead of bool+struct (eg: AutoBitTiming and BitTiming)
-    pub calculate_bit_timing_values: bool,
     pub baud_rate: BaudRate,
     pub fast_baud_rate: FastBaudRate,
     pub frame_mode: FrameMode,
@@ -138,26 +139,25 @@ impl NewCanNode {
 
         self.effects.enable_configuration_change();
 
-        self.configure_baud_rate(config.calculate_bit_timing_values, &config.baud_rate);
+        self.configure_baud_rate(&config.baud_rate);
 
         // for CAN FD frames, set fast baud rate
         if config.frame_mode != FrameMode::Standard {
-            self.configure_fast_baud_rate(
-                config.calculate_bit_timing_values,
-                &config.fast_baud_rate,
-            );
+            self.configure_fast_baud_rate(&config.fast_baud_rate);
         }
 
         // transmit frame configuration
         if let Some(tx_config) = &config.tx {
             self.set_tx_buffer_data_field_size(tx_config.buffer_data_field_size);
-            self.effects.set_tx_buffer_start_address(config.message_ram.tx_buffers_start_address);
+            self.effects
+                .set_tx_buffer_start_address(config.message_ram.tx_buffers_start_address);
 
             let mode = tx_config.mode;
 
             match mode {
                 TxMode::DedicatedBuffers | TxMode::SharedFifo | TxMode::SharedQueue => {
-                    self.effects.set_dedicated_tx_buffers_number(tx_config.dedicated_tx_buffers_number);
+                    self.effects
+                        .set_dedicated_tx_buffers_number(tx_config.dedicated_tx_buffers_number);
                     if let TxMode::SharedFifo | TxMode::SharedQueue = mode {
                         if let TxMode::SharedFifo = mode {
                             self.set_transmit_fifo_queue_mode(TxMode::Fifo);
@@ -165,17 +165,21 @@ impl NewCanNode {
                         if let TxMode::SharedQueue = mode {
                             self.set_transmit_fifo_queue_mode(TxMode::Queue);
                         }
-                        self.effects.set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
+                        self.effects
+                            .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
                     }
                     for id in 0..tx_config.dedicated_tx_buffers_number + tx_config.fifo_queue_size {
-                        self.effects.enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+                        self.effects
+                            .enable_tx_buffer_transmission_interrupt(TxBufferId(id));
                     }
                 }
                 TxMode::Fifo | TxMode::Queue => {
                     self.set_transmit_fifo_queue_mode(mode);
-                    self.effects.set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
+                    self.effects
+                        .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
                     for id in 0..tx_config.fifo_queue_size {
-                        self.effects.enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+                        self.effects
+                            .enable_tx_buffer_transmission_interrupt(TxBufferId(id));
                     }
                 }
             }
@@ -184,7 +188,8 @@ impl NewCanNode {
                 self.effects.set_tx_event_fifo_start_address(
                     config.message_ram.tx_event_fifo_start_address,
                 );
-                self.effects.set_tx_event_fifo_size(tx_config.event_fifo_size);
+                self.effects
+                    .set_tx_event_fifo_size(tx_config.event_fifo_size);
             } else {
                 crate::log::error!("Invalid event fifo size: {}", tx_config.event_fifo_size);
             }
@@ -247,8 +252,10 @@ impl NewCanNode {
         self.effects.set_rx_fifo0_data_field_size(data.field_size);
         self.effects.set_rx_fifo0_start_address(data.start_address);
         self.effects.set_rx_fifo0_size(data.size);
-        self.effects.set_rx_fifo0_operating_mode(data.operation_mode);
-        self.effects.set_rx_fifo0_watermark_level(data.watermark_level);
+        self.effects
+            .set_rx_fifo0_operating_mode(data.operation_mode);
+        self.effects
+            .set_rx_fifo0_watermark_level(data.watermark_level);
     }
 
     fn set_tx_fifo(&self, buffers: DedicatedData, fifo_size: u8) {
@@ -259,7 +266,8 @@ impl NewCanNode {
 
     fn set_inner_tx_buffers(&self, dedicated: DedicatedData) {
         self.set_tx_buffer_data_field_size(dedicated.field_size);
-        self.effects.set_tx_buffer_start_address(dedicated.start_address);
+        self.effects
+            .set_tx_buffer_start_address(dedicated.start_address);
     }
 
     fn set_inner_tx_fifo_queue(&self, mode: TxMode, size: u8) {
@@ -269,7 +277,8 @@ impl NewCanNode {
 
     fn set_inner_tx_int(&self, size: u8) {
         for id in 0..size {
-            self.effects.enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+            self.effects
+                .enable_tx_buffer_transmission_interrupt(TxBufferId(id));
         }
     }
 
@@ -282,8 +291,8 @@ impl NewCanNode {
         }
     }
 
-    fn configure_baud_rate(&self, calculate_bit_timing_values: bool, baud_rate: &BaudRate) {
-        if calculate_bit_timing_values {
+    fn configure_baud_rate(&self, baud_rate: &BaudRate) {
+        if baud_rate.calculate_bit_timing_values {
             let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
 
             info!(
@@ -308,12 +317,8 @@ impl NewCanNode {
         }
     }
 
-    fn configure_fast_baud_rate(
-        &self,
-        calculate_bit_timing_values: bool,
-        baud_rate: &FastBaudRate,
-    ) {
-        if calculate_bit_timing_values {
+    fn configure_fast_baud_rate(&self, baud_rate: &FastBaudRate) {
+        if baud_rate.calculate_bit_timing_values {
             let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
             self.effects.set_fast_bit_timing(
                 module_freq,
@@ -331,7 +336,8 @@ impl NewCanNode {
         }
 
         if baud_rate.transceiver_delay_offset != 0 {
-            self.effects.set_transceiver_delay_compensation_offset(baud_rate.transceiver_delay_offset);
+            self.effects
+                .set_transceiver_delay_compensation_offset(baud_rate.transceiver_delay_offset);
         }
     }
 
@@ -939,7 +945,8 @@ impl CanNode {
 
     #[inline]
     pub fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: TxBufferId) -> bool {
-        self.effects.is_tx_buffer_transmission_occured(tx_buffer_id.0)
+        self.effects
+            .is_tx_buffer_transmission_occured(tx_buffer_id.0)
     }
 
     pub fn get_rx_element_address(

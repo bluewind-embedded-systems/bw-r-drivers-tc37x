@@ -23,7 +23,7 @@ fn setup_can() -> Result<CanNode, ()> {
 
     let can_node = can_module.take_node(NodeId::new(0))?;
     let mut cfg = CanNodeConfig::default();
-    cfg.calculate_bit_timing_values = true;
+    cfg.baud_rate.calculate_bit_timing_values = true;
     cfg.baud_rate.baud_rate = 1_000_000;
     cfg.baud_rate.sync_jump_with = 3;
     cfg.baud_rate.sample_point = 8_000;
