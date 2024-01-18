@@ -81,22 +81,25 @@ impl NodeId {
     }
 }
 
+ // TODO Do not use Can0 type
 pub struct NewCanNode {
-    module: Module,
+    module: Module<crate::pac::can0::Can0>,
     node_id: NodeId,
     effects: NodeEffects,
 }
 
+ // TODO Do not use Can0 type
 pub struct Node {
-    module: Module,
+    module: Module<crate::pac::can0::Can0>,
     node_id: NodeId,
     effects: NodeEffects,
     frame_mode: FrameMode,
 }
 
 impl Node {
+    // TODO Do not use Can0 type
     /// Only a module can create a node. This function is only accessible from within this crate.
-    pub(crate) fn new(module: Module, node_id: NodeId) -> NewCanNode {
+    pub(crate) fn new(module: Module<crate::pac::can0::Can0>, node_id: NodeId) -> NewCanNode {
         let effects = NodeEffects::new(module.registers().node(node_id.0.into()));
         NewCanNode {
             module,

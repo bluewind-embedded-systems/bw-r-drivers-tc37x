@@ -1,29 +1,8 @@
 use super::can_node::{NewCanNode, Node, NodeId};
 use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
+use core::marker::PhantomData;
 use core::ops::Deref;
-use tc37x_pac::can0::Mcr;
-
-// TODO Remove Copy+Clone traits, we don't want to copy this
-#[derive(Clone, Copy)]
-struct CanRegisters(pac::can0::Can0);
-
-impl CanRegisters {
-    const fn can0() -> Self {
-        Self(pac::CAN0)
-    }
-    const fn can1() -> Self {
-        Self(unsafe { core::mem::transmute(pac::CAN1) })
-    }
-}
-
-impl Deref for CanRegisters {
-    type Target = pac::can0::Can0;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
 
 #[derive(Clone, Copy)]
 pub enum ModuleId {
@@ -34,30 +13,25 @@ pub enum ModuleId {
 #[derive(Default)]
 pub struct ModuleConfig {}
 
-pub struct NewCanModule {
-    id: ModuleId,
-    inner: CanRegisters,
-}
+pub struct NewCanModule<T>(PhantomData<T>);
 
-pub struct Module {
-    id: ModuleId,
-    inner: CanRegisters,
-}
+pub struct Module<T>(PhantomData<T>);
 
-impl NewCanModule {
-    pub fn enable(self) -> Result<Module, ()> {
+macro_rules! can_module {
+    ($reg:ident, $m:ident, $Reg:ty, $id: expr) => {
+impl NewCanModule<$Reg> {
+    pub fn enable(self) -> Result<Module<$Reg>, ()> {
         if !self.is_enabled() {
             self.enable_module();
         }
 
-        Ok(Module {
-            inner: self.inner,
-            id: self.id,
-        })
+        let module = Module::<$Reg>(PhantomData);
+
+        Ok(module)
     }
 
     pub fn is_enabled(&self) -> bool {
-        !unsafe { self.inner.clc().read() }.diss().get()
+        !unsafe { $reg.clc().read() }.diss().get()
     }
 
     pub fn enable_module(&self) {
@@ -65,40 +39,30 @@ impl NewCanModule {
 
         scu::wdt::clear_cpu_endinit_inline(passw);
 
-        unsafe { self.inner.clc().modify_atomic(|r| r.disr().set(false)) };
+        unsafe { $reg.clc().modify_atomic(|r| r.disr().set(false)) };
         while !self.is_enabled() {}
 
         scu::wdt::set_cpu_endinit_inline(passw);
     }
 }
 
-impl Module {
-    pub const fn new(id: ModuleId) -> NewCanModule {
-        let inner = match id {
-            ModuleId::Can0 => CanRegisters::can0(),
-            ModuleId::Can1 => CanRegisters::can1(),
-        };
-
-        // TODO Use id to select the correct CAN module
-        NewCanModule {
-            inner,
-            id,
-        }
+impl Module<$Reg> {
+    pub const fn new() -> NewCanModule<$Reg> {
+        NewCanModule::<$Reg>(PhantomData)
     }
 
     pub fn take_node(&mut self, node_id: NodeId) -> Result<NewCanNode, ()> {
         // Instead of dealing with lifetimes, we just create a new instance of CanModule
         // TODO This is not ideal, but it works for now
         // TODO Remember the node has been taken and return None on next call
-        let module = Module {
-            inner: self.inner,
-            id: self.id,
-        };
+        // TODO Avoid transmute, return the right type
+        let module = Module::<$Reg>(PhantomData);
+        let module = unsafe { core::mem::transmute(module) };
         Ok(Node::new(module, node_id))
     }
 
     pub fn id(&self) -> ModuleId {
-        self.id
+        $id
     }
 
     pub(crate) fn set_clock_source(
@@ -149,17 +113,39 @@ impl Module {
         Ok(())
     }
 
+    // TODO Return the right type (avoid transmute)
     pub(crate) fn registers(&self) -> &pac::can0::Can0 {
-        &self.inner
+        unsafe { core::mem::transmute(&$reg) }
     }
 
-    fn read_mcr(&self) -> Mcr {
-        unsafe { self.inner.mcr().read() }
+    fn read_mcr(&self) -> $m::Mcr {
+        unsafe { $reg.mcr().read() }
     }
 
-    fn write_mcr(&self, mcr: Mcr) {
-        unsafe { self.inner.mcr().write(mcr) }
+    fn write_mcr(&self, mcr: $m::Mcr) {
+        unsafe { $reg.mcr().write(mcr) }
     }
+}
+    };
+}
+
+use crate::pac::can0;
+use crate::pac::can1;
+use crate::pac::can0::Can0;
+use crate::pac::can1::Can1;
+use crate::pac::CAN0;
+use crate::pac::CAN1;
+can_module!(CAN0, can0, Can0, ModuleId::Can0);
+can_module!(CAN1, can1, Can1, ModuleId::Can1);
+
+// TODO Should remember if the module has been taken
+pub fn can_module0() -> NewCanModule<Can0> {
+    NewCanModule::<Can0>(PhantomData)
+}
+
+// TODO Should remember if the module has been taken
+pub fn can_module1() -> NewCanModule<Can1> {
+    NewCanModule::<Can1>(PhantomData)
 }
 
 pub(crate) struct ClockSelect(u8);
