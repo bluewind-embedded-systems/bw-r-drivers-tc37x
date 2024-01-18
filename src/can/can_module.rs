@@ -1,7 +1,29 @@
 use super::can_node::{NewCanNode, Node, NodeId};
 use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
+use core::ops::Deref;
 use tc37x_pac::can0::Mcr;
+
+// TODO Remove Copy+Clone traits, we don't want to copy this
+#[derive(Clone, Copy)]
+struct CanRegisters(pac::can0::Can0);
+
+impl CanRegisters {
+    const fn can0() -> Self {
+        Self(pac::CAN0)
+    }
+    const fn can1() -> Self {
+        Self(unsafe { core::mem::transmute(pac::CAN1) })
+    }
+}
+
+impl Deref for CanRegisters {
+    type Target = pac::can0::Can0;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 #[derive(Clone, Copy)]
 pub enum ModuleId {
@@ -14,12 +36,12 @@ pub struct ModuleConfig {}
 
 pub struct NewCanModule {
     id: ModuleId,
-    inner: pac::can0::Can0,
+    inner: CanRegisters,
 }
 
 pub struct Module {
     id: ModuleId,
-    inner: pac::can0::Can0,
+    inner: CanRegisters,
 }
 
 impl NewCanModule {
@@ -52,9 +74,14 @@ impl NewCanModule {
 
 impl Module {
     pub const fn new(id: ModuleId) -> NewCanModule {
+        let inner = match id {
+            ModuleId::Can0 => CanRegisters::can0(),
+            ModuleId::Can1 => CanRegisters::can1(),
+        };
+
         // TODO Use id to select the correct CAN module
         NewCanModule {
-            inner: pac::CAN0,
+            inner,
             id,
         }
     }
