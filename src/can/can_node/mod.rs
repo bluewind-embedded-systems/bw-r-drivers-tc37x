@@ -15,7 +15,9 @@ use crate::log::{info, HexSlice};
 use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
 use core::mem::transmute;
+use tc37x_pac::can0::Can0;
 use tc37x_pac::can0::node::txesc::Tbds;
+use tc37x_pac::can1::Can1;
 use tc37x_pac::hidden::RegValue;
 use tc37x_pac::RegisterValue;
 
@@ -82,24 +84,27 @@ impl NodeId {
 }
 
  // TODO Do not use Can0 type
-pub struct NewCanNode {
-    module: Module<crate::pac::can0::Can0>,
+pub struct NewCanNode<T> {
+    module: Module<T>,
     node_id: NodeId,
     effects: NodeEffects,
 }
 
  // TODO Do not use Can0 type
-pub struct Node {
-    module: Module<crate::pac::can0::Can0>,
+pub struct Node<T> {
+    module: Module<T>,
     node_id: NodeId,
     effects: NodeEffects,
     frame_mode: FrameMode,
 }
 
-impl Node {
+macro_rules! can_node {
+    ($Reg:ty) => {
+
+impl Node<$Reg> {
     // TODO Do not use Can0 type
     /// Only a module can create a node. This function is only accessible from within this crate.
-    pub(crate) fn new(module: Module<crate::pac::can0::Can0>, node_id: NodeId) -> NewCanNode {
+    pub(crate) fn new(module: Module<$Reg>, node_id: NodeId) -> NewCanNode<$Reg> {
         let effects = NodeEffects::new(module.registers().node(node_id.0.into()));
         NewCanNode {
             module,
@@ -109,8 +114,8 @@ impl Node {
     }
 }
 
-impl NewCanNode {
-    pub fn configure(self, config: NodeConfig) -> Result<Node, ()> {
+impl NewCanNode<$Reg> {
+    pub fn configure(self, config: NodeConfig) -> Result<Node<$Reg>, ()> {
         self.module
             .set_clock_source(self.node_id.into(), config.clock_source)?;
 
@@ -352,6 +357,8 @@ impl NewCanNode {
             // TODO Add other lines and can modules
             (ModuleId::Can0, InterruptLine(0)) => unsafe { transmute(src.can0int0()) },
             (ModuleId::Can0, InterruptLine(1)) => unsafe { transmute(src.can0int1()) },
+            (ModuleId::Can1, InterruptLine(0)) => unsafe { transmute(src.can1int0()) },
+            (ModuleId::Can1, InterruptLine(1)) => unsafe { transmute(src.can1int1()) },
             _ => unreachable!(),
         };
 
@@ -402,7 +409,148 @@ impl NewCanNode {
     }
 }
 
-impl Node {}
+impl Node<$Reg> {
+    pub fn transmit(&self, frame: &Frame) -> Result<(), ()> {
+        let buffer_id = self.get_tx_fifo_queue_put_index();
+        self.transmit_inner(buffer_id, frame.id, false, false, false, frame.data)
+    }
+
+    pub fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
+        let id = self.effects.get_tx_fifo_queue_put_index();
+        TxBufferId::new_const(id)
+    }
+
+    // TODO Use a meaningful error type
+    #[allow(unused_variables)]
+    fn transmit_inner(
+        &self,
+        buffer_id: TxBufferId,
+        id: MessageId,
+        tx_event_fifo_control: bool,
+        remote_transmit_request: bool,
+        error_state_indicator: bool,
+        data: &[u8],
+    ) -> Result<(), ()> {
+        info!("transmit_inner");
+
+        // TODO list errors
+        if self.effects.is_tx_buffer_request_pending(buffer_id) {
+            return Err(());
+        }
+
+        // FIXME Use real base address
+        //let ram_base_address = 0xF0200000u32;
+        let ram_base_address = self.module.ram_base_address() as u32;
+
+        // FIXME Use real start address
+        let tx_buffers_start_address = 0x0440u16;
+
+        let tx_buf_el =
+            self.get_tx_element_address(ram_base_address, tx_buffers_start_address, buffer_id);
+
+        tx_buf_el.set_msg_id(id);
+
+        if tx_event_fifo_control {
+            tx_buf_el.set_tx_event_fifo_ctrl(tx_event_fifo_control);
+            tx_buf_el.set_message_marker(buffer_id);
+        }
+
+        tx_buf_el.set_remote_transmit_req(remote_transmit_request);
+
+        if let FrameMode::FdLong | FrameMode::FdLongAndFast = self.frame_mode {
+            tx_buf_el.set_err_state_indicator(error_state_indicator)
+        }
+
+        let data_len: u8 = data.len().try_into().map_err(|_| ())?;
+        let dlc = DataLenghtCode::try_from(data_len)?;
+
+        tx_buf_el.set_data_length(dlc);
+        tx_buf_el.write_tx_buf_data(dlc, data.as_ptr());
+        tx_buf_el.set_frame_mode_req(self.frame_mode);
+        self.effects.set_tx_buffer_add_request(buffer_id);
+
+        info!("transmit {}#{}", id.data, HexSlice::from(data));
+
+        Ok(())
+    }
+}
+
+// IfxLld_Can_Std_Rx_Element_Functions
+impl Node<$Reg> {
+    pub fn get_rx_fifo0_get_index(&self) -> RxBufferId {
+        let id = self.effects.get_rx_fifo0_get_index();
+        RxBufferId::new_const(id)
+    }
+
+    pub fn get_rx_fifo1_get_index(&self) -> RxBufferId {
+        let id = self.effects.get_rx_fifo1_get_index();
+        RxBufferId::new_const(id)
+    }
+
+    #[inline]
+    pub fn set_rx_buffer_data_field_size(&self, size: DataFieldSize) {
+        self.effects.set_rx_buffer_data_field_size(size);
+    }
+
+    pub fn is_rx_buffer_new_data_updated(&self, rx_buffer_id: RxBufferId) -> bool {
+        self.effects.is_rx_buffer_new_data_updated(rx_buffer_id.0)
+    }
+}
+
+// IfxLld_Can_Std_Tx_Element_Functions
+impl Node<$Reg> {
+    #[inline]
+    pub fn is_tx_buffer_cancellation_finished(&self, tx_buffer_id: TxBufferId) -> bool {
+        self.is_tx_buffer_transmission_occured(tx_buffer_id)
+    }
+
+    #[inline]
+    pub fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: TxBufferId) -> bool {
+        self.effects
+            .is_tx_buffer_transmission_occured(tx_buffer_id.0)
+    }
+
+    pub fn get_rx_element_address(
+        &self,
+        ram_base_address: u32,
+        tx_buffers_start_address: u16,
+        buf_from: ReadFrom,
+        buffer_number: RxBufferId,
+    ) -> Rx {
+        let num_of_config_bytes = 8u32;
+        let num_of_data_bytes = self.effects.get_data_field_size(buf_from) as u32;
+        let tx_buffer_size = num_of_config_bytes + num_of_data_bytes;
+        let tx_buffer_index = tx_buffer_size * u32::from(buffer_number);
+
+        let tx_buffer_element_address =
+            ram_base_address + tx_buffers_start_address as u32 + tx_buffer_index;
+
+        Rx::new(tx_buffer_element_address as *mut u8)
+    }
+
+    pub fn get_tx_element_address(
+        &self,
+        ram_base_address: u32,
+        tx_buffers_start_address: u16,
+        buffer_number: TxBufferId,
+    ) -> Tx {
+        let num_of_config_bytes = 8u32;
+        let num_of_data_bytes = self.effects.get_tx_buffer_data_field_size() as u32;
+        let tx_buffer_size = num_of_config_bytes + num_of_data_bytes;
+        let tx_buffer_index = tx_buffer_size * u32::from(buffer_number);
+
+        let tx_buffer_element_address =
+            ram_base_address + tx_buffers_start_address as u32 + tx_buffer_index;
+
+        Tx::new(tx_buffer_element_address as *mut u8)
+    }
+}
+    }
+}
+
+can_node!(Can0);
+can_node!(Can1);
+
 
 #[derive(Clone, Copy)]
 pub struct FifoData {
@@ -815,142 +963,6 @@ impl TxdOut {
 }
 
 pub type Priority = u8;
-
-impl Node {
-    pub fn transmit(&self, frame: &Frame) -> Result<(), ()> {
-        let buffer_id = self.get_tx_fifo_queue_put_index();
-        self.transmit_inner(buffer_id, frame.id, false, false, false, frame.data)
-    }
-
-    pub fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
-        let id = self.effects.get_tx_fifo_queue_put_index();
-        TxBufferId::new_const(id)
-    }
-
-    // TODO Use a meaningful error type
-    #[allow(unused_variables)]
-    fn transmit_inner(
-        &self,
-        buffer_id: TxBufferId,
-        id: MessageId,
-        tx_event_fifo_control: bool,
-        remote_transmit_request: bool,
-        error_state_indicator: bool,
-        data: &[u8],
-    ) -> Result<(), ()> {
-        info!("transmit_inner");
-
-        // TODO list errors
-        if self.effects.is_tx_buffer_request_pending(buffer_id) {
-            return Err(());
-        }
-
-        // FIXME Use real base address
-        let ram_base_address = 0xF0200000u32;
-
-        // FIXME Use real start address
-        let tx_buffers_start_address = 0x0440u16;
-
-        let tx_buf_el =
-            self.get_tx_element_address(ram_base_address, tx_buffers_start_address, buffer_id);
-
-        tx_buf_el.set_msg_id(id);
-
-        if tx_event_fifo_control {
-            tx_buf_el.set_tx_event_fifo_ctrl(tx_event_fifo_control);
-            tx_buf_el.set_message_marker(buffer_id);
-        }
-
-        tx_buf_el.set_remote_transmit_req(remote_transmit_request);
-
-        if let FrameMode::FdLong | FrameMode::FdLongAndFast = self.frame_mode {
-            tx_buf_el.set_err_state_indicator(error_state_indicator)
-        }
-
-        let data_len: u8 = data.len().try_into().map_err(|_| ())?;
-        let dlc = DataLenghtCode::try_from(data_len)?;
-
-        tx_buf_el.set_data_length(dlc);
-        tx_buf_el.write_tx_buf_data(dlc, data.as_ptr());
-        tx_buf_el.set_frame_mode_req(self.frame_mode);
-        self.effects.set_tx_buffer_add_request(buffer_id);
-
-        info!("transmit {}#{}", id.data, HexSlice::from(data));
-
-        Ok(())
-    }
-}
-
-// IfxLld_Can_Std_Rx_Element_Functions
-impl Node {
-    pub fn get_rx_fifo0_get_index(&self) -> RxBufferId {
-        let id = self.effects.get_rx_fifo0_get_index();
-        RxBufferId::new_const(id)
-    }
-
-    pub fn get_rx_fifo1_get_index(&self) -> RxBufferId {
-        let id = self.effects.get_rx_fifo1_get_index();
-        RxBufferId::new_const(id)
-    }
-
-    #[inline]
-    pub fn set_rx_buffer_data_field_size(&self, size: DataFieldSize) {
-        self.effects.set_rx_buffer_data_field_size(size);
-    }
-
-    pub fn is_rx_buffer_new_data_updated(&self, rx_buffer_id: RxBufferId) -> bool {
-        self.effects.is_rx_buffer_new_data_updated(rx_buffer_id.0)
-    }
-}
-
-// IfxLld_Can_Std_Tx_Element_Functions
-impl Node {
-    #[inline]
-    pub fn is_tx_buffer_cancellation_finished(&self, tx_buffer_id: TxBufferId) -> bool {
-        self.is_tx_buffer_transmission_occured(tx_buffer_id)
-    }
-
-    #[inline]
-    pub fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: TxBufferId) -> bool {
-        self.effects
-            .is_tx_buffer_transmission_occured(tx_buffer_id.0)
-    }
-
-    pub fn get_rx_element_address(
-        &self,
-        ram_base_address: u32,
-        tx_buffers_start_address: u16,
-        buf_from: ReadFrom,
-        buffer_number: RxBufferId,
-    ) -> Rx {
-        let num_of_config_bytes = 8u32;
-        let num_of_data_bytes = self.effects.get_data_field_size(buf_from) as u32;
-        let tx_buffer_size = num_of_config_bytes + num_of_data_bytes;
-        let tx_buffer_index = tx_buffer_size * u32::from(buffer_number);
-
-        let tx_buffer_element_address =
-            ram_base_address + tx_buffers_start_address as u32 + tx_buffer_index;
-
-        Rx::new(tx_buffer_element_address as *mut u8)
-    }
-
-    pub fn get_tx_element_address(
-        &self,
-        ram_base_address: u32,
-        tx_buffers_start_address: u16,
-        buffer_number: TxBufferId,
-    ) -> Tx {
-        let num_of_config_bytes = 8u32;
-        let num_of_data_bytes = self.effects.get_tx_buffer_data_field_size() as u32;
-        let tx_buffer_size = num_of_config_bytes + num_of_data_bytes;
-        let tx_buffer_index = tx_buffer_size * u32::from(buffer_number);
-
-        let tx_buffer_element_address =
-            ram_base_address + tx_buffers_start_address as u32 + tx_buffer_index;
-
-        Tx::new(tx_buffer_element_address as *mut u8)
-    }
-}
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum MessageIdLenght {

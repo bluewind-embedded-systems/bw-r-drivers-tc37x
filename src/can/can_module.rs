@@ -3,6 +3,7 @@ use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
 use core::marker::PhantomData;
 use core::ops::Deref;
+use crate::log::info;
 
 #[derive(Clone, Copy)]
 pub enum ModuleId {
@@ -51,14 +52,12 @@ impl Module<$Reg> {
         NewCanModule::<$Reg>(PhantomData)
     }
 
-    pub fn take_node(&mut self, node_id: NodeId) -> Result<NewCanNode, ()> {
+    pub fn take_node(&mut self, node_id: NodeId) -> Result<NewCanNode<$Reg>, ()> {
         // Instead of dealing with lifetimes, we just create a new instance of CanModule
         // TODO This is not ideal, but it works for now
         // TODO Remember the node has been taken and return None on next call
-        // TODO Avoid transmute, return the right type
         let module = Module::<$Reg>(PhantomData);
-        let module = unsafe { core::mem::transmute(module) };
-        Ok(Node::new(module, node_id))
+        Ok(Node::<$Reg>::new(module, node_id))
     }
 
     pub fn id(&self) -> ModuleId {
@@ -70,6 +69,8 @@ impl Module<$Reg> {
         clock_select: ClockSelect,
         clock_source: ClockSource,
     ) -> Result<(), ()> {
+        info!("Read mcr {}", $reg.mcr().ptr());
+
         let mcr = self.read_mcr();
 
         // Enable CCCE and CI
@@ -124,6 +125,10 @@ impl Module<$Reg> {
 
     fn write_mcr(&self, mcr: $m::Mcr) {
         unsafe { $reg.mcr().write(mcr) }
+    }
+
+    pub(crate) fn ram_base_address(&self) -> usize {
+        $reg.0 as usize
     }
 }
     };

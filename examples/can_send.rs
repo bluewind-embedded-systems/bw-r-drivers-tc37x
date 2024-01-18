@@ -9,16 +9,18 @@ tc37x_rt::entry!(main);
 
 use core::time::Duration;
 use embedded_can::ExtendedId;
+use tc37x_hal::can::can_module0;
 use tc37x_hal::can::{
-    can_module0, AutoBitTiming, BitTimingConfig, DataFieldSize, Frame, Node, NodeConfig, NodeId,
-    TxConfig, TxMode,
+    AutoBitTiming, BitTimingConfig, DataFieldSize, Frame, Node, NodeConfig, NodeId, TxConfig,
+    TxMode,
 };
 use tc37x_hal::cpu::asm::enable_interrupts;
 use tc37x_hal::gpio::GpioExt;
 use tc37x_hal::log::info;
 use tc37x_hal::{pac, ssw};
+use tc37x_pac::can0::Can0;
 
-fn setup_can() -> Result<Node, ()> {
+fn setup_can() -> Result<Node<Can0>, ()> {
     let can_module = can_module0();
     let mut can_module = can_module.enable()?;
 
@@ -71,6 +73,13 @@ fn main() -> ! {
     let mut led1 = gpio00.p00_5.into_push_pull_output();
 
     info!("Create can module ... ");
+
+    // info!("CAN0 MCR: {:?}", unsafe { CAN0.mcr().read() }.get_raw());
+    // info!("CAN1 MCR: {:?}", unsafe { CAN0.mcr().read() }.bits());
+
+    // loop {
+    //
+    // }
 
     init_can_stb_pin();
 
