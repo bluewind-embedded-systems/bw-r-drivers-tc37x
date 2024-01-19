@@ -105,12 +105,12 @@ macro_rules! can_node {
 impl Node<$Reg> {
     // TODO Do not use Can0 type
     /// Only a module can create a node. This function is only accessible from within this crate.
-    pub(crate) fn new(module: Module<$Reg>, node_id: NodeId) -> NewCanNode<$Reg> {
-        let reg = *module.registers(); 
-        let effects = NodeEffects::<$Reg>::new(reg, node_id);
+    pub(crate) fn new(module: Module<$Reg>, id: NodeId) -> NewCanNode<$Reg> {
+        let memory = *module.registers(); 
+        let effects = NodeEffects::<$Reg>{reg:memory, node_id:id}; 
         NewCanNode {
             module,
-            node_id,
+            node_id:id,
             effects,
         }
     }
@@ -120,7 +120,6 @@ impl NewCanNode<$Reg> {
     pub fn configure(self, config: NodeConfig) -> Result<Node<$Reg>, ()> {
         self.module
             .set_clock_source(self.node_id.into(), config.clock_source)?;
-        let reg =self.module.registers();
         self.effects.enable_configuration_change();
 
         self.configure_baud_rate(&config.baud_rate);
@@ -427,7 +426,7 @@ impl Node<$Reg> {
         info!("transmit_inner");
 
         // TODO list errors
-        if self.effects.is_tx_buffer_request_pending(buffer_id) {
+        if self.effects.is_tx_buffer_request_pending() {
             return Err(());
         }
 
@@ -460,7 +459,7 @@ impl Node<$Reg> {
         tx_buf_el.set_data_length(dlc);
         tx_buf_el.write_tx_buf_data(dlc, data.as_ptr());
         tx_buf_el.set_frame_mode_req(self.frame_mode);
-        self.effects.set_tx_buffer_add_request(buffer_id);
+        self.effects.set_tx_buffer_add_request(/*buffer_id*/);
 
         info!("transmit {}#{}", id.data, HexSlice::from(data));
 
