@@ -426,7 +426,7 @@ impl Node<$Reg> {
         info!("transmit_inner");
 
         // TODO list errors
-        if self.effects.is_tx_buffer_request_pending() {
+        if self.effects.is_tx_buffer_request_pending(buffer_id) {
             return Err(());
         }
 
