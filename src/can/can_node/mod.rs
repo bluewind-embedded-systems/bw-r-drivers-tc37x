@@ -87,14 +87,15 @@ impl NodeId {
 pub struct NewCanNode<T> {
     module: Module<T>,
     node_id: NodeId,
-    effects: NodeEffects,
+    effects: NodeEffects<T>,
 }
 
  // TODO Do not use Can0 type
 pub struct Node<T> {
+
     module: Module<T>,
     node_id: NodeId,
-    effects: NodeEffects,
+    effects: NodeEffects<T>,
     frame_mode: FrameMode,
 }
 
@@ -105,7 +106,8 @@ impl Node<$Reg> {
     // TODO Do not use Can0 type
     /// Only a module can create a node. This function is only accessible from within this crate.
     pub(crate) fn new(module: Module<$Reg>, node_id: NodeId) -> NewCanNode<$Reg> {
-        let effects = NodeEffects::new(module.registers().node(node_id.0.into()));
+        let reg = *module.registers(); 
+        let effects = NodeEffects::<$Reg>::new(reg, node_id);
         NewCanNode {
             module,
             node_id,
@@ -118,7 +120,7 @@ impl NewCanNode<$Reg> {
     pub fn configure(self, config: NodeConfig) -> Result<Node<$Reg>, ()> {
         self.module
             .set_clock_source(self.node_id.into(), config.clock_source)?;
-
+        let reg =self.module.registers();
         self.effects.enable_configuration_change();
 
         self.configure_baud_rate(&config.baud_rate);
@@ -236,8 +238,9 @@ impl NewCanNode<$Reg> {
         })
     }
 
-    fn set_rx_fifo0(&self, data: FifoData) {
-        self.effects.set_rx_fifo0_data_field_size(data.field_size);
+    fn set_rx_fifo0(&self, data: FifoData) {    
+        // TODO impl conversion DataFieldSize to u8 
+        self.effects.set_rx_fifo0_data_field_size(data.field_size.into_register_value());
         self.effects.set_rx_fifo0_start_address(data.start_address);
         self.effects.set_rx_fifo0_size(data.size);
         self.effects
@@ -315,18 +318,8 @@ impl NewCanNode<$Reg> {
 
     #[inline]
     pub fn set_tx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
-        info!("Data field size: {}", data_field_size as u8);
-        let tdbs = match data_field_size {
-            DataFieldSize::_8 => Tbds::TBDS_BUFFERSIZE8,
-            DataFieldSize::_12 => Tbds::TBDS_BUFFERSIZE12,
-            DataFieldSize::_16 => Tbds::TBDS_BUFFERSIZE16,
-            DataFieldSize::_20 => Tbds::TBDS_BUFFERSIZE20,
-            DataFieldSize::_24 => Tbds::TBDS_BUFFERSIZE24,
-            DataFieldSize::_32 => Tbds::TBDS_BUFFERSIZE32,
-            DataFieldSize::_48 => Tbds::TBDS_BUFFERSIZE48,
-            DataFieldSize::_64 => Tbds::TBDS_BUFFERSIZE64,
-        };
-        self.effects.set_tx_buffer_data_field_size(tdbs);
+        info!("Data field size: {}", data_field_size.into_register_value());
+        self.effects.set_tx_buffer_data_field_size(data_field_size.into_register_value());
     }
 
     fn set_frame_mode(&self, frame_mode: FrameMode) {
@@ -489,7 +482,7 @@ impl Node<$Reg> {
 
     #[inline]
     pub fn set_rx_buffer_data_field_size(&self, size: DataFieldSize) {
-        self.effects.set_rx_buffer_data_field_size(size);
+        self.effects.set_rx_buffer_data_field_size(size.into_register_value());
     }
 
     pub fn is_rx_buffer_new_data_updated(&self, rx_buffer_id: RxBufferId) -> bool {
@@ -549,7 +542,7 @@ impl Node<$Reg> {
 }
 
 can_node!(Can0);
-can_node!(Can1);
+//can_node!(Can1);
 
 
 #[derive(Clone, Copy)]
@@ -579,6 +572,22 @@ pub enum DataFieldSize {
     _32,
     _48,
     _64,
+}
+
+impl DataFieldSize {
+    fn into_register_value(self) ->  u8 {      
+        let value = match self {
+            DataFieldSize::_8  => 0,
+            DataFieldSize::_12 => 1,
+            DataFieldSize::_16 => 2,
+            DataFieldSize::_20 => 3,
+            DataFieldSize::_24 => 4,
+            DataFieldSize::_32 => 5,
+            DataFieldSize::_48 => 6,
+            DataFieldSize::_64 => 7,
+        };
+        value
+    }
 }
 
 #[derive(Clone, Copy)]

@@ -69,8 +69,7 @@ impl Module<$Reg> {
         clock_select: ClockSelect,
         clock_source: ClockSource,
     ) -> Result<(), ()> {
-        info!("Read mcr {}", $reg.mcr().ptr());
-
+        
         let mcr = self.read_mcr();
 
         // Enable CCCE and CI
@@ -115,8 +114,8 @@ impl Module<$Reg> {
     }
 
     // TODO Return the right type (avoid transmute)
-    pub(crate) fn registers(&self) -> &pac::can0::Can0 {
-        unsafe { core::mem::transmute(&$reg) }
+    pub(crate) fn registers(&self) -> &$Reg {
+        &$reg
     }
 
     fn read_mcr(&self) -> $m::Mcr {
@@ -140,8 +139,10 @@ use crate::pac::can0::Can0;
 use crate::pac::can1::Can1;
 use crate::pac::CAN0;
 use crate::pac::CAN1;
+
+
 can_module!(CAN0, can0, Can0, ModuleId::Can0);
-can_module!(CAN1, can1, Can1, ModuleId::Can1);
+//can_module!(CAN1, can1, Can1, ModuleId::Can1);
 
 // TODO Should remember if the module has been taken
 pub fn can_module0() -> NewCanModule<Can0> {
