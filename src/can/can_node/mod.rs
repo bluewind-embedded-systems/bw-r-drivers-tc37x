@@ -16,9 +16,7 @@ use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
 use core::mem::transmute;
 use tc37x_pac::can0::Can0;
-use tc37x_pac::can0::node::txesc::Tbds;
 use tc37x_pac::can1::Can1;
-use tc37x_pac::hidden::RegValue;
 use tc37x_pac::RegisterValue;
 
 #[derive(PartialEq, Debug, Default, Copy, Clone)]
