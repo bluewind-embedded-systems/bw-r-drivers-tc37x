@@ -1,3 +1,6 @@
+// FIXME Remove
+#![allow(dead_code)]
+
 use tc37x_pac::{self as pac};
 
 fn rststat_stbyr_to_bool(reg: pac::scu::rststat::Stbyr) -> bool {
