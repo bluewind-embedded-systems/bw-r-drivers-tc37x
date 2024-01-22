@@ -28,7 +28,7 @@ fn rststat_porst_to_bool(reg: pac::scu::rststat::Porst) -> bool {
 #[cfg(target_arch = "tricore")]
 #[inline]
 pub fn is_application_reset() -> bool {
-    use tc37x_pac::hidden::RegValue;
+    use tc37x_pac::RegisterValue;
     use tc37x_pac::SCU;
 
     let v = unsafe { SCU.rststat().read() };
@@ -50,9 +50,9 @@ pub fn is_application_reset() -> bool {
         | rststat_porst_to_bool(v.porst().get())
     {
         false
-    } else if (v.data() & APP_RESET_MSK) > 0 {
-        let v = v.data() & APP_RESET_MSK;
-        let v = (unsafe { SCU.rstcon().read() }.data() >> ((31 - v.leading_zeros()) << 1)) & 3;
+    } else if (v.get_raw() & APP_RESET_MSK) > 0 {
+        let v = v.get_raw() & APP_RESET_MSK;
+        let v = (unsafe { SCU.rstcon().read() }.get_raw() >> ((31 - v.leading_zeros()) << 1)) & 3;
         v == 2
     } else if rststat_cb3_to_bool(v.cb3().get()) {
         true
