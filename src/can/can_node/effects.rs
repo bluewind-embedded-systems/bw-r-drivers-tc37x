@@ -7,7 +7,6 @@ use crate::can::can_node::{
 use crate::can::msg::{ReadFrom, RxBufferId, TxBufferId};
 use crate::can::{DataFieldSize, Module, ModuleId, TxMode};
 use crate::pac;
-use tc37x_pac::can0::n::dbtpi::Tdc;
 use tc37x_pac::can0::Can0;
 use tc37x_pac::can1::Can1;
 use tc37x_pac::hidden::RegValue;
@@ -17,16 +16,14 @@ use super::NodeId;
 
 pub(super) struct NodeEffects<T> {
     pub(crate) reg: T,
-    pub(crate) node_id: NodeId,
+    pub(crate) node_id: NodeId, // TODO Is this necessary?
 }
 
-const CCE_FALSE: tc37x_pac::can0::n::cccri::Cce = tc37x_pac::can0::n::cccri::Cce::CONST_00;
-const CCE_TRUE: tc37x_pac::can0::n::cccri::Cce = tc37x_pac::can0::n::cccri::Cce::CONST_11;
-const INIT_FALSE: tc37x_pac::can0::n::cccri::Init = tc37x_pac::can0::n::cccri::Init::CONST_00;
-const INIT_TRUE: tc37x_pac::can0::n::cccri::Init = tc37x_pac::can0::n::cccri::Init::CONST_11;
+macro_rules! can_node_effect {
+    ($NodeReg:path) => {
 
-impl NodeEffects<pac::can0::N> {
-    pub(crate) fn new_node<T>(reg: pac::can0::N, node_id: NodeId) -> NodeEffects<pac::can0::N> {
+impl NodeEffects<$NodeReg> {
+    pub(crate) fn new_node(reg: $NodeReg, node_id: NodeId) -> NodeEffects<$NodeReg> {
         NodeEffects {
             reg,
             node_id,
@@ -34,8 +31,7 @@ impl NodeEffects<pac::can0::N> {
     }
 
     pub(crate) fn set_rx_fifo0_data_field_size(&self, size: u8) {
-        use pac::can0::n::rx::rxesci::F0Ds;
-        unsafe { self.reg.rx().rxesci().modify(|r| r.f0ds().set(F0Ds(size))) };
+        unsafe { self.reg.rx().rxesci().modify(|r| r.f0ds().set(size.into())) };
     }
 
     pub(crate) fn set_rx_fifo0_start_address(&self, address: u16) {
@@ -118,7 +114,7 @@ impl NodeEffects<pac::can0::N> {
             self.reg
                 .tx()
                 .txbci()
-                .modify(|r| r.tfqs().set(tc37x_pac::can0::n::tx::txbci::Tfqs(number)))
+                .modify(|r| r.tfqs().set(number.into()))
         };
     }
 
@@ -126,28 +122,28 @@ impl NodeEffects<pac::can0::N> {
     pub(crate) fn enable_configuration_change(&self) {
         let cccr = self.reg.cccri();
 
-        if unsafe { cccr.read() }.init().get() == INIT_TRUE {
-            unsafe { cccr.modify(|r| r.cce().set(CCE_FALSE)) };
-            while !{ unsafe { cccr.read() }.cce().get() == CCE_FALSE } {}
-            unsafe { cccr.modify(|r| r.init().set(INIT_FALSE)) };
-            while !{ unsafe { cccr.read() }.init().get() == INIT_FALSE } {}
+        if unsafe { cccr.read() }.init().get().0 == 1u8 {
+            unsafe { cccr.modify(|r| r.cce().set(0u8.into())) };
+            while !{ unsafe { cccr.read() }.cce().get().0 == 0u8 } {}
+            unsafe { cccr.modify(|r| r.init().set(0u8.into())) };
+            while !{ unsafe { cccr.read() }.init().get().0 == 0u8 } {}
         }
 
-        unsafe { cccr.modify(|r| r.init().set(INIT_TRUE)) };
-        while !{ unsafe { cccr.read() }.init().get() == INIT_TRUE } {}
+        unsafe { cccr.modify(|r| r.init().set(1u8.into())) };
+        while !{ unsafe { cccr.read() }.init().get().0 == 1u8 } {}
 
-        unsafe { cccr.modify(|r| r.cce().set(CCE_TRUE).init().set(INIT_TRUE)) };
+        unsafe { cccr.modify(|r| r.cce().set(1u8.into()).init().set(1u8.into())) };
     }
 
     // TODO Return a different type which does not implement methods needing configuration change enabled
     pub(crate) fn disable_configuration_change(&self) {
         let cccr = self.reg.cccri();
 
-        unsafe { cccr.modify(|r| r.cce().set(CCE_FALSE)) };
-        while !{ unsafe { cccr.read() }.cce().get() == CCE_FALSE } {}
+        unsafe { cccr.modify(|r| r.cce().set(0u8.into())) };
+        while !{ unsafe { cccr.read() }.cce().get().0 == 0u8 } {}
 
-        unsafe { cccr.modify(|r| r.init().set(INIT_FALSE)) };
-        while !{ unsafe { cccr.read() }.init().get() == INIT_FALSE } {}
+        unsafe { cccr.modify(|r| r.init().set(0u8.into())) };
+        while !{ unsafe { cccr.read() }.init().get().0 == 0u8 } {}
     }
 
     pub(crate) fn set_nominal_bit_timing(&self, timing: &BitTiming) {
@@ -200,7 +196,7 @@ impl NodeEffects<pac::can0::N> {
     }
 
     pub(crate) fn set_transceiver_delay_compensation_offset(&self, delay: u8) {
-        unsafe { self.reg.dbtpi().modify(|r| r.tdc().set(Tdc::CONST_11)) };
+        unsafe { self.reg.dbtpi().modify(|r| r.tdc().set(1u8.into())) };
         unsafe { self.reg.tdcri().modify(|r| r.tdco().set(delay)) };
     }
 
@@ -433,3 +429,9 @@ impl NodeEffects<pac::can0::N> {
         }
     }
 }
+
+}
+}
+
+can_node_effect!(pac::can0::N);
+can_node_effect!(pac::can1::N);

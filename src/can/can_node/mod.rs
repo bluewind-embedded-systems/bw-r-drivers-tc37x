@@ -548,6 +548,7 @@ impl Node<$NodeReg, $ModuleReg> {
 }
 
 can_node!(crate::pac::can0::Can0, crate::pac::can0::N);
+can_node!(crate::pac::can1::Can1, crate::pac::can1::N);
 
 #[derive(Clone, Copy)]
 pub struct FifoData {

@@ -4,7 +4,6 @@ use crate::{pac, scu};
 use core::marker::PhantomData;
 use core::ops::Deref;
 use crate::log::info;
-use pac::can0::mcr::{Clksel0, Clksel1, Clksel2, Clksel3};
 use pac::hidden::CastFrom;
 
 #[derive(Clone, Copy)]
@@ -71,7 +70,8 @@ impl Module<$Reg> {
         clock_select: ClockSelect,
         clock_source: ClockSource,
     ) -> Result<(), ()> {
-        
+        use $m::mcr::{Ccce, Ci, Clksel0, Clksel1, Clksel2, Clksel3};
+
         let mcr = self.read_mcr();
 
         // Enable CCCE and CI
@@ -92,7 +92,7 @@ impl Module<$Reg> {
         self.write_mcr(mcr);
 
         // Disable CCCE and CI
-        let mcr = mcr.ccce().set(pac::can0::mcr::Ccce::CONST_11).ci().set(pac::can0::mcr::Ci::CONST_11);
+        let mcr = mcr.ccce().set(Ccce::CONST_11).ci().set(Ci::CONST_11);
         self.write_mcr(mcr);
 
         // TODO Is this enough or we need to wait until actual_clock_source == clock_source
