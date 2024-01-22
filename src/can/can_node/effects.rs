@@ -6,10 +6,8 @@ use crate::can::can_node::{
 };
 use crate::can::msg::{ReadFrom, RxBufferId, TxBufferId};
 use crate::can::{DataFieldSize, Module, ModuleId, TxMode};
-use tc37x_pac::can0::node::txesc::Tbds;
-use tc37x_pac::can0::{Can0, Node};
+use tc37x_pac::can0::Can0;
 use tc37x_pac::can1::Can1;
-use tc37x_pac::hidden::RegValue;
 use tc37x_pac::RegisterValue;
 
 use super::NodeId;
