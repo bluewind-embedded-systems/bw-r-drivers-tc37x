@@ -54,12 +54,12 @@ impl Module<$Reg> {
         NewCanModule::<$Reg>(PhantomData)
     }
 
-    pub fn take_node(&mut self, node_id: NodeId) -> Result<NewCanNode<$Reg>, ()> {
+    pub fn take_node(&mut self, node_id: NodeId) -> Result<NewCanNode<$m::N, $Reg>, ()> {
         // Instead of dealing with lifetimes, we just create a new instance of CanModule
         // TODO This is not ideal, but it works for now
         // TODO Remember the node has been taken and return None on next call
         let module = Module::<$Reg>(PhantomData);
-        Ok(Node::<$Reg>::new(module, node_id))
+        Ok(Node::<$m::N, $Reg>::new(module, node_id))
     }
 
     pub fn id(&self) -> ModuleId {
@@ -162,7 +162,7 @@ pub(crate) struct ClockSelect(u8);
 
 impl From<NodeId> for ClockSelect {
     fn from(node_id: NodeId) -> Self {
-        Self(node_id.0)
+        Self(node_id.into())
     }
 }
 

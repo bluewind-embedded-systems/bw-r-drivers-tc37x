@@ -26,10 +26,10 @@ const INIT_FALSE: tc37x_pac::can0::n::cccri::Init = tc37x_pac::can0::n::cccri::I
 const INIT_TRUE: tc37x_pac::can0::n::cccri::Init = tc37x_pac::can0::n::cccri::Init::CONST_11;
 
 impl NodeEffects<pac::can0::N> {
-    pub(crate) fn new_node<T>(node_registers: pac::can0::N) -> NodeEffects<pac::can0::N> {
+    pub(crate) fn new_node<T>(reg: pac::can0::N, node_id: NodeId) -> NodeEffects<pac::can0::N> {
         NodeEffects {
-            reg: node_registers,
-            node_id: NodeId(0),
+            reg,
+            node_id,
         }
     }
 

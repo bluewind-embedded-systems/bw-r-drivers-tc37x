@@ -15,8 +15,7 @@ use crate::log::{info, HexSlice};
 use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
 use core::mem::transmute;
-use tc37x_pac::can0::Can0;
-use tc37x_pac::can1::Can1;
+use tc37x_pac::hidden::RegValue;
 use tc37x_pac::RegisterValue;
 
 #[derive(PartialEq, Debug, Default, Copy, Clone)]
@@ -39,7 +38,7 @@ pub enum FrameType
     RemoteAnswer,
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, PartialEq)]
 pub enum TxMode {
     #[default]
     DedicatedBuffers,
@@ -72,40 +71,49 @@ pub struct NodeConfig {
     pub message_ram: MessageRAM,
 }
 
-#[derive(Copy, Clone, Debug)]
-pub struct NodeId(pub(crate) u8);
+#[derive(Clone, Copy)]
+pub enum NodeId {
+    Node0,
+    Node1,
+    Node2,
+    Node3,
+}
 
-impl NodeId {
-    pub const fn new(n: u8) -> Self {
-        Self(n)
+impl Into<u8> for NodeId {
+    fn into(self) -> u8 {
+        match self {
+            NodeId::Node0 => 0,
+            NodeId::Node1 => 1,
+            NodeId::Node2 => 2,
+            NodeId::Node3 => 3,
+        }
     }
 }
 
- // TODO Do not use Can0 type
-pub struct NewCanNode<T> {
-    module: Module<T>,
+pub struct NewCanNode<N, M> {
+    module: Module<M>,
     node_id: NodeId,
-    effects: NodeEffects<T>,
+    effects: NodeEffects<N>,
 }
 
- // TODO Do not use Can0 type
-pub struct Node<T> {
-
-    module: Module<T>,
+pub struct Node<N, M> {
+    module: Module<M>,
     node_id: NodeId,
-    effects: NodeEffects<T>,
+    effects: NodeEffects<N>,
     frame_mode: FrameMode,
 }
 
 macro_rules! can_node {
-    ($Reg:ty) => {
+    ($ModuleReg:ty, $NodeReg:path) => {
 
-impl Node<$Reg> {
+impl Node<$NodeReg, $ModuleReg> {
     // TODO Do not use Can0 type
     /// Only a module can create a node. This function is only accessible from within this crate.
-    pub(crate) fn new(module: Module<$Reg>, id: NodeId) -> NewCanNode<$Reg> {
-        let memory = *module.registers(); 
-        let effects = NodeEffects::<$Reg>{reg:memory, node_id:id}; 
+    pub(crate) fn new(module: Module<$ModuleReg>, id: NodeId) -> NewCanNode<$NodeReg, $ModuleReg> {
+        let node_index : u8 = id.into();
+        let node_index : usize = node_index.into();
+        let node_reg = module.registers().n()[node_index];
+        let effects = NodeEffects::<$NodeReg>{reg:node_reg, node_id:id};
         NewCanNode {
             module,
             node_id:id,
@@ -114,8 +122,8 @@ impl Node<$Reg> {
     }
 }
 
-impl NewCanNode<$Reg> {
-    pub fn configure(self, config: NodeConfig) -> Result<Node<$Reg>, ()> {
+impl NewCanNode<$NodeReg, $ModuleReg> {
+    pub fn configure(self, config: NodeConfig) -> Result<Node<$NodeReg, $ModuleReg>, ()> {
         self.module
             .set_clock_source(self.node_id.into(), config.clock_source)?;
         self.effects.enable_configuration_change();
@@ -399,7 +407,7 @@ impl NewCanNode<$Reg> {
     }
 }
 
-impl Node<$Reg> {
+impl Node<$NodeReg, $ModuleReg> {
     pub fn transmit(&self, frame: &Frame) -> Result<(), ()> {
         let buffer_id = self.get_tx_fifo_queue_put_index();
         self.transmit_inner(buffer_id, frame.id, false, false, false, frame.data)
@@ -466,7 +474,7 @@ impl Node<$Reg> {
 }
 
 // IfxLld_Can_Std_Rx_Element_Functions
-impl Node<$Reg> {
+impl Node<$NodeReg, $ModuleReg> {
     pub fn get_rx_fifo0_get_index(&self) -> RxBufferId {
         let id = self.effects.get_rx_fifo0_get_index();
         RxBufferId::new_const(id)
@@ -488,7 +496,7 @@ impl Node<$Reg> {
 }
 
 // IfxLld_Can_Std_Tx_Element_Functions
-impl Node<$Reg> {
+impl Node<$NodeReg, $ModuleReg> {
     #[inline]
     pub fn is_tx_buffer_cancellation_finished(&self, tx_buffer_id: TxBufferId) -> bool {
         self.is_tx_buffer_transmission_occured(tx_buffer_id)
@@ -661,11 +669,11 @@ pub enum Tos {
 }
 
 const RXD00B_P20_7_IN: RxdIn =
-    RxdIn::new(ModuleId::Can0, NodeId(0), PortNumber::_20, 7, RxSel::_B);
+    RxdIn::new(ModuleId::Can0, NodeId::Node0, PortNumber::_20, 7, RxSel::_B);
 
 const TXD00_P20_8_OUT: TxdOut = TxdOut::new(
     ModuleId::Can0,
-    NodeId(0),
+    NodeId::Node0,
     PortNumber::_20,
     8,
     OutputIdx::ALT5,
@@ -673,7 +681,7 @@ const TXD00_P20_8_OUT: TxdOut = TxdOut::new(
 
 const TXD00_P20_6_OUT: TxdOut = TxdOut::new(
     ModuleId::Can0,
-    NodeId(0),
+    NodeId::Node0,
     PortNumber::_20,
     6,
     OutputIdx::GENERAL,
