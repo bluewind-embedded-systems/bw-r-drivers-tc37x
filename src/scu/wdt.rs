@@ -16,7 +16,7 @@ pub fn get_cpu_watchdog_password() -> u16 {
 
 #[inline]
 pub fn get_safety_watchdog_password() -> u16 {
-    let password = unsafe { pac::SCU.wdtscon0().read() }.pw().get();
+    let password = unsafe { pac::SCU.wdts().wdtscon0().read() }.pw().get();
     password ^ 0x003F
 }
 
@@ -154,14 +154,18 @@ pub fn set_cpu_endinit_inline_cpu0(password: u16) {
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
+fn wdtscon0lock_to_bool(reg: pac::scu::wdts::wdtscon0::Lck) -> bool {
+    reg == pac::scu::wdts::wdtscon0::Lck::CONST_11
+}
+
 #[inline]
 pub fn clear_safety_endinit_inline(password: u16) {
-    let con0 = pac::SCU.wdtscon0();
+    let con0 = pac::SCU.wdts().wdtscon0();
 
-    if unsafe { con0.read() }.lck().get() {
-        unsafe { con0.modify(|r| r.endinit().set(true).lck().set(false).pw().set(password)) };
+    if wdtscon0lock_to_bool(unsafe { con0.read() }.lck().get()) {
+        unsafe { con0.modify(|r| r.endinit().set(pac::scu::wdts::wdtscon0::Endinit::CONST_11).lck().set(pac::scu::wdts::wdtscon0::Lck::CONST_00).pw().set(password)) };
     }
-    unsafe { con0.modify(|r| r.endinit().set(false).lck().set(true).pw().set(password)) }
+    unsafe { con0.modify(|r| r.endinit().set(pac::scu::wdts::wdtscon0::Endinit::CONST_00).lck().set(pac::scu::wdts::wdtscon0::Lck::CONST_11).pw().set(password)) }
 
     #[cfg(tricore_arch = "tricore")]
     while unsafe { con0.read() }.endinit().get() {}
@@ -237,28 +241,30 @@ pub fn set_cpu_endinit_inline_cpu2(password: u16) {
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
-#[inline]
-pub fn clear_safety_endinit_inline_cpu0(password: u16) {
-    let con0 = pac::SCU.wdtscon0();
+// TODO check function clear_safety_endinit_inline
+// #[inline]
+// pub fn clear_safety_endinit_inline_cpu0(password: u16) {
+//     let con0 = pac::SCU.wdts().wdtscon0();
 
-    if unsafe { con0.read() }.lck().get() {
-        unsafe { con0.modify(|r| r.endinit().set(true).lck().set(false).pw().set(password)) };
-    }
-    unsafe { con0.modify(|r| r.endinit().set(false).lck().set(true).pw().set(password)) }
+//     if unsafe { con0.read() }.lck().get() {
+//         unsafe { con0.modify(|r| r.endinit().set(true).lck().set(false).pw().set(password)) };
+//     }
+//     unsafe { con0.modify(|r| r.endinit().set(false).lck().set(true).pw().set(password)) }
 
-    #[cfg(tricore_arch = "tricore")]
-    while unsafe { con0.read() }.endinit().get() {}
-}
+//     #[cfg(tricore_arch = "tricore")]
+//     while unsafe { con0.read() }.endinit().get() {}
+// }
 
+// TODO check function clear_safety_endinit_inline
 #[inline]
 pub fn set_safety_endinit_inline(password: u16) {
-    let con0 = pac::SCU.wdtscon0();
+    let con0 = pac::SCU.wdts().wdtscon0();
 
-    if unsafe { con0.read() }.lck().get() {
-        unsafe { con0.modify(|r| r.endinit().set(true).lck().set(false).pw().set(password)) };
+    if wdtscon0lock_to_bool(unsafe { con0.read() }.lck().get()) {
+        unsafe { con0.modify(|r| r.endinit().set(pac::scu::wdts::wdtscon0::Endinit::CONST_11).lck().set(pac::scu::wdts::wdtscon0::Lck::CONST_00).pw().set(password)) };
     }
 
-    unsafe { con0.modify(|r| r.endinit().set(true).lck().set(true).pw().set(password)) }
+    unsafe { con0.modify(|r| r.endinit().set(pac::scu::wdts::wdtscon0::Endinit::CONST_00).lck().set(pac::scu::wdts::wdtscon0::Lck::CONST_11).pw().set(password)) }
     #[cfg(tricore_arch = "tricore")]
     while !unsafe { con0.read() }.endinit().get() {}
 }

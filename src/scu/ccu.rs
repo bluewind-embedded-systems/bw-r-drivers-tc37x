@@ -5,6 +5,7 @@
 use super::wdt;
 use crate::log::{debug, info};
 use tc37x_pac::hidden::RegValue;
+use tc37x_pac::scu;
 use tc37x_pac::{RegisterValue, SCU, SMU};
 
 const SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT: usize = 0x3000;
@@ -31,17 +32,72 @@ pub fn init(config: &Config) -> Result<(), InitError> {
 
 fn wait_ccucon0_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-        unsafe { SCU.ccucon0().read() }.lck().get()
+        unsafe { SCU.ccucon0().read() }.lck().get() == scu::ccucon0::Lck::CONST_11
     })
 }
 
-fn set_pll_power(power: bool) -> Result<(), ()> {
-    unsafe { SCU.syspllcon0().modify(|r| r.pllpwd().set(power)) };
-    unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(power)) };
+fn wait_ccucon1_lock() -> Result<(), ()> {
+    wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
+        unsafe { SCU.ccucon1().read() }.lck().get() == scu::ccucon1::Lck::CONST_11
+    })
+}
+
+fn wait_ccucon2_lock() -> Result<(), ()> {
+    wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
+        unsafe { SCU.ccucon2().read() }.lck().get() == scu::ccucon2::Lck::CONST_11
+    })
+}
+
+fn wait_ccucon5_lock() -> Result<(), ()> {
+    wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
+        unsafe { SCU.ccucon5().read() }.lck().get() == scu::ccucon5::Lck::CONST_11
+    })
+}
+
+fn syspllpwd_to_bool(reg: scu::syspllcon0::Pllpwd) -> bool {
+    reg == scu::syspllcon0::Pllpwd::CONST_11
+}
+fn perpllpwd_to_bool(reg: scu::perpllcon0::Pllpwd) -> bool {
+    reg == scu::perpllcon0::Pllpwd::CONST_11
+}
+fn syspllpwdstat_to_bool(reg: scu::syspllstat::Pwdstat) -> bool {
+    reg == scu::syspllstat::Pwdstat::CONST_11
+}
+fn sysplllock_to_bool(reg: scu::syspllstat::Lock) -> bool {
+    reg == scu::syspllstat::Lock::CONST_11
+}
+fn perplllock_to_bool(reg: scu::perpllstat::Lock) -> bool {
+    reg == scu::perpllstat::Lock::CONST_11
+}
+fn perpllpwdstat_to_bool(reg: scu::perpllstat::Pwdstat) -> bool {
+    reg == scu::perpllstat::Pwdstat::CONST_11
+}
+fn syspllk2rdy_to_bool(reg: scu::syspllstat::K2Rdy) -> bool {
+    reg == scu::syspllstat::K2Rdy::CONST_11
+}
+fn perpllk2rdy_to_bool(reg: scu::perpllstat::K2Rdy) -> bool {
+    reg == scu::perpllstat::K2Rdy::CONST_11
+}
+fn perpllk3rdy_to_bool(reg: scu::perpllstat::K3Rdy) -> bool {
+    reg == scu::perpllstat::K3Rdy::CONST_11
+}
+fn perplldivby_to_bool(reg: scu::perpllcon0::Divby) -> bool {
+    reg == scu::perpllcon0::Divby::CONST_11
+}
+fn oscconplllv_to_bool(reg: scu::osccon::Plllv) -> bool {
+    reg == scu::osccon::Plllv::CONST_11
+}
+fn oscconpllhv_to_bool(reg: scu::osccon::Pllhv) -> bool {
+    reg == scu::osccon::Pllhv::CONST_11
+}
+
+fn set_pll_power(syspllpower: scu::syspllcon0::Pllpwd, perpllpower: scu::perpllcon0::Pllpwd) -> Result<(), ()> {
+    unsafe { SCU.syspllcon0().modify(|r| r.pllpwd().set(syspllpower)) };
+    unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(perpllpower)) };
 
     wait_cond(SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT, || {
-        power == unsafe { SCU.syspllstat().read() }.pwdstat().get()
-            || power == unsafe { SCU.perpllstat().read() }.pwdstat().get()
+        syspllpwd_to_bool(syspllpower) == syspllpwdstat_to_bool(unsafe { SCU.syspllstat().read() }.pwdstat().get())
+            || perpllpwd_to_bool(perpllpower) == perpllpwdstat_to_bool(unsafe { SCU.perpllstat().read() }.pwdstat().get())
     })
 }
 
@@ -57,7 +113,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     // TODO Explain this
     unsafe {
         SCU.ccucon0()
-            .modify(|r| r.clksel().set(CLKSEL_BACKUP).up().set(true))
+            .modify(|r| r.clksel().set(scu::ccucon0::Clksel(CLKSEL_BACKUP)).up().set(scu::ccucon0::Up::CONST_11))
     };
     wait_ccucon0_lock()?;
 
@@ -76,7 +132,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     // Power down the both the PLLs before configuring registers
     // Both the PLLs are powered down to be sure for asynchronous PLL registers
     // update cause no glitches.
-    set_pll_power(false)?;
+    set_pll_power(scu::syspllcon0::Pllpwd::CONST_00, scu::perpllcon0::Pllpwd::CONST_00)?;
 
     let plls_params = &config.pll_initial_step.plls_parameters;
 
@@ -94,7 +150,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
 
         unsafe {
             SCU.osccon()
-                .modify(|r| r.mode().set(mode).oscval().set(oscval))
+                .modify(|r| r.mode().set(scu::osccon::Mode(mode)).oscval().set(oscval))
         };
     }
 
@@ -106,7 +162,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
                 .ndiv()
                 .set(plls_params.sys_pll.n_divider)
                 .insel()
-                .set(plls_params.pll_input_clock_selection as u8)
+                .set(scu::syspllcon0::Insel(plls_params.pll_input_clock_selection as u8))
         })
     }
 
@@ -114,7 +170,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     unsafe {
         SCU.perpllcon0().modify(|r| {
             r.divby()
-                .set(plls_params.per_pll.k3_divider_bypass != 0)
+                .set(scu::perpllcon0::Divby(plls_params.per_pll.k3_divider_bypass))
                 .pdiv()
                 .set(plls_params.per_pll.p_divider)
                 .ndiv()
@@ -122,18 +178,18 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         })
     }
 
-    set_pll_power(true)?;
+    set_pll_power(scu::syspllcon0::Pllpwd::CONST_11, scu::perpllcon0::Pllpwd::CONST_11)?;
 
     wait_cond(PLL_KRDY_TIMEOUT_COUNT, || {
-        unsafe { SCU.syspllstat().read() }.k2rdy().get() || {
+        syspllk2rdy_to_bool(unsafe { SCU.syspllstat().read() }.k2rdy().get()) || {
             let stat = unsafe { SCU.perpllstat().read() };
-            stat.k2rdy().get() || stat.k3rdy().get()
+            perpllk2rdy_to_bool(stat.k2rdy().get()) || perpllk3rdy_to_bool(stat.k3rdy().get())
         }
     })?;
 
     wait_cond(OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT, || {
         let osccon = unsafe { SCU.osccon().read() };
-        !osccon.plllv().get() && !osccon.pllhv().get()
+        !oscconplllv_to_bool(osccon.plllv().get()) && !oscconpllhv_to_bool(osccon.pllhv().get())
     })?;
 
     // Start PLL locking for latest set values
@@ -142,8 +198,8 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         unsafe { SCU.perpllcon0().modify(|r| r.resld().set(true)) };
 
         wait_cond(PLL_LOCK_TIMEOUT_COUNT, || {
-            !unsafe { SCU.syspllstat().read() }.lock().get()
-                || !unsafe { SCU.perpllstat().read() }.lock().get()
+            !sysplllock_to_bool(unsafe { SCU.syspllstat().read() }.lock().get())
+                || !perplllock_to_bool(unsafe { SCU.perpllstat().read() }.lock().get())
         })?;
     }
 
@@ -162,9 +218,9 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
 
         let ccucon0 = unsafe { SCU.ccucon0().read() }
             .clksel()
-            .set(CLKSEL_PLL)
+            .set(scu::ccucon0::Clksel(CLKSEL_PLL))
             .up()
-            .set(true);
+            .set(scu::ccucon0::Up::CONST_11);
 
         wait_ccucon0_lock()?;
 
@@ -190,7 +246,7 @@ pub fn modulation_init(config: &Config) -> Result<(), ()> {
                 .modify(|r| r.modcfg().set((0x3 << 10) | rgain_p.rgain_hex))
         };
 
-        unsafe { SCU.syspllcon0().modify(|r| r.moden().set(true)) };
+        unsafe { SCU.syspllcon0().modify(|r| r.moden().set(scu::syspllcon0::Moden::CONST_11)) };
 
         wdt::set_safety_endinit_inline(endinit_sfty_pw);
     }
@@ -232,23 +288,18 @@ pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         *cuccon0.data_mut_ref() |=
             config.clock_distribution.ccucon0.mask & config.clock_distribution.ccucon0.value;
 
-        wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-            unsafe { SCU.ccucon0().read() }.lck().get()
-        })?;
+        wait_ccucon0_lock()?;
 
         unsafe { SCU.ccucon0().write(cuccon0) };
 
-        wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-            unsafe { SCU.ccucon0().read() }.lck().get()
-        })?;
+        wait_ccucon0_lock()?;
     }
     // CCUCON1 config
     {
         let mut ccucon1 = unsafe { SCU.ccucon1().read() };
-        if ccucon1.clkselmcan().get() !=  0 /*ccucon1::Clkselmcan::CLKSELMCAN_STOPPED*/
-            || ccucon1.clkselmsc().get() != 1/*ccucon1::Clkselmsc::CLKSELMSC_STOPPED*/
-            || ccucon1.clkselqspi().get() != 2
-        /*ccucon1::Clkselqspi::CLKSELQSPI_STOPPED*/
+        if ccucon1.clkselmcan().get() !=  scu::ccucon1::Clkselmcan::CONST_00 /*ccucon1::Clkselmcan::CLKSELMCAN_STOPPED*/
+            || ccucon1.clkselmsc().get() != scu::ccucon1::Clkselmsc::CONST_11 /*ccucon1::Clkselmsc::CLKSELMSC_STOPPED*/
+            || ccucon1.clkselqspi().get() != scu::ccucon1::Clkselqspi::CONST_22 /*ccucon1::Clkselqspi::CLKSELQSPI_STOPPED*/
         {
             *ccucon1.data_mut_ref() &= !config.clock_distribution.ccucon1.mask;
             *ccucon1.data_mut_ref() |=
@@ -256,19 +307,15 @@ pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
 
             ccucon1 = ccucon1
                 .clkselmcan()
-                .set(0 /*ccucon1::Clkselmcan::CLKSELMCAN_STOPPED*/)
+                .set(scu::ccucon1::Clkselmcan::CONST_00 /*ccucon1::Clkselmcan::CLKSELMCAN_STOPPED*/)
                 .clkselmsc()
-                .set(1 /*ccucon1::Clkselmsc::CLKSELMSC_STOPPED*/)
+                .set(scu::ccucon1::Clkselmsc::CONST_11 /*ccucon1::Clkselmsc::CLKSELMSC_STOPPED*/)
                 .clkselqspi()
-                .set(2 /*ccucon1::Clkselqspi::CLKSELQSPI_STOPPED*/);
+                .set(scu::ccucon1::Clkselqspi::CONST_22 /*ccucon1::Clkselqspi::CLKSELQSPI_STOPPED*/);
 
-            wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-                unsafe { SCU.ccucon1().read() }.lck().get()
-            })?;
+            wait_ccucon1_lock()?;
             unsafe { SCU.ccucon1().write(ccucon1) };
-            wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-                unsafe { SCU.ccucon1().read() }.lck().get()
-            })?;
+            wait_ccucon1_lock()?;
         }
 
         ccucon1 = unsafe { SCU.ccucon1().read() };
@@ -276,19 +323,15 @@ pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         *ccucon1.data_mut_ref() |=
             config.clock_distribution.ccucon1.mask & config.clock_distribution.ccucon1.value;
 
-        wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-            unsafe { SCU.ccucon1().read() }.lck().get()
-        })?;
+        wait_ccucon1_lock()?;
         unsafe { SCU.ccucon1().write(ccucon1) };
-        wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-            unsafe { SCU.ccucon1().read() }.lck().get()
-        })?;
+        wait_ccucon1_lock()?;
     }
 
     // CCUCON2 config
     {
         let mut ccucon2 = unsafe { SCU.ccucon2().read() };
-        if ccucon2.clkselasclins().get() != 0
+        if ccucon2.clkselasclins().get() != scu::ccucon2::Clkselasclins::CONST_00
         /*scu::Ccucon2::Clkselasclins::CLKSELASCLINS_STOPPED*/
         {
             ccucon2 = unsafe { SCU.ccucon2().read() };
@@ -297,18 +340,14 @@ pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
                 config.clock_distribution.ccucon2.mask & config.clock_distribution.ccucon2.value;
 
             ccucon2 = ccucon2.clkselasclins().set(
-                0, /*scu::ccucon2::Clkselasclins::CLKSELASCLINS_STOPPED*/
+                scu::ccucon2::Clkselasclins::CONST_00, /*scu::ccucon2::Clkselasclins::CLKSELASCLINS_STOPPED*/
             );
 
-            wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-                unsafe { SCU.ccucon2().read() }.lck().get()
-            })?;
+            wait_ccucon2_lock()?;
 
             unsafe { SCU.ccucon2().write(ccucon2) };
 
-            wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-                unsafe { SCU.ccucon2().read() }.lck().get()
-            })?;
+            wait_ccucon2_lock()?;
         }
 
         ccucon2 = unsafe { SCU.ccucon2().read() };
@@ -316,13 +355,9 @@ pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         *ccucon2.data_mut_ref() |=
             config.clock_distribution.ccucon2.mask & config.clock_distribution.ccucon2.value;
 
-        wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-            unsafe { SCU.ccucon2().read() }.lck().get()
-        })?;
+        wait_ccucon2_lock()?;
         unsafe { SCU.ccucon2().write(ccucon2) };
-        wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-            unsafe { SCU.ccucon2().read() }.lck().get()
-        })?;
+        wait_ccucon2_lock()?;
     }
 
     // CUCCON5 config
@@ -331,17 +366,13 @@ pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         *ccucon5.data_mut_ref() &= !config.clock_distribution.ccucon5.mask;
         *ccucon5.data_mut_ref() |=
             config.clock_distribution.ccucon5.mask & config.clock_distribution.ccucon5.value;
-        ccucon5 = ccucon5.up().set(true);
+        ccucon5 = ccucon5.up().set(scu::ccucon5::Up::CONST_11);
 
-        wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-            unsafe { SCU.ccucon5().read() }.lck().get()
-        })?;
+        wait_ccucon5_lock()?;
 
         unsafe { SCU.ccucon5().write(ccucon5) };
 
-        wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-            unsafe { SCU.ccucon5().read() }.lck().get()
-        })?;
+        wait_ccucon5_lock()?;
     }
 
     // CUCCON6 config
@@ -392,7 +423,7 @@ pub fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
         wdt::clear_safety_endinit_inline(endinit_sfty_pw);
 
         wait_cond(PLL_KRDY_TIMEOUT_COUNT, || {
-            !unsafe { SCU.syspllstat().read() }.k2rdy().get()
+            !syspllk2rdy_to_bool(unsafe { SCU.syspllstat().read() }.k2rdy().get())
         })?;
 
         unsafe {
@@ -428,9 +459,9 @@ const SYSCLK_FREQUENCY: u32 = 20_000_000;
 #[inline]
 pub fn get_osc_frequency() -> f32 {
     let f = match unsafe { SCU.syspllcon0().read() }.insel().get() {
-        0 => EVR_OSC_FREQUENCY,
-        1 => XTAL_FREQUENCY,
-        2 => SYSCLK_FREQUENCY,
+        scu::syspllcon0::Insel::CONST_00 => EVR_OSC_FREQUENCY,
+        scu::syspllcon0::Insel::CONST_11 => XTAL_FREQUENCY,
+        scu::syspllcon0::Insel::CONST_22 => SYSCLK_FREQUENCY,
         _ => 0,
     };
     f as f32
@@ -459,7 +490,7 @@ pub fn get_per_pll_frequency2() -> u32 {
     let perpllcon0 = unsafe { SCU.perpllcon0().read() };
     let perpllcon1 = unsafe { SCU.perpllcon1().read() };
 
-    let multiplier = if !perpllcon0.divby().get() { 1.6 } else { 2.0 };
+    let multiplier = if !perplldivby_to_bool(perpllcon0.divby().get()) { 1.6 } else { 2.0 };
     let f = (osc_freq * (perpllcon0.ndiv().get() + 1) as f32)
         / ((perpllcon0.pdiv().get() + 1) as f32
             * (perpllcon1.k2div().get() + 1) as f32
@@ -664,18 +695,19 @@ pub(crate) fn get_mcan_frequency() -> u32 {
     let clkselmcan = ccucon1.clkselmcan().get();
     let mcandiv = ccucon1.mcandiv().get();
 
-    info!("clkselmcan: {}, mcandiv: {}", clkselmcan, mcandiv);
+    //info!("clkselmcan: {}, mcandiv: {}", clkselmcan, mcandiv);
 
-    const CLKSELMCAN_USEMCANI: u8 = 1;
-    const CLKSELMCAN_USEOSCILLATOR: u8 = 2;
-    const MCANDIV_STOPPED: u8 = 0;
+    const CLKSELMCAN_USEMCANI: scu::ccucon1::Clkselmcan = scu::ccucon1::Clkselmcan::CONST_11;
+    const CLKSELMCAN_USEOSCILLATOR: scu::ccucon1::Clkselmcan = scu::ccucon1::Clkselmcan::CONST_22;
+    const MCANDIV_STOPPED: scu::ccucon1::Mcandiv = scu::ccucon1::Mcandiv::CONST_00;
 
     match clkselmcan {
         CLKSELMCAN_USEMCANI => {
             let source = get_source_frequency(1);
             debug!("source: {}", source);
             if mcandiv != MCANDIV_STOPPED {
-                let div: u32 = mcandiv.into();
+                let div: u64 = mcandiv.into();
+                let div: u32 = div as u32;
                 source / div
             } else {
                 source
@@ -687,11 +719,11 @@ pub(crate) fn get_mcan_frequency() -> u32 {
 }
 
 fn get_source_frequency(source: u32) -> u32 {
-    const CLKSEL_BACKUP: u8 = 0;
-    const CLKSEL_PLL: u8 = 1;
+    const CLKSEL_BACKUP: scu::ccucon0::Clksel = scu::ccucon0::Clksel::CONST_00;
+    const CLKSEL_PLL: scu::ccucon0::Clksel = scu::ccucon0::Clksel::CONST_11;
 
     let clksel = unsafe { SCU.ccucon0().read() }.clksel().get();
-    info!("clksel: {}", clksel);
+    //info!("clksel: {}", clksel);
 
     match clksel {
         CLKSEL_BACKUP => get_evr_frequency(),
@@ -700,7 +732,7 @@ fn get_source_frequency(source: u32) -> u32 {
             1 => {
                 let source_freq = get_per_pll_frequency1();
                 let ccucon1 = unsafe { SCU.ccucon1().read() };
-                if ccucon1.pll1divdis().get() {
+                if ccucon1.pll1divdis().get() == scu::ccucon1::Pll1Divdis::CONST_11 {
                     source_freq
                 } else {
                     source_freq / 2
