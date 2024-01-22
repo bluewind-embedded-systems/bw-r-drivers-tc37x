@@ -144,19 +144,8 @@ use crate::pac::can1::Can1;
 use crate::pac::CAN0;
 use crate::pac::CAN1;
 
-
 can_module!(CAN0, can0, Can0, ModuleId::Can0);
-//can_module!(CAN1, can1, Can1, ModuleId::Can1);
-
-// TODO Should remember if the module has been taken
-pub fn can_module0() -> NewCanModule<Can0> {
-    NewCanModule::<Can0>(PhantomData)
-}
-
-// TODO Should remember if the module has been taken
-pub fn can_module1() -> NewCanModule<Can1> {
-    NewCanModule::<Can1>(PhantomData)
-}
+can_module!(CAN1, can1, Can1, ModuleId::Can1);
 
 pub(crate) struct ClockSelect(u8);
 
