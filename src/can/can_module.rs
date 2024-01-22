@@ -73,7 +73,7 @@ impl Module<$Reg> {
         let mcr = self.read_mcr();
 
         // Enable CCCE and CI
-        let mcr = mcr.ccce().set(true).ci().set(true);
+        let mcr = mcr.ccce().set($m::mcr::Ccce::CONST_11).ci().set($m::mcr::Ci::CONST_11);
         self.write_mcr(mcr);
 
         // Select clock
