@@ -122,9 +122,10 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         // TODO Explain this or use field accessors
         unsafe { SMU.keys().write(RegValue::new(0xBC, 0)) };
 
-        unsafe { SMU.ag8cf0().modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
-        unsafe { SMU.ag8cf1().modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
-        unsafe { SMU.ag8cf2().modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        // FIXME After pac update, this is a cluster
+        // unsafe { SMU.ag8cf0().modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        // unsafe { SMU.ag8cf1().modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        // unsafe { SMU.ag8cf2().modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
 
         unsafe { SMU.keys().write(RegValue::new(0, 0)) };
     }
