@@ -208,7 +208,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         // TODO Explain these magic numbers
         unsafe { SMU.keys().write(RegValue::new(0xBC, 0)) };
         unsafe { SMU.cmd().write(RegValue::new(0x00000005, 0)) };
-        unsafe { SMU.ag8().write(RegValue::new(0x1D, 0)) };
+        unsafe { SMU.agi()[8].write(RegValue::new(0x1D, 0)); }
         unsafe { SMU.keys().write(RegValue::new(0, 0)) };
     }
 
