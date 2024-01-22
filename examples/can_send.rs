@@ -9,10 +9,9 @@ tc37x_rt::entry!(main);
 
 use core::time::Duration;
 use embedded_can::ExtendedId;
-use tc37x_hal::can::can_module0;
 use tc37x_hal::can::{
     AutoBitTiming, BitTimingConfig, DataFieldSize, Frame, Node, NodeConfig, NodeId, TxConfig,
-    TxMode,
+    TxMode, Module,
 };
 use tc37x_hal::cpu::asm::enable_interrupts;
 use tc37x_hal::gpio::GpioExt;
@@ -21,7 +20,7 @@ use tc37x_hal::{pac, ssw};
 use tc37x_pac::can0;
 
 fn setup_can() -> Result<Node<can0::N, can0::Can0>, ()> {
-    let can_module = can_module0();
+    let can_module = Module::<can0::Can0>::new();
     let mut can_module = can_module.enable()?;
 
     let can_node_id = NodeId::Node0;
