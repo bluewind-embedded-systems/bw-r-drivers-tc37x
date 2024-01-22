@@ -7,8 +7,8 @@ use crate::can::can_node::{
 use crate::can::msg::{ReadFrom, RxBufferId, TxBufferId};
 use crate::can::{DataFieldSize, Module, ModuleId, TxMode};
 use crate::pac;
-use tc37x_pac::can0::Can0;
 use tc37x_pac::can0::n::dbtpi::Tdc;
+use tc37x_pac::can0::Can0;
 use tc37x_pac::can1::Can1;
 use tc37x_pac::hidden::RegValue;
 use tc37x_pac::RegisterValue;
@@ -48,12 +48,7 @@ impl NodeEffects<pac::can0::N> {
     }
 
     pub(crate) fn set_rx_fifo0_size(&self, size: u8) {
-        unsafe {
-            self.reg
-                .rx()
-                .rxf0ci()
-                .modify(|r| r.f0s().set(tc37x_pac::can0::n::rx::rxf0ci::F0S(size)))
-        };
+        unsafe { self.reg.rx().rxf0ci().modify(|r| r.f0s().set(size.into())) };
     }
 
     pub(crate) fn set_rx_fifo0_watermark_level(&self, level: u8) {
@@ -61,17 +56,19 @@ impl NodeEffects<pac::can0::N> {
             self.reg
                 .rx()
                 .rxf0ci()
-                .modify(|r| r.f0wm().set(tc37x_pac::can0::n::rx::rxf0ci::F0Wm(level)))
+                .modify(|r| r.f0wm().set(level.into()))
         };
     }
 
+    // TODO Move logic to the caller
     pub(crate) fn set_rx_fifo0_operating_mode(&self, mode: RxFifoMode) {
+        let overwrite = mode == RxFifoMode::Overwrite;
+        let overwrite = u8::from(overwrite);
         unsafe {
-            self.reg.rx().rxf0ci().modify(|r| {
-                r.f0om().set(tc37x_pac::can0::n::rx::rxf0ci::F0Om(u8::from(
-                    mode == RxFifoMode::Overwrite,
-                )))
-            })
+            self.reg
+                .rx()
+                .rxf0ci()
+                .modify(|r| r.f0om().set(overwrite.into()))
         };
     }
 
@@ -90,7 +87,7 @@ impl NodeEffects<pac::can0::N> {
             self.reg
                 .tx()
                 .txbci()
-                .modify(|r| r.ndtb().set(tc37x_pac::can0::n::tx::txbci::Ndtb(number)))
+                .modify(|r| r.ndtb().set(number.into()))
         };
     }
 
@@ -106,22 +103,14 @@ impl NodeEffects<pac::can0::N> {
 
     #[inline]
     pub(crate) fn set_tx_event_fifo_size(&self, size: u8) {
-        unsafe {
-            self.reg
-                .tx()
-                .txefci()
-                .modify(|r| r.efs().set(tc37x_pac::can0::n::tx::txefci::Efs(size)))
-        };
+        unsafe { self.reg.tx().txefci().modify(|r| r.efs().set(size.into())) };
     }
 
+    // TODO Move logic to the caller
     pub(crate) fn set_transmit_fifo_queue_mode(&self, mode: TxMode) {
-        let val = (mode as u8) != 0;
-        unsafe {
-            self.reg.tx().txbci().modify(|r| {
-                r.tfqm()
-                    .set(tc37x_pac::can0::n::tx::txbci::Tfqm(val.into()))
-            })
-        };
+        let val = mode != TxMode::DedicatedBuffers;
+        let val = u8::from(val);
+        unsafe { self.reg.tx().txbci().modify(|r| r.tfqm().set(val.into())) };
     }
 
     pub(crate) fn set_transmit_fifo_queue_size(&self, number: u8) {
@@ -133,6 +122,7 @@ impl NodeEffects<pac::can0::N> {
         };
     }
 
+    // TODO Return a different type which implements methods needing configuration change enabled
     pub(crate) fn enable_configuration_change(&self) {
         let cccr = self.reg.cccri();
 
@@ -149,6 +139,7 @@ impl NodeEffects<pac::can0::N> {
         unsafe { cccr.modify(|r| r.cce().set(CCE_TRUE).init().set(INIT_TRUE)) };
     }
 
+    // TODO Return a different type which does not implement methods needing configuration change enabled
     pub(crate) fn disable_configuration_change(&self) {
         let cccr = self.reg.cccri();
 
@@ -271,7 +262,12 @@ impl NodeEffects<pac::can0::N> {
     }
 
     pub(crate) fn set_rx_fifo1_watermark_level(&self, level: u8) {
-        unsafe { self.reg.rx().rxf1ci().modify(|r| r.f1wm().set(level.into())) };
+        unsafe {
+            self.reg
+                .rx()
+                .rxf1ci()
+                .modify(|r| r.f1wm().set(level.into()))
+        };
     }
 
     pub(crate) fn is_tx_event_fifo_element_lost(&self) -> bool {
@@ -287,7 +283,11 @@ impl NodeEffects<pac::can0::N> {
     }
 
     pub(crate) fn pause_trasmission(&self, enable: bool) {
-        unsafe { self.reg.cccri().modify(|r| r.txp().set(u8::from(enable).into())) };
+        unsafe {
+            self.reg
+                .cccri()
+                .modify(|r| r.txp().set(u8::from(enable).into()))
+        };
     }
 
     pub(crate) fn set_standard_filter_list_start_address(&self, address: u16) {
@@ -299,7 +299,11 @@ impl NodeEffects<pac::can0::N> {
     }
 
     pub(crate) fn reject_remote_frames_with_standard_id(&self) {
-        unsafe { self.reg.gfci().modify(|r| r.rrfs().set(u8::from(true).into())) };
+        unsafe {
+            self.reg
+                .gfci()
+                .modify(|r| r.rrfs().set(u8::from(true).into()))
+        };
     }
 
     pub(crate) fn set_extended_filter_list_start_address(&self, address: u16) {
@@ -307,7 +311,11 @@ impl NodeEffects<pac::can0::N> {
     }
 
     pub(crate) fn set_extended_filter_list_size(&self, size: u8) {
-        unsafe { self.reg.xidfci().modify(|r| r.lse().set(u8::from(size).into())) };
+        unsafe {
+            self.reg
+                .xidfci()
+                .modify(|r| r.lse().set(u8::from(size).into()))
+        };
     }
 
     pub(crate) fn reject_remote_frames_with_extended_id(&self) {
@@ -350,7 +358,8 @@ impl NodeEffects<pac::can0::N> {
     pub(crate) fn set_rx_fifo0_acknowledge_index(&self, rx_buffer_id: RxBufferId) {
         unsafe {
             self.reg
-                .rx().rxf0ai()
+                .rx()
+                .rxf0ai()
                 .modify(|r| r.f0ai().set(rx_buffer_id.into()))
         };
     }
@@ -359,7 +368,8 @@ impl NodeEffects<pac::can0::N> {
     pub(crate) fn set_rx_fifo1_acknowledge_index(&self, rx_buffer_id: RxBufferId) {
         unsafe {
             self.reg
-                .rx().rxf1ai()
+                .rx()
+                .rxf1ai()
                 .modify(|r| r.f1ai().set(rx_buffer_id.into()))
         };
     }
@@ -375,27 +385,27 @@ impl NodeEffects<pac::can0::N> {
     pub(crate) fn set_tx_buffer_add_request(&self /*,tx_buffer_id: TxBufferId*/) {
         unsafe {
             self.reg
-                .tx().txbari()
+                .tx()
+                .txbari()
                 // TODO argument is now a postfix?
                 .modify(|r| r.ar0(/*tx_buffer_id.into()*/).set(1u8.into()))
         }
     }
 
     // TODO The original code does not work with current PAC
-    pub(crate) fn get_data_field_size(&self, _from: ReadFrom) -> u8 {
-        todo!();
-        // let rx_esc = unsafe { self.reg.rx().rxesi().read() };
-        // let size_code:u32 = match from {
-        //     ReadFrom::Buffer(_) => rx_esc.rbds().get().0,
-        //     ReadFrom::RxFifo0 => rx_esc.f0ds().get().0,
-        //     ReadFrom::RxFifo1 => rx_esc.f1ds().get().0,
-        // };
+    pub(crate) fn get_data_field_size(&self, from: ReadFrom) -> u8 {
+        let rx_esc = unsafe { self.reg.rx().rxesci().read() };
+        let size_code: u8 = match from {
+            ReadFrom::Buffer(_) => rx_esc.rbds().get().0,
+            ReadFrom::RxFifo0 => rx_esc.f0ds().get().0,
+            ReadFrom::RxFifo1 => rx_esc.f1ds().get().0,
+        };
 
-        // if size_code < DataFieldSize::_32.into() {
-        //     (size_code + 2) * 4
-        // } else {
-        //     (size_code - 3) * 16
-        // }
+        if size_code < (DataFieldSize::_32 as u8) {
+            (size_code + 2) * 4
+        } else {
+            (size_code - 3) * 16
+        }
     }
 
     pub(crate) fn get_tx_buffer_data_field_size(&self) -> u8 {
