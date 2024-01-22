@@ -343,8 +343,8 @@ impl NewCanNode<$NodeReg, $ModuleReg> {
         interrupt_group: InterruptGroup,
         interrupt: Interrupt,
         line: InterruptLine,
-        priority: Priority,
-        tos: Tos,
+        _priority: Priority,
+        _tos: Tos,
     ) {
         self.set_group_interrupt_line(interrupt_group, line);
 
@@ -361,8 +361,8 @@ impl NewCanNode<$NodeReg, $ModuleReg> {
         //     _ => unreachable!(),
         // };
         //
-        let priority = priority;
-        let tos = tos as u8;
+        // let priority = priority;
+        // let tos = tos as u8;
 
         // Set priority and type of service
         // unsafe { can_int.modify(|r| r.srpn().set(priority).tos().set(tos)) };
