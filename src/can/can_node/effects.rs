@@ -418,7 +418,7 @@ impl NodeEffects<pac::can0::N> {
     }
 
     pub(crate) fn is_tx_buffer_request_pending(&self, tx_buffer_id: TxBufferId) -> bool {
-        match (tx_buffer_id.0) {
+        match tx_buffer_id.0 {
             0 => unsafe { self.reg.tx().txbrpi().read() }.trp0().get().0 == 1,
             1 => unsafe { self.reg.tx().txbrpi().read() }.trp1().get().0 == 1,
             2 => unsafe { self.reg.tx().txbrpi().read() }.trp2().get().0 == 1,
