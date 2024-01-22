@@ -348,7 +348,7 @@ macro_rules! can_effects_node0 {
 
            pub(crate) fn get_tx_buffer_data_field_size(&self) -> u8 {
                 let size_code: u8 = (unsafe { self.reg.txesc0().read() }.get_raw() & 0x2) as u8;
-                if size_code < Tbds::TBDS_BUFFERSIZE32.0 {
+                if size_code < (DataFieldSize::_32 as u8) {
                     (size_code + 2) * 4
                 } else {
                     (size_code - 3) * 16
