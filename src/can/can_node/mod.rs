@@ -337,6 +337,7 @@ impl NewCanNode<$NodeReg, $ModuleReg> {
         self.effects.set_frame_mode(fdoe, brse);
     }
 
+    // FIXME Fix set_interrupt. Broken after update of pac (SRC is missing)
     fn set_interrupt(
         &self,
         interrupt_group: InterruptGroup,
