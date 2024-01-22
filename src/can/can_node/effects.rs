@@ -366,8 +366,8 @@ macro_rules! can_effects_node0 {
                     6 =>  unsafe { self.reg.txbrp0().read() }.trp6().get(),
                     7 =>  unsafe { self.reg.txbrp0().read() }.trp7().get(),
                     8 =>  unsafe { self.reg.txbrp0().read() }.trp8().get(),
-                    _ => {todo!(); false}, // implement trp0..trp31 
-        
+                    // TODO implement trp0..trp31
+                    _ => todo!()
                 }
     
             }
