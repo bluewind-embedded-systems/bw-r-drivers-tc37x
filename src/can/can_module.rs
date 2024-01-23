@@ -92,7 +92,7 @@ impl Module<$Reg> {
         self.write_mcr(mcr);
 
         // Disable CCCE and CI
-        let mcr = mcr.ccce().set(Ccce::CONST_11).ci().set(Ci::CONST_11);
+        let mcr = mcr.ccce().set(Ccce::CONST_00).ci().set(Ci::CONST_00);
         self.write_mcr(mcr);
 
         // TODO Is this enough or we need to wait until actual_clock_source == clock_source
