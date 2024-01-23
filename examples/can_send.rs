@@ -85,7 +85,10 @@ fn main() -> ! {
 
     let can = match setup_can() {
         Ok(can) => can,
-        Err(_) => loop {},
+        Err(_) =>  {
+            info!("Can initialization error");
+            loop{}
+        },
     };
 
     let tx_msg_id: ExtendedId = ExtendedId::new(0x0CFE6E00).unwrap().into();

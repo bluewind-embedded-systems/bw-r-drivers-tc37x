@@ -120,12 +120,23 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     // disable SMU
     {
         // TODO Explain this or use field accessors
-        unsafe { SMU.keys().write(RegValue::new(0xBC, 0)) };
-
+        //unsafe { SMU.keys().write(RegValue::new(0xBC, 0)) };
         // FIXME After pac update, this is a cluster
         // unsafe { SMU.ag8cf0().modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
         // unsafe { SMU.ag8cf1().modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
         // unsafe { SMU.ag8cf2().modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+
+
+        //unsafe { SMU.keys().write(RegValue::new(0, 0)) };
+    }
+    {
+        // TODO Explain this or use field accessors
+        unsafe { SMU.keys().write(RegValue::new(0xBC, 0)) };
+
+        // FIXME After pac update, this is a BW patch on pac
+        unsafe { SMU.ag8cfj()[0].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        unsafe { SMU.ag8cfj()[1].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        unsafe { SMU.ag8cfj()[2].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
 
         unsafe { SMU.keys().write(RegValue::new(0, 0)) };
     }
