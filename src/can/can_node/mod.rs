@@ -104,6 +104,15 @@ pub struct Node<N, M> {
     frame_mode: FrameMode,
 }
 
+pub enum ConfigError {
+    CannotSetClockSource,
+}
+
+pub enum TransmitError {
+    Busy,
+    InvalidDataLength,
+}
+
 macro_rules! can_node {
     ($ModuleReg:ty, $NodeReg:path) => {
 
@@ -123,9 +132,10 @@ impl Node<$NodeReg, $ModuleReg> {
 }
 
 impl NewCanNode<$NodeReg, $ModuleReg> {
-    pub fn configure(self, config: NodeConfig) -> Result<Node<$NodeReg, $ModuleReg>, ()> {
+    pub fn configure(self, config: NodeConfig) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError> {
         self.module
-            .set_clock_source(self.node_id.into(), config.clock_source)?;
+            .set_clock_source(self.node_id.into(), config.clock_source).map_err(|_| ConfigError::CannotSetClockSource)?;
+
         self.effects.enable_configuration_change();
 
         self.configure_baud_rate(&config.baud_rate);
@@ -409,7 +419,7 @@ impl NewCanNode<$NodeReg, $ModuleReg> {
 }
 
 impl Node<$NodeReg, $ModuleReg> {
-    pub fn transmit(&self, frame: &Frame) -> Result<(), ()> {
+    pub fn transmit(&self, frame: &Frame) -> Result<(), TransmitError> {
         let buffer_id = self.get_tx_fifo_queue_put_index();
         self.transmit_inner(buffer_id, frame.id, false, false, false, frame.data)
     }
@@ -429,16 +439,11 @@ impl Node<$NodeReg, $ModuleReg> {
         remote_transmit_request: bool,
         error_state_indicator: bool,
         data: &[u8],
-    ) -> Result<(), ()> {
-        info!("transmit_inner");
-
-        // TODO list errors
+    ) -> Result<(), TransmitError> {
         if self.effects.is_tx_buffer_request_pending(buffer_id) {
-            return Err(());
+            return Err(TransmitError::Busy);
         }
 
-        // FIXME Use real base address
-        //let ram_base_address = 0xF0200000u32;
         let ram_base_address = self.module.ram_base_address() as u32;
 
         // FIXME Use real start address
@@ -460,8 +465,7 @@ impl Node<$NodeReg, $ModuleReg> {
             tx_buf_el.set_err_state_indicator(error_state_indicator)
         }
 
-        let data_len: u8 = data.len().try_into().map_err(|_| ())?;
-        let dlc = DataLenghtCode::try_from(data_len)?;
+        let dlc = DataLenghtCode::from_length(data.len()).ok_or(TransmitError::InvalidDataLength)?;
 
         tx_buf_el.set_data_length(dlc);
         tx_buf_el.write_tx_buf_data(dlc, data.as_ptr());

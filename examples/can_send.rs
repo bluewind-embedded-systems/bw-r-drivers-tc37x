@@ -41,7 +41,7 @@ fn setup_can() -> Result<Node<Can0Node, Can0>, ()> {
         event_fifo_size: 1,
     });
 
-    let can_node = can_node.configure(cfg)?;
+    let can_node = can_node.configure(cfg).map_err(|_| ())?;
 
     Ok(can_node)
 }
