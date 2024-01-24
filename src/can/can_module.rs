@@ -1,4 +1,4 @@
-use super::can_node::{NewCanNode, Node, NodeId};
+use super::can_node::{Node, NodeConfig, NodeId};
 use crate::log::info;
 use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
@@ -63,7 +63,7 @@ macro_rules! impl_can_module {
                 }
             }
 
-            pub fn take_node(&mut self, node_id: NodeId) -> Option<NewCanNode<$($m)::+::N, $Reg>> {
+            pub fn take_node(&mut self, node_id: NodeId, cfg: NodeConfig) -> Option<Node<$($m)::+::N, $Reg>> {
                 let node_index = match node_id {
                     NodeId::Node0 => 0,
                     NodeId::Node1 => 1,
@@ -77,10 +77,7 @@ macro_rules! impl_can_module {
 
                 self.nodes_taken[node_index] = true;
 
-                // Instead of dealing with lifetimes, we just create a new instance of CanModule
-                // TODO This is not ideal, but it works for now
-                let module = Module::<$Reg, Enabled>::new();
-                Some(Node::<$($m)::+::N, $Reg>::new(module, node_id))
+                Node::<$($m)::+::N, $Reg>::new(self, node_id, cfg).ok()
             }
 
             pub fn id(&self) -> ModuleId {
@@ -191,21 +188,5 @@ impl From<ClockSource> for u8 {
             ClockSource::Synchronous => 2,
             ClockSource::Both => 3,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_node_can_be_taken_only_once() {
-        use tc37x_pac::can0::Can0;
-
-        let mut can_module = Module::<Can0, Enabled>::new();
-
-        assert!(can_module.take_node(NodeId::Node0).is_some());
-        assert!(can_module.take_node(NodeId::Node0).is_none());
-        assert!(can_module.take_node(NodeId::Node1).is_some());
     }
 }

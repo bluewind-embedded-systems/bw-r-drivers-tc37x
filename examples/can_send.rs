@@ -24,7 +24,7 @@ fn setup_can() -> Option<Node<Can0Node, Can0>> {
     let mut can_module = can_module.enable();
 
     let can_node_id = NodeId::Node0;
-    let can_node = can_module.take_node(can_node_id)?;
+
     let mut cfg = NodeConfig::default();
 
     cfg.baud_rate = BitTimingConfig::Auto(AutoBitTiming {
@@ -41,7 +41,7 @@ fn setup_can() -> Option<Node<Can0Node, Can0>> {
         event_fifo_size: 1,
     });
 
-    can_node.configure(cfg).ok()
+    can_module.take_node(can_node_id, cfg)
 }
 
 /// Initialize the STB pin for the CAN transceiver.

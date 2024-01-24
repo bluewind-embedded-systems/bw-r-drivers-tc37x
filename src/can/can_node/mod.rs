@@ -16,6 +16,7 @@ use crate::log::{info, HexSlice};
 use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
 use core::mem::transmute;
+use core::marker::PhantomData;
 use tc37x_pac::hidden::RegValue;
 use tc37x_pac::RegisterValue;
 
@@ -91,17 +92,12 @@ impl Into<u8> for NodeId {
     }
 }
 
-pub struct NewCanNode<N, M> {
-    module: Module<M, can_module::Enabled>,
-    node_id: NodeId,
-    effects: NodeEffects<N>,
-}
-
 pub struct Node<N, M> {
-    module: Module<M, can_module::Enabled>,
     node_id: NodeId,
     effects: NodeEffects<N>,
     frame_mode: FrameMode,
+    _phantom: PhantomData<M>,
+    ram_base_address: u32,
 }
 
 pub enum ConfigError {
@@ -118,94 +114,93 @@ macro_rules! impl_can_node {
 
 impl Node<$NodeReg, $ModuleReg> {
     /// Only a module can create a node. This function is only accessible from within this crate.
-    pub(crate) fn new(module: Module<$ModuleReg, can_module::Enabled>, id: NodeId) -> NewCanNode<$NodeReg, $ModuleReg> {
+    pub(super) fn new(module: &mut Module<$ModuleReg, can_module::Enabled>, id: NodeId, config: NodeConfig) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError> {
         let node_index : u8 = id.into();
         let node_index : usize = node_index.into();
         let node_reg = module.registers().n()[node_index];
         let effects = NodeEffects::<$NodeReg>::new(node_reg);
-        NewCanNode {
-            module,
+
+        let node = Self {
             node_id:id,
             effects,
-        }
-    }
-}
+            _phantom: PhantomData,
+            frame_mode: config.frame_mode,
+            ram_base_address: module.ram_base_address() as u32,
+        };
 
-impl NewCanNode<$NodeReg, $ModuleReg> {
-    pub fn configure(self, config: NodeConfig) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError> {
-        self.module
-            .set_clock_source(self.node_id.into(), config.clock_source).map_err(|_| ConfigError::CannotSetClockSource)?;
+        module
+            .set_clock_source(node.node_id.into(), config.clock_source).map_err(|_| ConfigError::CannotSetClockSource)?;
 
-        self.effects.enable_configuration_change();
+        node.effects.enable_configuration_change();
 
-        self.configure_baud_rate(&config.baud_rate);
+        node.configure_baud_rate(&config.baud_rate);
 
         // for CAN FD frames, set fast baud rate
         if config.frame_mode != FrameMode::Standard {
-            self.configure_fast_baud_rate(&config.fast_baud_rate);
+            node.configure_fast_baud_rate(&config.fast_baud_rate);
         }
 
         // TODO Check if transceiver_delay_offset is needed only for CAN FD
         if config.transceiver_delay_offset != 0 {
-            self.effects
+            node.effects
                 .set_transceiver_delay_compensation_offset(config.transceiver_delay_offset);
         }
 
         // transmit frame configuration
         if let Some(tx_config) = &config.tx {
-            self.set_tx_buffer_data_field_size(tx_config.buffer_data_field_size);
-            self.effects
+            node.set_tx_buffer_data_field_size(tx_config.buffer_data_field_size);
+            node.effects
                 .set_tx_buffer_start_address(config.message_ram.tx_buffers_start_address);
 
             let mode = tx_config.mode;
 
             match mode {
                 TxMode::DedicatedBuffers | TxMode::SharedFifo | TxMode::SharedQueue => {
-                    self.effects
+                    node.effects
                         .set_dedicated_tx_buffers_number(tx_config.dedicated_tx_buffers_number);
                     if let TxMode::SharedFifo | TxMode::SharedQueue = mode {
                         if let TxMode::SharedFifo = mode {
-                            self.set_transmit_fifo_queue_mode(TxMode::Fifo);
+                            node.set_transmit_fifo_queue_mode(TxMode::Fifo);
                         }
                         if let TxMode::SharedQueue = mode {
-                            self.set_transmit_fifo_queue_mode(TxMode::Queue);
+                            node.set_transmit_fifo_queue_mode(TxMode::Queue);
                         }
-                        self.effects
+                        node.effects
                             .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
                     }
                     for id in 0..tx_config.dedicated_tx_buffers_number + tx_config.fifo_queue_size {
-                        self.effects
+                        node.effects
                             .enable_tx_buffer_transmission_interrupt(TxBufferId(id));
                     }
                 }
                 TxMode::Fifo | TxMode::Queue => {
-                    self.set_transmit_fifo_queue_mode(mode);
-                    self.effects
+                    node.set_transmit_fifo_queue_mode(mode);
+                    node.effects
                         .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
                     for id in 0..tx_config.fifo_queue_size {
-                        self.effects
+                        node.effects
                             .enable_tx_buffer_transmission_interrupt(TxBufferId(id));
                     }
                 }
             }
 
             if (1..=32).contains(&tx_config.event_fifo_size) {
-                self.effects.set_tx_event_fifo_start_address(
+                node.effects.set_tx_event_fifo_start_address(
                     config.message_ram.tx_event_fifo_start_address,
                 );
-                self.effects
+                node.effects
                     .set_tx_event_fifo_size(tx_config.event_fifo_size);
             } else {
                 crate::log::error!("Invalid event fifo size: {}", tx_config.event_fifo_size);
             }
 
-            self.set_frame_mode(config.frame_mode);
+            node.set_frame_mode(config.frame_mode);
         }
 
-        self.effects.disable_configuration_change();
+        node.effects.disable_configuration_change();
 
         // TODO FifoData from config
-        self.set_rx_fifo0(FifoData {
+        node.set_rx_fifo0(FifoData {
             field_size: DataFieldSize::_8,
             operation_mode: RxFifoMode::Blocking,
             watermark_level: 0,
@@ -214,7 +209,7 @@ impl NewCanNode<$NodeReg, $ModuleReg> {
         });
 
         // TODO DedicatedData from config
-        self.set_tx_fifo(
+        node.set_tx_fifo(
             DedicatedData {
                 field_size: DataFieldSize::_8,
                 start_address: 0x440,
@@ -223,7 +218,7 @@ impl NewCanNode<$NodeReg, $ModuleReg> {
         );
 
         // TODO Interrupt from config
-        self.set_interrupt(
+        node.set_interrupt(
             InterruptGroup::Rxf0n,
             Interrupt::RxFifo0newMessage,
             InterruptLine(1),
@@ -232,25 +227,20 @@ impl NewCanNode<$NodeReg, $ModuleReg> {
         );
 
         // TODO Connect pins from config
-        self.connect_pin_rx(
+        node.connect_pin_rx(
             RXD00B_P20_7_IN,
             InputMode::PULL_UP,
             PadDriver::CmosAutomotiveSpeed3,
         );
 
         // TODO Connect pins from config
-        self.connect_pin_tx(
+        node.connect_pin_tx(
             TXD00_P20_8_OUT,
             OutputMode::PUSH_PULL,
             PadDriver::CmosAutomotiveSpeed3,
         );
 
-        Ok(Node {
-            frame_mode: config.frame_mode,
-            module: self.module,
-            node_id: self.node_id,
-            effects: self.effects,
-        })
+        Ok(node)
     }
 
     fn set_rx_fifo0(&self, data: FifoData) {
@@ -416,9 +406,7 @@ impl NewCanNode<$NodeReg, $ModuleReg> {
         port.set_pin_pad_driver(txd.pin_index, pad_driver);
         port.set_pin_low(txd.pin_index);
     }
-}
 
-impl Node<$NodeReg, $ModuleReg> {
     pub fn transmit(&self, frame: &Frame) -> Result<(), TransmitError> {
         let buffer_id = self.get_tx_fifo_queue_put_index();
         self.transmit_inner(buffer_id, frame.id, false, false, false, frame.data)
@@ -444,7 +432,7 @@ impl Node<$NodeReg, $ModuleReg> {
             return Err(TransmitError::Busy);
         }
 
-        let ram_base_address = self.module.ram_base_address() as u32;
+        let ram_base_address = self.ram_base_address;
 
         // FIXME Use real start address
         let tx_buffers_start_address = 0x0440u16;
