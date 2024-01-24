@@ -19,7 +19,7 @@ use tc37x_hal::log::info;
 use tc37x_hal::{pac, ssw};
 use tc37x_pac::can0::{Can0, N as Can0Node};
 
-fn setup_can() -> Result<Node<Can0Node, Can0>, ()> {
+fn setup_can() -> Option<Node<Can0Node, Can0>> {
     let can_module = Module::<Can0>::new();
     let mut can_module = can_module.enable();
 
@@ -41,9 +41,7 @@ fn setup_can() -> Result<Node<Can0Node, Can0>, ()> {
         event_fifo_size: 1,
     });
 
-    let can_node = can_node.configure(cfg).map_err(|_| ())?;
-
-    Ok(can_node)
+    can_node.configure(cfg).ok()
 }
 
 /// Initialize the STB pin for the CAN transceiver.
@@ -79,8 +77,8 @@ fn main() -> ! {
 
     info!("Create CAN module ... ");
     let can = match setup_can() {
-        Ok(can) => can,
-        Err(_) => {
+        Some(can) => can,
+        None => {
             info!("Can initialization error");
             loop {}
         }
