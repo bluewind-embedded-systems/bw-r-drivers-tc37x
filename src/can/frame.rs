@@ -123,10 +123,10 @@ mod test {
 
     #[test]
     pub fn test_data_length_code() {
-        let test = |code: DataLenghtCode| {
+        let test = |dlc: DataLenghtCode| {
             assert_eq!(
-                code.get_data_length_in_bytes(),
-                match code {
+                dlc.to_length(),
+                match dlc {
                     DataLenghtCode::_0 => 0,
                     DataLenghtCode::_1 => 1,
                     DataLenghtCode::_2 => 2,
@@ -143,36 +143,6 @@ mod test {
                     DataLenghtCode::_32 => 32,
                     DataLenghtCode::_48 => 48,
                     DataLenghtCode::_64 => 64,
-                }
-            );
-        };
-        for i in 0u8..=DataLenghtCode::_64 as _ {
-            test(DataLenghtCode::try_from(i).unwrap());
-        }
-    }
-
-    #[test]
-    pub fn test_data_length_int32() {
-        let test = |code: DataLenghtCode| {
-            assert_eq!(
-                code.get_data_length_int32(),
-                match code {
-                    DataLenghtCode::_0 => 0,
-                    DataLenghtCode::_1 => 1,
-                    DataLenghtCode::_2 => 1,
-                    DataLenghtCode::_3 => 1,
-                    DataLenghtCode::_4 => 1,
-                    DataLenghtCode::_5 => 2,
-                    DataLenghtCode::_6 => 2,
-                    DataLenghtCode::_7 => 2,
-                    DataLenghtCode::_8 => 2,
-                    DataLenghtCode::_12 => 3,
-                    DataLenghtCode::_16 => 4,
-                    DataLenghtCode::_20 => 5,
-                    DataLenghtCode::_24 => 6,
-                    DataLenghtCode::_32 => 8,
-                    DataLenghtCode::_48 => 12,
-                    DataLenghtCode::_64 => 16,
                 }
             );
         };
