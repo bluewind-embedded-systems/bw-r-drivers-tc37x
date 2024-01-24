@@ -69,6 +69,7 @@ pub struct NodeConfig {
     pub transceiver_delay_offset: u8,
     pub frame_mode: FrameMode,
     pub tx: Option<TxConfig>,
+    pub rx: Option<RxConfig>,
     pub message_ram: MessageRAM,
 }
 
@@ -196,16 +197,9 @@ impl Node<$NodeReg, $ModuleReg> {
             node.set_frame_mode(config.frame_mode);
         }
 
-        node.effects.disable_configuration_change();
-
-        // TODO FifoData from config
-        node.set_rx_fifo0(FifoData {
-            field_size: DataFieldSize::_8,
-            operation_mode: RxFifoMode::Blocking,
-            watermark_level: 0,
-            size: 4,
-            start_address: 0x100,
-        });
+        if let Some(_rx_config) = &config.rx {
+            // TODO Configure rx
+        }
 
         // TODO Interrupt from config
         node.set_interrupt(
@@ -229,6 +223,8 @@ impl Node<$NodeReg, $ModuleReg> {
             OutputMode::PUSH_PULL,
             PadDriver::CmosAutomotiveSpeed3,
         );
+
+        node.effects.disable_configuration_change();
 
         Ok(node)
     }
@@ -962,6 +958,11 @@ pub struct TxConfig {
     pub fifo_queue_size: u8,
     pub buffer_data_field_size: DataFieldSize,
     pub event_fifo_size: u8,
+}
+
+#[derive(Clone, Copy)]
+pub struct RxConfig {
+    // TODO
 }
 
 #[derive(Clone, Copy)]
