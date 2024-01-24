@@ -11,7 +11,6 @@ use embedded_hal::digital::StatefulOutputPin;
 use tc37x_hal::gpio::GpioExt;
 use tc37x_hal::log::info;
 use tc37x_hal::pac;
-use tc37x_hal::util::wait_nop;
 
 pub enum State {
     NotChanged = 0,
@@ -55,7 +54,9 @@ fn main() -> ! {
         // Test toggle
         led2.toggle();
 
+        info!("Wait for {:?}", period);
         wait_nop(period);
+        info!("Wait done");
 
         // Test high
         led1.set_high();
@@ -72,4 +73,19 @@ fn main() -> ! {
 
         wait_nop(period);
     }
+}
+
+/// Wait for a number of cycles roughly calculated from a duration.
+#[inline(always)]
+pub fn wait_nop(period: Duration) {
+    #[cfg(target_arch = "tricore")]
+    {
+        use tc37x_hal::util::wait_nop_cycles;
+        let ns = period.as_nanos() as u32;
+        let n_cycles = ns / 1412;
+        wait_nop_cycles(n_cycles);
+    }
+
+    #[cfg(not(target_arch = "tricore"))]
+    std::thread::sleep(period);
 }
