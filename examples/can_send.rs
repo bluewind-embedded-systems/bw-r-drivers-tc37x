@@ -10,8 +10,8 @@ tc37x_rt::entry!(main);
 use core::time::Duration;
 use embedded_can::ExtendedId;
 use tc37x_hal::can::{
-    AutoBitTiming, BitTimingConfig, DataFieldSize, Frame, Node, NodeConfig, NodeId, TxConfig,
-    TxMode, Module,
+    AutoBitTiming, BitTimingConfig, DataFieldSize, Frame, MessageId, Module, Node, NodeConfig,
+    NodeId, TxConfig, TxMode,
 };
 use tc37x_hal::cpu::asm::enable_interrupts;
 use tc37x_hal::gpio::GpioExt;
@@ -67,32 +67,33 @@ fn main() -> ! {
         loop {}
     }
 
+    info!("Enable interrupts");
     enable_interrupts();
 
+    info!("Setup notification LED");
     let gpio00 = pac::PORT_00.split();
     let mut led1 = gpio00.p00_5.into_push_pull_output();
 
-    info!("Create can module ... ");
-
-    // info!("CAN0 MCR: {:?}", unsafe { CAN0.mcr().read() }.get_raw());
-    // info!("CAN1 MCR: {:?}", unsafe { CAN0.mcr().read() }.bits());
-
-    // loop {
-    //
-    // }
-
+    info!("Initialize CAN transceiver");
     init_can_stb_pin();
 
+    info!("Create CAN module ... ");
     let can = match setup_can() {
         Ok(can) => can,
-        Err(_) =>  {
+        Err(_) => {
             info!("Can initialization error");
-            loop{}
-        },
+            loop {}
+        }
     };
 
-    let tx_msg_id: ExtendedId = ExtendedId::new(0x0CFE6E00).unwrap().into();
-    let tx_msg_id = tx_msg_id.into();
+    info!("Define a message to send");
+    let tx_msg_id: MessageId = {
+        let id = 0x0CFE6E00;
+        let id: ExtendedId = ExtendedId::new(id).unwrap().into();
+        id.into()
+    };
+
+    info!("Allocate a buffer for the message data");
     let mut tx_msg_data: [u8; 8] = [0, 1, 2, 3, 4, 5, 6, 7];
 
     loop {
@@ -107,9 +108,9 @@ fn main() -> ! {
             info!("Cannot send frame");
         }
 
-        wait_nop(Duration::from_millis(10));
+        wait_nop(Duration::from_millis(100));
         led1.set_low();
-        wait_nop(Duration::from_millis(90));
+        wait_nop(Duration::from_millis(900));
     }
 }
 
