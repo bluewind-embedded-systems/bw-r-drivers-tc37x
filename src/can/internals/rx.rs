@@ -56,7 +56,8 @@ impl Rx {
     #[inline]
     pub fn get_data_length(&self) -> DataLenghtCode {
         let d = unsafe { self.inner.r1().read() }.dlc().get();
-        DataLenghtCode::try_from(d).unwrap()
+        // SAFETY: d is a valid DataLenghtCode, because it is a 4 bit field
+        unsafe { DataLenghtCode::try_from(d).unwrap_unchecked() }
     }
 
     pub fn get_frame_mode(&self) -> FrameMode {
