@@ -207,15 +207,6 @@ impl Node<$NodeReg, $ModuleReg> {
             start_address: 0x100,
         });
 
-        // TODO DedicatedData from config
-        node.set_tx_fifo(
-            DedicatedData {
-                field_size: DataFieldSize::_8,
-                start_address: 0x440,
-            },
-            4,
-        );
-
         // TODO Interrupt from config
         node.set_interrupt(
             InterruptGroup::Rxf0n,
@@ -251,12 +242,6 @@ impl Node<$NodeReg, $ModuleReg> {
             .set_rx_fifo0_operating_mode(data.operation_mode);
         self.effects
             .set_rx_fifo0_watermark_level(data.watermark_level);
-    }
-
-    fn set_tx_fifo(&self, buffers: DedicatedData, fifo_size: u8) {
-        self.set_inner_tx_buffers(buffers);
-        self.set_inner_tx_fifo_queue(TxMode::Fifo, fifo_size);
-        self.set_inner_tx_int(fifo_size);
     }
 
     fn set_inner_tx_buffers(&self, dedicated: DedicatedData) {
