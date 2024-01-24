@@ -19,17 +19,21 @@ pub struct ModuleConfig {}
 pub struct Disabled;
 pub struct Enabled;
 
-pub struct Module<Reg, State = Disabled>(PhantomData<(Reg, State)>);
+pub struct Module<Reg, State = Disabled> {
+    nodes_taken: [bool; 4],
+    _phantom: PhantomData<(Reg, State)>,
+}
 
 macro_rules! impl_can_module {
     ($reg:path, $($m:ident)::+, $Reg:ty, $id: expr) => {
         impl Module<$Reg, Disabled> {
-            pub const fn new() -> Module<$Reg, Disabled> {
-                Module::<$Reg, Disabled>(PhantomData)
+            pub const fn new() -> Self {
+                Self {
+                    nodes_taken: [false; 4],
+                    _phantom: PhantomData,
+                }
             }
-        }
 
-        impl Module<$Reg, Disabled> {
             fn is_enabled(&self) -> bool {
                 !unsafe { $reg.clc().read() }.diss().get()
             }
@@ -43,16 +47,43 @@ macro_rules! impl_can_module {
 
                 scu::wdt::set_cpu_endinit_inline(passw);
 
-                Module::<$Reg, Enabled>(PhantomData)
+                Module::<$Reg, Enabled> {
+                    nodes_taken: [false; 4],
+                    _phantom: PhantomData,
+                }
             }
         }
 
         impl Module<$Reg, Enabled> {
+            // This method is private to prevent the user from creating a new instance of an enabled module
+            const fn new() -> Self {
+                Self {
+                    nodes_taken: [false; 4],
+                    _phantom: PhantomData,
+                }
+            }
+
             pub fn take_node(&mut self, node_id: NodeId) -> Option<NewCanNode<$($m)::+::N, $Reg>> {
+                let node_index = match node_id {
+                    NodeId::Node0 => 0,
+                    NodeId::Node1 => 1,
+                    NodeId::Node2 => 2,
+                    NodeId::Node3 => 3,
+                };
+
+                if self.nodes_taken[node_index] {
+                    return None;
+                }
+
+                self.nodes_taken[node_index] = true;
+
                 // Instead of dealing with lifetimes, we just create a new instance of CanModule
                 // TODO This is not ideal, but it works for now
-                // TODO Remember the node has been taken and return None on next call
-                let module = Module::<$Reg, Enabled>(PhantomData);
+                let module = Module::<$Reg, Enabled> {
+                    nodes_taken: self.nodes_taken,
+                    _phantom: PhantomData,
+                };
+
                 Some(Node::<$($m)::+::N, $Reg>::new(module, node_id))
             }
 
@@ -164,5 +195,21 @@ impl From<ClockSource> for u8 {
             ClockSource::Synchronous => 2,
             ClockSource::Both => 3,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_node_can_be_taken_only_once() {
+        use tc37x_pac::can0::Can0;
+
+        let mut can_module = Module::<Can0, Enabled>::new();
+
+        assert!(can_module.take_node(NodeId::Node0).is_some());
+        assert!(can_module.take_node(NodeId::Node0).is_none());
+        assert!(can_module.take_node(NodeId::Node1).is_some());
     }
 }
