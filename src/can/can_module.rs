@@ -117,7 +117,6 @@ impl Module<$Reg> {
         Ok(())
     }
 
-    // TODO Return the right type (avoid transmute)
     pub(crate) fn registers(&self) -> &$Reg {
         &$reg
     }
