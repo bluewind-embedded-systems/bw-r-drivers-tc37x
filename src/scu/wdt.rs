@@ -163,9 +163,27 @@ pub fn clear_safety_endinit_inline(password: u16) {
     let con0 = pac::SCU.wdts().wdtscon0();
 
     if wdtscon0lock_to_bool(unsafe { con0.read() }.lck().get()) {
-        unsafe { con0.modify(|r| r.endinit().set(pac::scu::wdts::wdtscon0::Endinit::CONST_11).lck().set(pac::scu::wdts::wdtscon0::Lck::CONST_00).pw().set(password)) };
+        unsafe {
+            con0.modify(|r| {
+                r.endinit()
+                    .set(pac::scu::wdts::wdtscon0::Endinit::CONST_11)
+                    .lck()
+                    .set(pac::scu::wdts::wdtscon0::Lck::CONST_00)
+                    .pw()
+                    .set(password)
+            })
+        };
     }
-    unsafe { con0.modify(|r| r.endinit().set(pac::scu::wdts::wdtscon0::Endinit::CONST_00).lck().set(pac::scu::wdts::wdtscon0::Lck::CONST_11).pw().set(password)) }
+    unsafe {
+        con0.modify(|r| {
+            r.endinit()
+                .set(pac::scu::wdts::wdtscon0::Endinit::CONST_00)
+                .lck()
+                .set(pac::scu::wdts::wdtscon0::Lck::CONST_11)
+                .pw()
+                .set(password)
+        })
+    }
 
     #[cfg(tricore_arch = "tricore")]
     while unsafe { con0.read() }.endinit().get() {}
@@ -261,10 +279,28 @@ pub fn set_safety_endinit_inline(password: u16) {
     let con0 = pac::SCU.wdts().wdtscon0();
 
     if wdtscon0lock_to_bool(unsafe { con0.read() }.lck().get()) {
-        unsafe { con0.modify(|r| r.endinit().set(pac::scu::wdts::wdtscon0::Endinit::CONST_11).lck().set(pac::scu::wdts::wdtscon0::Lck::CONST_00).pw().set(password)) };
+        unsafe {
+            con0.modify(|r| {
+                r.endinit()
+                    .set(pac::scu::wdts::wdtscon0::Endinit::CONST_11)
+                    .lck()
+                    .set(pac::scu::wdts::wdtscon0::Lck::CONST_00)
+                    .pw()
+                    .set(password)
+            })
+        };
     }
 
-    unsafe { con0.modify(|r| r.endinit().set(pac::scu::wdts::wdtscon0::Endinit::CONST_00).lck().set(pac::scu::wdts::wdtscon0::Lck::CONST_11).pw().set(password)) }
+    unsafe {
+        con0.modify(|r| {
+            r.endinit()
+                .set(pac::scu::wdts::wdtscon0::Endinit::CONST_00)
+                .lck()
+                .set(pac::scu::wdts::wdtscon0::Lck::CONST_11)
+                .pw()
+                .set(password)
+        })
+    }
     #[cfg(tricore_arch = "tricore")]
     while !unsafe { con0.read() }.endinit().get() {}
 }

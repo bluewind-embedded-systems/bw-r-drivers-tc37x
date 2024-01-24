@@ -3,7 +3,12 @@ use tc37x_pac::{self as pac};
 
 pub fn disable_safety_watchdog(passw: u16) {
     wdt::clear_safety_endinit_inline(passw);
-    unsafe { pac::SCU.wdts().wdtscon1().modify(|p| p.dr().set(pac::scu::wdts::wdtscon1::Dr::CONST_11)) };
+    unsafe {
+        pac::SCU
+            .wdts()
+            .wdtscon1()
+            .modify(|p| p.dr().set(pac::scu::wdts::wdtscon1::Dr::CONST_11))
+    };
     wdt::set_safety_endinit_inline(passw);
 }
 
