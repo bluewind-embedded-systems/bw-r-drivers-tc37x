@@ -17,11 +17,11 @@ use tc37x_hal::cpu::asm::enable_interrupts;
 use tc37x_hal::gpio::GpioExt;
 use tc37x_hal::log::info;
 use tc37x_hal::{pac, ssw};
-use tc37x_pac::can0;
+use tc37x_pac::can0::{Can0, N as Can0Node};
 
-fn setup_can() -> Result<Node<can0::N, can0::Can0>, ()> {
-    let can_module = Module::<can0::Can0>::new();
-    let mut can_module = can_module.enable()?;
+fn setup_can() -> Result<Node<Can0Node, Can0>, ()> {
+    let can_module = Module::<Can0>::new();
+    let mut can_module = can_module.enable();
 
     let can_node_id = NodeId::Node0;
     let can_node = can_module.take_node(can_node_id)?;

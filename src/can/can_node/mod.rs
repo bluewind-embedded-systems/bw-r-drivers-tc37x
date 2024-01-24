@@ -8,7 +8,7 @@ use super::can_module::{ClockSource, ModuleId};
 use super::frame::{DataLenghtCode, Frame};
 use super::internals::{Rx, Tx};
 use super::msg::{ReadFrom, RxBufferId, TxBufferId};
-use super::Module;
+use super::{can_module, Module};
 use crate::can::msg::MessageId;
 
 use crate::can::can_node::effects::NodeEffects;
@@ -92,13 +92,13 @@ impl Into<u8> for NodeId {
 }
 
 pub struct NewCanNode<N, M> {
-    module: Module<M>,
+    module: Module<M, can_module::Enabled>,
     node_id: NodeId,
     effects: NodeEffects<N>,
 }
 
 pub struct Node<N, M> {
-    module: Module<M>,
+    module: Module<M, can_module::Enabled>,
     node_id: NodeId,
     effects: NodeEffects<N>,
     frame_mode: FrameMode,
@@ -108,9 +108,8 @@ macro_rules! can_node {
     ($ModuleReg:ty, $NodeReg:path) => {
 
 impl Node<$NodeReg, $ModuleReg> {
-    // TODO Do not use Can0 type
     /// Only a module can create a node. This function is only accessible from within this crate.
-    pub(crate) fn new(module: Module<$ModuleReg>, id: NodeId) -> NewCanNode<$NodeReg, $ModuleReg> {
+    pub(crate) fn new(module: Module<$ModuleReg, can_module::Enabled>, id: NodeId) -> NewCanNode<$NodeReg, $ModuleReg> {
         let node_index : u8 = id.into();
         let node_index : usize = node_index.into();
         let node_reg = module.registers().n()[node_index];

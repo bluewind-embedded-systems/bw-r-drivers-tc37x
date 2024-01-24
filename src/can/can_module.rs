@@ -15,49 +15,44 @@ pub enum ModuleId {
 #[derive(Default)]
 pub struct ModuleConfig {}
 
-pub struct NewCanModule<T>(PhantomData<T>);
+// Type states for Module
+pub struct Disabled;
+pub struct Enabled;
 
-pub struct Module<T>(PhantomData<T>);
+pub struct Module<T, S = Disabled>(PhantomData<(T, S)>);
 
 macro_rules! can_module {
     ($reg:ident, $m:ident, $Reg:ty, $id: expr) => {
-        impl NewCanModule<$Reg> {
-            pub fn enable(self) -> Result<Module<$Reg>, ()> {
-                if !self.is_enabled() {
-                    self.enable_module();
-                }
-
-                let module = Module::<$Reg>(PhantomData);
-
-                Ok(module)
+        impl Module<$Reg, Disabled> {
+            pub const fn new() -> Module<$Reg, Disabled> {
+                Module::<$Reg, Disabled>(PhantomData)
             }
+        }
 
-            pub fn is_enabled(&self) -> bool {
+        impl Module<$Reg, Disabled> {
+            fn is_enabled(&self) -> bool {
                 !unsafe { $reg.clc().read() }.diss().get()
             }
 
-            pub fn enable_module(&self) {
+            pub fn enable(self) -> Module<$Reg, Enabled> {
                 let passw = scu::wdt::get_cpu_watchdog_password();
-
                 scu::wdt::clear_cpu_endinit_inline(passw);
 
                 unsafe { $reg.clc().modify_atomic(|r| r.disr().set(false)) };
                 while !self.is_enabled() {}
 
                 scu::wdt::set_cpu_endinit_inline(passw);
+
+                Module::<$Reg, Enabled>(PhantomData)
             }
         }
 
-        impl Module<$Reg> {
-            pub const fn new() -> NewCanModule<$Reg> {
-                NewCanModule::<$Reg>(PhantomData)
-            }
-
+        impl Module<$Reg, Enabled> {
             pub fn take_node(&mut self, node_id: NodeId) -> Result<NewCanNode<$m::N, $Reg>, ()> {
                 // Instead of dealing with lifetimes, we just create a new instance of CanModule
                 // TODO This is not ideal, but it works for now
                 // TODO Remember the node has been taken and return None on next call
-                let module = Module::<$Reg>(PhantomData);
+                let module = Module::<$Reg, Enabled>(PhantomData);
                 Ok(Node::<$m::N, $Reg>::new(module, node_id))
             }
 
