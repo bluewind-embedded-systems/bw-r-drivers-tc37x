@@ -21,7 +21,7 @@ pub struct Enabled;
 
 pub struct Module<Reg, State = Disabled>(PhantomData<(Reg, State)>);
 
-macro_rules! can_module {
+macro_rules! impl_can_module {
     ($reg:ident, $m:ident, $Reg:ty, $id: expr) => {
         impl Module<$Reg, Disabled> {
             pub const fn new() -> Module<$Reg, Disabled> {
@@ -142,8 +142,8 @@ use crate::pac::can1::Can1;
 use crate::pac::CAN0;
 use crate::pac::CAN1;
 
-can_module!(CAN0, can0, Can0, ModuleId::Can0);
-can_module!(CAN1, can1, Can1, ModuleId::Can1);
+impl_can_module!(CAN0, can0, Can0, ModuleId::Can0);
+impl_can_module!(CAN1, can1, Can1, ModuleId::Can1);
 
 pub(crate) struct ClockSelect(u8);
 

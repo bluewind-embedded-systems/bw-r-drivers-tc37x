@@ -19,7 +19,7 @@ pub(super) struct NodeEffects<T> {
     pub(crate) node_id: NodeId, // TODO Is this necessary?
 }
 
-macro_rules! can_node_effect {
+macro_rules! impl_can_node_effect {
     ($NodeReg:path) => {
 
 impl NodeEffects<$NodeReg> {
@@ -432,5 +432,5 @@ impl NodeEffects<$NodeReg> {
 }
 }
 
-can_node_effect!(pac::can0::N);
-can_node_effect!(pac::can1::N);
+impl_can_node_effect!(pac::can0::N);
+impl_can_node_effect!(pac::can1::N);
