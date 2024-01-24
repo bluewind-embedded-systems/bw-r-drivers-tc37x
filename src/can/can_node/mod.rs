@@ -4,7 +4,7 @@
 mod effects;
 
 use super::baud_rate::*;
-use super::can_module::{ModuleId, ClockSource};
+use super::can_module::{ClockSource, ModuleId};
 use super::frame::{DataLenghtCode, Frame};
 use super::internals::{Rx, Tx};
 use super::msg::{ReadFrom, RxBufferId, TxBufferId};
@@ -244,8 +244,8 @@ impl NewCanNode<$NodeReg, $ModuleReg> {
         })
     }
 
-    fn set_rx_fifo0(&self, data: FifoData) {    
-        // TODO impl conversion DataFieldSize to u8 
+    fn set_rx_fifo0(&self, data: FifoData) {
+        // TODO impl conversion DataFieldSize to u8
         self.effects.set_rx_fifo0_data_field_size(data.field_size.into_register_value());
         self.effects.set_rx_fifo0_start_address(data.start_address);
         self.effects.set_rx_fifo0_size(data.size);
@@ -289,7 +289,7 @@ impl NewCanNode<$NodeReg, $ModuleReg> {
     }
 
     fn configure_baud_rate(&self, baud_rate: &BitTimingConfig) {
-        let bit_timing: BitTiming = match baud_rate {
+        let bit_timing: NominalBitTiming = match baud_rate {
             BitTimingConfig::Auto(baud_rate) => {
                 let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
                 calculate_bit_timing(
@@ -306,7 +306,7 @@ impl NewCanNode<$NodeReg, $ModuleReg> {
     }
 
     fn configure_fast_baud_rate(&self, baud_rate: &FastBitTimingConfig) {
-        let bit_timing: BitTiming = match baud_rate {
+        let bit_timing: DataBitTiming = match baud_rate {
             FastBitTimingConfig::Auto(baud_rate) => {
                 let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
                 calculate_fast_bit_timing(
@@ -581,9 +581,9 @@ pub enum DataFieldSize {
 }
 
 impl DataFieldSize {
-    fn into_register_value(self) ->  u8 {      
+    fn into_register_value(self) -> u8 {
         let value = match self {
-            DataFieldSize::_8  => 0,
+            DataFieldSize::_8 => 0,
             DataFieldSize::_12 => 1,
             DataFieldSize::_16 => 2,
             DataFieldSize::_20 => 3,

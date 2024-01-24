@@ -8,7 +8,7 @@ use crate::util::F32Abs;
 
 pub enum BitTimingConfig {
     Auto(AutoBitTiming),
-    Manual(BitTiming),
+    Manual(NominalBitTiming),
 }
 
 impl Default for BitTimingConfig {
@@ -19,7 +19,7 @@ impl Default for BitTimingConfig {
 
 pub enum FastBitTimingConfig {
     Auto(AutoBitTiming),
-    Manual(BitTiming),
+    Manual(DataBitTiming),
 }
 
 impl Default for FastBitTimingConfig {
@@ -186,8 +186,16 @@ pub(super) fn get_best_sjw(best_tbaud: u32, best_tseg2: u32, sync_jump_width: u1
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct BitTiming {
+pub struct NominalBitTiming {
     pub(super) brp: u16,
+    pub(super) sjw: u8,
+    pub(super) tseg1: u8,
+    pub(super) tseg2: u8,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct DataBitTiming {
+    pub(super) brp: u8,
     pub(super) sjw: u8,
     pub(super) tseg1: u8,
     pub(super) tseg2: u8,
@@ -198,7 +206,7 @@ pub(super) fn calculate_bit_timing(
     baud_rate: u32,
     sample_point: u16,
     sjw: u16,
-) -> BitTiming {
+) -> NominalBitTiming {
     info!(
         "module_freq: {}, baud_rate: {}, sample_point: {}, sync_jump_with: {}",
         module_freq, baud_rate, sample_point, sjw
@@ -218,7 +226,7 @@ pub(super) fn calculate_bit_timing(
     let best_sjw = get_best_sjw(best.tbaud as _, best_tseg2 as _, sjw);
 
     // TODO check this smell, why 1 is subtracted from these values?
-    BitTiming {
+    NominalBitTiming {
         brp: best.brp as u16 - 1,
         sjw: best_sjw as u8 - 1,
         tseg1: best_tseg1 as u8 - 1,
@@ -231,7 +239,7 @@ pub(super) fn calculate_fast_bit_timing(
     baud_rate: u32,
     sample_point: u16,
     sjw: u16,
-) -> BitTiming {
+) -> DataBitTiming {
     /* Set values into node */
     let best = get_best_baud_rate(
         DBTP_DBRP_MSK,
@@ -246,8 +254,8 @@ pub(super) fn calculate_fast_bit_timing(
     let best_sjw = get_best_sjw(best.tbaud as _, best_tseg2 as _, sjw);
 
     // TODO check this smell, why 1 is subtracted from these values?
-    BitTiming {
-        brp: best.brp as u16 - 1,
+    DataBitTiming {
+        brp: best.brp as u8 - 1,
         sjw: best_sjw as u8 - 1,
         tseg1: best_tseg1 as u8 - 1,
         tseg2: best_tseg2 as u8 - 1,

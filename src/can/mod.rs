@@ -9,7 +9,7 @@ mod internals;
 pub mod msg;
 mod reg;
 
-pub use baud_rate::{AutoBitTiming, BitTiming, BitTimingConfig};
+pub use baud_rate::{AutoBitTiming, BitTimingConfig, DataBitTiming, NominalBitTiming};
 pub use can_module::{Module, ModuleConfig, ModuleId};
 pub use can_node::{DataFieldSize, Node, NodeConfig, NodeId, TxConfig, TxMode};
 pub use frame::Frame;

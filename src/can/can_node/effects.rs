@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
 
-use crate::can::baud_rate::{calculate_fast_bit_timing, BitTiming};
+use crate::can::baud_rate::{calculate_fast_bit_timing, DataBitTiming, NominalBitTiming};
 use crate::can::can_node::{
     FrameMode, Interrupt, InterruptGroup, InterruptLine, Priority, RxFifoMode, RxSel, Tos,
 };
@@ -146,11 +146,11 @@ impl NodeEffects<$NodeReg> {
         while !{ unsafe { cccr.read() }.init().get().0 == 0u8 } {}
     }
 
-    pub(crate) fn set_nominal_bit_timing(&self, timing: &BitTiming) {
+    pub(crate) fn set_nominal_bit_timing(&self, timing: &NominalBitTiming) {
         unsafe {
             self.reg.nbtpi().modify(|r| {
                 r.nbrp()
-                    .set(timing.brp)
+                    .set(timing.brp as u16) // expected u16
                     .nsjw()
                     .set(timing.sjw)
                     .ntseg1()
@@ -161,12 +161,11 @@ impl NodeEffects<$NodeReg> {
         }
     }
 
-    pub(crate) fn set_data_bit_timing(&self, timing: &BitTiming) {
-        // TODO Remove unwrap
+    pub(crate) fn set_data_bit_timing(&self, timing: &DataBitTiming) {
         unsafe {
             self.reg.dbtpi().modify(|r| {
                 r.dbrp()
-                    .set(timing.brp.try_into().unwrap())
+                    .set(timing.brp)
                     .dsjw()
                     .set(timing.sjw)
                     .dtseg1()
