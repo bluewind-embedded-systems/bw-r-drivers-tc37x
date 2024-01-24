@@ -1,6 +1,6 @@
 #![allow(unused_variables)]
 
-use crate::can::can_node::MessageId;
+use crate::can::msg::MessageId;
 use embedded_can::{Id, StandardId};
 
 #[repr(u8)]

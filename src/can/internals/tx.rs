@@ -1,9 +1,5 @@
-use crate::can::{
-    can_node::{FrameMode, MessageId, MessageIdLenght},
-    frame::DataLenghtCode,
-    reg,
-};
-use crate::can::msg::TxBufferId;
+use crate::can::msg::{MessageId, MessageIdLenght, TxBufferId};
+use crate::can::{can_node::FrameMode, frame::DataLenghtCode, reg};
 use crate::log::debug;
 
 pub struct Tx {

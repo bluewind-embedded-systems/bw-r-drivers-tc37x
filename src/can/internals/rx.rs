@@ -1,5 +1,6 @@
+use crate::can::msg::MessageIdLenght;
 use crate::can::{
-    can_node::{FrameMode, MessageIdLenght},
+    can_node::FrameMode,
     frame::DataLenghtCode,
     //types::{DataLenghtCode, FrameMode, MessageIdLenght},
     reg,

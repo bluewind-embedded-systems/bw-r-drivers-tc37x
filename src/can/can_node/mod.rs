@@ -9,6 +9,7 @@ use super::frame::{DataLenghtCode, Frame};
 use super::internals::{Rx, Tx};
 use super::msg::{ReadFrom, RxBufferId, TxBufferId};
 use super::Module;
+use crate::can::msg::MessageId;
 
 use crate::can::can_node::effects::NodeEffects;
 use crate::log::{info, HexSlice};
@@ -977,46 +978,6 @@ impl TxdOut {
 }
 
 pub type Priority = u8;
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub enum MessageIdLenght {
-    Standard,
-    Extended,
-    Both,
-}
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct MessageId {
-    pub data: u32,
-    pub length: MessageIdLenght,
-}
-
-impl From<embedded_can::Id> for MessageId {
-    fn from(id: embedded_can::Id) -> Self {
-        match id {
-            embedded_can::Id::Standard(id) => id.into(),
-            embedded_can::Id::Extended(id) => id.into(),
-        }
-    }
-}
-
-impl From<embedded_can::StandardId> for MessageId {
-    fn from(id: embedded_can::StandardId) -> Self {
-        MessageId {
-            data: id.as_raw().into(),
-            length: MessageIdLenght::Standard,
-        }
-    }
-}
-
-impl From<embedded_can::ExtendedId> for MessageId {
-    fn from(id: embedded_can::ExtendedId) -> Self {
-        MessageId {
-            data: id.as_raw(),
-            length: MessageIdLenght::Extended,
-        }
-    }
-}
 
 #[derive(Clone, Copy)]
 pub struct TxConfig {

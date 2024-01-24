@@ -48,6 +48,33 @@ pub struct MessageId {
     pub length: MessageIdLenght,
 }
 
+impl From<embedded_can::Id> for MessageId {
+    fn from(id: embedded_can::Id) -> Self {
+        match id {
+            embedded_can::Id::Standard(id) => id.into(),
+            embedded_can::Id::Extended(id) => id.into(),
+        }
+    }
+}
+
+impl From<embedded_can::StandardId> for MessageId {
+    fn from(id: embedded_can::StandardId) -> Self {
+        MessageId {
+            data: id.as_raw().into(),
+            length: MessageIdLenght::Standard,
+        }
+    }
+}
+
+impl From<embedded_can::ExtendedId> for MessageId {
+    fn from(id: embedded_can::ExtendedId) -> Self {
+        MessageId {
+            data: id.as_raw(),
+            length: MessageIdLenght::Extended,
+        }
+    }
+}
+
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum FrameMode {
     Standard,
