@@ -79,11 +79,7 @@ macro_rules! impl_can_module {
 
                 // Instead of dealing with lifetimes, we just create a new instance of CanModule
                 // TODO This is not ideal, but it works for now
-                let module = Module::<$Reg, Enabled> {
-                    nodes_taken: self.nodes_taken,
-                    _phantom: PhantomData,
-                };
-
+                let module = Module::<$Reg, Enabled>::new();
                 Some(Node::<$($m)::+::N, $Reg>::new(module, node_id))
             }
 
