@@ -19,7 +19,7 @@ pub struct ModuleConfig {}
 pub struct Disabled;
 pub struct Enabled;
 
-pub struct Module<T, S = Disabled>(PhantomData<(T, S)>);
+pub struct Module<Reg, State = Disabled>(PhantomData<(Reg, State)>);
 
 macro_rules! can_module {
     ($reg:ident, $m:ident, $Reg:ty, $id: expr) => {
