@@ -329,6 +329,7 @@ impl NodeEffects<$NodeReg> {
 
     pub(crate) fn set_rx_buffer_data_field_size(&self, size: u8) {
         unsafe { self.reg.rx().rxesci().modify(|r| r.rbds().set(size.into())) };
+        // TODO Is this todo correct? What are we supposed to do here?
         todo!()
     }
 
