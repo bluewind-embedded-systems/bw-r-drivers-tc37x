@@ -231,7 +231,7 @@ impl Node<$NodeReg, $ModuleReg> {
 
     fn set_rx_fifo0(&self, data: FifoData) {
         // TODO impl conversion DataFieldSize to u8
-        self.effects.set_rx_fifo0_data_field_size(data.field_size.into_register_value());
+        self.effects.set_rx_fifo0_data_field_size(data.field_size.to_esci_register_value());
         self.effects.set_rx_fifo0_start_address(data.start_address);
         self.effects.set_rx_fifo0_size(data.size);
         self.effects
@@ -303,8 +303,7 @@ impl Node<$NodeReg, $ModuleReg> {
 
     #[inline]
     pub fn set_tx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
-        info!("Data field size: {}", data_field_size.into_register_value());
-        self.effects.set_tx_buffer_data_field_size(data_field_size.into_register_value());
+        self.effects.set_tx_buffer_data_field_size(data_field_size.to_esci_register_value());
     }
 
     fn set_frame_mode(&self, frame_mode: FrameMode) {
@@ -460,7 +459,7 @@ impl Node<$NodeReg, $ModuleReg> {
 
     #[inline]
     pub fn set_rx_buffer_data_field_size(&self, size: DataFieldSize) {
-        self.effects.set_rx_buffer_data_field_size(size.into_register_value());
+        self.effects.set_rx_buffer_data_field_size(size.to_esci_register_value());
     }
 
     pub fn is_rx_buffer_new_data_updated(&self, rx_buffer_id: RxBufferId) -> bool {
@@ -552,8 +551,7 @@ pub enum DataFieldSize {
 }
 
 impl DataFieldSize {
-    // TODO Check if this is right
-    fn into_register_value(self) -> u8 {
+    fn to_esci_register_value(self) -> u8 {
         let value = match self {
             DataFieldSize::_8 => 0,
             DataFieldSize::_12 => 1,
