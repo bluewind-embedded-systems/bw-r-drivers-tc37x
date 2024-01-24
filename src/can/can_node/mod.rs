@@ -114,22 +114,22 @@ macro_rules! impl_can_node {
 
 impl Node<$NodeReg, $ModuleReg> {
     /// Only a module can create a node. This function is only accessible from within this crate.
-    pub(super) fn new(module: &mut Module<$ModuleReg, can_module::Enabled>, id: NodeId, config: NodeConfig) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError> {
-        let node_index : u8 = id.into();
+    pub(super) fn new(module: &mut Module<$ModuleReg, can_module::Enabled>, node_id: NodeId, config: NodeConfig) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError> {
+        let node_index : u8 = node_id.into();
         let node_index : usize = node_index.into();
         let node_reg = module.registers().n()[node_index];
         let effects = NodeEffects::<$NodeReg>::new(node_reg);
 
+        module
+            .set_clock_source(node_id.into(), config.clock_source).map_err(|_| ConfigError::CannotSetClockSource)?;
+
         let node = Self {
-            node_id:id,
+            node_id,
             effects,
             _phantom: PhantomData,
             frame_mode: config.frame_mode,
             ram_base_address: module.ram_base_address() as u32,
         };
-
-        module
-            .set_clock_source(node.node_id.into(), config.clock_source).map_err(|_| ConfigError::CannotSetClockSource)?;
 
         node.effects.enable_configuration_change();
 
