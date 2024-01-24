@@ -1,6 +1,7 @@
 #![allow(unused_variables)]
 
 use crate::can::msg::MessageId;
+use core::hint::unreachable_unchecked;
 use embedded_can::{Id, StandardId};
 
 #[repr(u8)]
@@ -25,7 +26,7 @@ pub enum DataLenghtCode {
 }
 
 impl DataLenghtCode {
-    fn from_length(length: usize) -> Option<Self> {
+    pub const fn from_length(length: usize) -> Option<Self> {
         match length {
             0 => Some(Self::_0),
             1 => Some(Self::_1),
@@ -44,6 +45,27 @@ impl DataLenghtCode {
             48 => Some(Self::_48),
             64 => Some(Self::_64),
             _ => None,
+        }
+    }
+
+    pub const fn to_length(&self) -> usize {
+        match self {
+            Self::_0 => 0,
+            Self::_1 => 1,
+            Self::_2 => 2,
+            Self::_3 => 3,
+            Self::_4 => 4,
+            Self::_5 => 5,
+            Self::_6 => 6,
+            Self::_7 => 7,
+            Self::_8 => 8,
+            Self::_12 => 12,
+            Self::_16 => 16,
+            Self::_20 => 20,
+            Self::_24 => 24,
+            Self::_32 => 32,
+            Self::_48 => 48,
+            Self::_64 => 64,
         }
     }
 }
@@ -74,23 +96,9 @@ impl TryFrom<u8> for DataLenghtCode {
     }
 }
 
-impl DataLenghtCode {
-    pub fn get_data_length_in_bytes(&self) -> u32 {
-        match *self {
-            n if n <= Self::_8 => n as u32,
-            n if n <= Self::_24 => (n as u32 - 6) << 2,
-            n => (n as u32 - 11) << 4,
-        }
-    }
-
-    pub fn get_data_length_int32(&self) -> u32 {
-        let num_byts = match *self {
-            n if n <= Self::_8 => n as u32,
-            n if n <= Self::_24 => (n as u32 - 6) << 2,
-            n => (n as u32 - 11) << 4,
-        };
-
-        (num_byts + 3) >> 2
+impl From<DataLenghtCode> for u8 {
+    fn from(value: DataLenghtCode) -> Self {
+        value as u8
     }
 }
 

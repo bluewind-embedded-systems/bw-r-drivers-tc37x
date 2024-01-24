@@ -71,13 +71,13 @@ impl Tx {
         unsafe {
             self.inner
                 .t1()
-                .modify(|r| r.dlc().set(data_length_code as u8))
+                .modify(|r| r.dlc().set(data_length_code.into()))
         };
     }
 
     pub fn write_tx_buf_data(&self, data_length_code: DataLenghtCode, data: *const u8) {
         let destination_address = self.inner.db().ptr() as _;
-        let length = data_length_code.get_data_length_in_bytes();
+        let length = data_length_code.to_length();
 
         unsafe { core::ptr::copy_nonoverlapping(data, destination_address, length as _) };
     }

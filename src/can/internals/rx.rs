@@ -76,7 +76,7 @@ impl Rx {
 
     pub fn read_data(&self, data_length_code: DataLenghtCode, data: *mut u8) {
         let source_address = self.inner.db().ptr() as _;
-        let length = data_length_code.get_data_length_in_bytes();
+        let length = data_length_code.to_length();
 
         debug!("reading {} bytes from {:x}", length, source_address);
 
