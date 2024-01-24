@@ -15,8 +15,8 @@ use crate::can::can_node::effects::NodeEffects;
 use crate::log::{info, HexSlice};
 use crate::scu::wdt_call;
 use crate::util::wait_nop_cycles;
-use core::mem::transmute;
 use core::marker::PhantomData;
+use core::mem::transmute;
 use tc37x_pac::hidden::RegValue;
 use tc37x_pac::RegisterValue;
 
@@ -69,7 +69,6 @@ pub struct NodeConfig {
     pub transceiver_delay_offset: u8,
     pub frame_mode: FrameMode,
     pub tx: Option<TxConfig>,
-    pub rx_mode: RxMode,
     pub message_ram: MessageRAM,
 }
 
