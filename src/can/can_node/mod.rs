@@ -122,7 +122,7 @@ impl Node<$NodeReg, $ModuleReg> {
         let node_index : u8 = id.into();
         let node_index : usize = node_index.into();
         let node_reg = module.registers().n()[node_index];
-        let effects = NodeEffects::<$NodeReg>{reg:node_reg, node_id:id};
+        let effects = NodeEffects::<$NodeReg>::new(node_reg);
         NewCanNode {
             module,
             node_id:id,

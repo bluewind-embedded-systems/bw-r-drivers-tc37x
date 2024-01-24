@@ -15,18 +15,16 @@ use tc37x_pac::RegisterValue;
 use super::NodeId;
 
 pub(super) struct NodeEffects<T> {
-    pub(crate) reg: T,
-    pub(crate) node_id: NodeId, // TODO Is this necessary?
+    reg: T,
 }
 
 macro_rules! impl_can_node_effect {
     ($NodeReg:path) => {
 
 impl NodeEffects<$NodeReg> {
-    pub(crate) fn new_node(reg: $NodeReg, node_id: NodeId) -> NodeEffects<$NodeReg> {
+    pub(super) fn new(reg: $NodeReg) -> NodeEffects<$NodeReg> {
         NodeEffects {
             reg,
-            node_id,
         }
     }
 
