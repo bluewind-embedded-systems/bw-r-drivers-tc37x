@@ -584,6 +584,7 @@ pub enum DataFieldSize {
 }
 
 impl DataFieldSize {
+    // TODO Check if this is right
     fn into_register_value(self) -> u8 {
         let value = match self {
             DataFieldSize::_8 => 0,
