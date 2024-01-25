@@ -235,7 +235,6 @@ impl Node<$NodeReg, $ModuleReg> {
     }
 
     fn set_rx_fifo0(&self, data: FifoData) {
-        // TODO impl conversion DataFieldSize to u8
         self.effects.set_rx_fifo0_data_field_size(data.field_size.to_esci_register_value());
         self.effects.set_rx_fifo0_start_address(data.start_address);
         self.effects.set_rx_fifo0_size(data.size);
@@ -401,7 +400,6 @@ impl Node<$NodeReg, $ModuleReg> {
         TxBufferId::new_const(id)
     }
 
-    // TODO Use a meaningful error type
     #[allow(unused_variables)]
     fn transmit_inner(
         &self,
@@ -419,14 +417,9 @@ impl Node<$NodeReg, $ModuleReg> {
         if  req_pending.unwrap() == true{
             return Err(TransmitError::InvalidAccess);
         }
-  
-
-        let ram_base_address = self.ram_base_address;
-
-
 
         let tx_buf_el =
-            self.get_tx_element_address(ram_base_address, buffer_id);
+            self.get_tx_element_address(self.ram_base_address, buffer_id);
 
         tx_buf_el.set_msg_id(id);
 
@@ -446,7 +439,8 @@ impl Node<$NodeReg, $ModuleReg> {
         tx_buf_el.set_data_length(dlc);
         tx_buf_el.write_tx_buf_data(dlc, data.as_ptr());
         tx_buf_el.set_frame_mode_req(self.frame_mode);
-        self.effects.set_tx_buffer_add_request(/*buffer_id*/);
+        let buffer_id = 0; //TODO 
+        self.effects.set_tx_buffer_add_request(buffer_id);
 
         info!("transmit {}#{}", id.data, HexSlice::from(data));
 
@@ -454,22 +448,6 @@ impl Node<$NodeReg, $ModuleReg> {
     }
 }
 
-// IfxLld_Can_Std_Rx_Element_Functions
-impl Node<$NodeReg, $ModuleReg> {
-    pub fn get_rx_fifo0_get_index(&self) -> RxBufferId {
-        let id = self.effects.get_rx_fifo0_get_index();
-        RxBufferId::new_const(id)
-    }
-
-    pub fn get_rx_fifo1_get_index(&self) -> RxBufferId {
-        let id = self.effects.get_rx_fifo1_get_index();
-        RxBufferId::new_const(id)
-    }
-
-    pub fn is_rx_buffer_new_data_updated(&self, rx_buffer_id: RxBufferId) -> bool {
-        self.effects.is_rx_buffer_new_data_updated(rx_buffer_id.0)
-    }
-}
 
 // IfxLld_Can_Std_Tx_Element_Functions
 impl Node<$NodeReg, $ModuleReg> {
@@ -482,24 +460,6 @@ impl Node<$NodeReg, $ModuleReg> {
     pub fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: TxBufferId) -> bool {
         self.effects
             .is_tx_buffer_transmission_occured(tx_buffer_id.0)
-    }
-
-    pub fn get_rx_element_address(
-        &self,
-        ram_base_address: u32,
-        tx_buffers_start_address: u16,
-        buf_from: ReadFrom,
-        buffer_number: RxBufferId,
-    ) -> Rx {
-        let num_of_config_bytes = 8u32;
-        let num_of_data_bytes = self.effects.get_data_field_size(buf_from) as u32;
-        let tx_buffer_size = num_of_config_bytes + num_of_data_bytes;
-        let tx_buffer_index = tx_buffer_size * u32::from(buffer_number);
-
-        let tx_buffer_element_address =
-            ram_base_address + tx_buffers_start_address as u32 + tx_buffer_index;
-
-        Rx::new(tx_buffer_element_address as *mut u8)
     }
 
     pub fn get_tx_element_address(

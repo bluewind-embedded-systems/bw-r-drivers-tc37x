@@ -370,14 +370,44 @@ impl NodeEffects<$NodeReg> {
     }
 
     #[inline]
-    pub(crate) fn set_tx_buffer_add_request(&self /*,tx_buffer_id: TxBufferId*/) {
-        unsafe {
-            self.reg
-                .tx()
-                .txbari()
-                // TODO argument is now a postfix?
-                .modify(|r| r.ar0(/*tx_buffer_id.into()*/).set(1u8.into()))
-        }
+    pub(crate) fn set_tx_buffer_add_request(&self, id:u8) -> Result<(),()> {
+        match id {
+            0 =>  { unsafe  {self.reg.tx().txbari().modify(|r| r.ar0().set(1u8.into()))} ; Ok(())}, 
+            1 =>  { unsafe  {self.reg.tx().txbari().modify(|r| r.ar1().set(1u8.into()))} ; Ok(())}, 
+            2 =>  { unsafe  {self.reg.tx().txbari().modify(|r| r.ar2().set(1u8.into()))} ; Ok(())}, 
+            3 =>  { unsafe  {self.reg.tx().txbari().modify(|r| r.ar3().set(1u8.into()))} ; Ok(())}, 
+            4 =>  { unsafe  {self.reg.tx().txbari().modify(|r| r.ar4().set(1u8.into()))} ; Ok(())}, 
+            5 =>  { unsafe  {self.reg.tx().txbari().modify(|r| r.ar5().set(1u8.into()))} ; Ok(())}, 
+            6 =>  { unsafe  {self.reg.tx().txbari().modify(|r| r.ar6().set(1u8.into()))} ; Ok(())}, 
+            7 =>  { unsafe  {self.reg.tx().txbari().modify(|r| r.ar7().set(1u8.into()))} ; Ok(())}, 
+            8 =>  { unsafe  {self.reg.tx().txbari().modify(|r| r.ar8().set(1u8.into()))} ; Ok(())}, 
+            9 =>  { unsafe  {self.reg.tx().txbari().modify(|r| r.ar9().set(1u8.into()))} ; Ok(())}, 
+            10 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar10().set(1u8.into()))};  Ok(())}, 
+            11 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar11().set(1u8.into()))};  Ok(())}, 
+            12 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar12().set(1u8.into()))};  Ok(())}, 
+            14 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar14().set(1u8.into()))};  Ok(())}, 
+            13 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar13().set(1u8.into()))};  Ok(())}, 
+            15 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar15().set(1u8.into()))};  Ok(())}, 
+            16 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar16().set(1u8.into()))};  Ok(())}, 
+            17 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar17().set(1u8.into()))};  Ok(())}, 
+            18 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar18().set(1u8.into()))};  Ok(())}, 
+            19 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar19().set(1u8.into()))};  Ok(())}, 
+            20 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar20().set(1u8.into()))};  Ok(())}, 
+            21 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar21().set(1u8.into()))};  Ok(())}, 
+            22 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar22().set(1u8.into()))};  Ok(())}, 
+            23 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar23().set(1u8.into()))};  Ok(())}, 
+            24 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar24().set(1u8.into()))};  Ok(())}, 
+            25 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar25().set(1u8.into()))};  Ok(())}, 
+            26 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar26().set(1u8.into()))};  Ok(())}, 
+            27 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar27().set(1u8.into()))};  Ok(())}, 
+            28 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar28().set(1u8.into()))};  Ok(())}, 
+            29 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar29().set(1u8.into()))};  Ok(())}, 
+            30 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar30().set(1u8.into()))};  Ok(())}, 
+            31 => { unsafe {self.reg.tx().txbari().modify(|r| r.ar31().set(1u8.into()))};  Ok(())}, 
+            _ => Err(())
+
+        } 
+
     }
 
     // TODO The original code does not work with current PAC
