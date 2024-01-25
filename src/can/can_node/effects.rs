@@ -326,11 +326,6 @@ impl NodeEffects<$NodeReg> {
         unsafe { self.reg.rx().rxf1si().read() }.f1gi().get()
     }
 
-    pub(crate) fn set_rx_buffer_data_field_size(&self, size: u8) {
-        unsafe { self.reg.rx().rxesci().modify(|r| r.rbds().set(size.into())) };
-        // TODO Is this todo correct? What are we supposed to do here?
-        todo!()
-    }
 
     pub(crate) fn is_rx_buffer_new_data_updated(&self, rx_buffer_id: u8) -> bool {
         let (data, mask) = if rx_buffer_id < 32 {

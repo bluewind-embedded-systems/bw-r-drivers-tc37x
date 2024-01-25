@@ -466,11 +466,6 @@ impl Node<$NodeReg, $ModuleReg> {
         RxBufferId::new_const(id)
     }
 
-    #[inline]
-    pub fn set_rx_buffer_data_field_size(&self, size: DataFieldSize) {
-        self.effects.set_rx_buffer_data_field_size(size.to_esci_register_value());
-    }
-
     pub fn is_rx_buffer_new_data_updated(&self, rx_buffer_id: RxBufferId) -> bool {
         self.effects.is_rx_buffer_new_data_updated(rx_buffer_id.0)
     }
