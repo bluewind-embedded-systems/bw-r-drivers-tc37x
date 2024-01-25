@@ -225,7 +225,6 @@ pub(super) fn calculate_bit_timing(
         get_best_sample_point(NBTP_NTSEG1_MSK, NBTP_NTSEG2_MSK, best.tbaud, sample_point);
     let best_sjw = get_best_sjw(best.tbaud as _, best_tseg2 as _, sjw);
 
-    // TODO check this smell, why 1 is subtracted from these values?
     NominalBitTiming {
         brp: best.brp as u16 - 1,
         sjw: best_sjw as u8 - 1,
@@ -253,7 +252,6 @@ pub(super) fn calculate_fast_bit_timing(
         get_best_sample_point(DBTP_DTSEG1_MSK, DBTP_DTSEG2_MSK, best.tbaud, sample_point);
     let best_sjw = get_best_sjw(best.tbaud as _, best_tseg2 as _, sjw);
 
-    // TODO check this smell, why 1 is subtracted from these values?
     DataBitTiming {
         brp: best.brp as u8 - 1,
         sjw: best_sjw as u8 - 1,
