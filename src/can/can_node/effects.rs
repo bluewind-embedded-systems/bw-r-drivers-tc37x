@@ -225,8 +225,7 @@ impl NodeEffects<$NodeReg> {
     }
 
     pub(crate) fn connect_pin_rx(&self, rx_sel: RxSel) {
-        // TODO Check if "as u8" is necessary and safe
-        unsafe { self.reg.npcri().modify(|r| r.rxsel().set(rx_sel as u8)) };
+        unsafe { self.reg.npcri().modify(|r| r.rxsel().set(rx_sel.into())) };
     }
 
     pub(crate) fn get_rx_fifo0_fill_level(&self) -> u8 {
@@ -411,19 +410,41 @@ impl NodeEffects<$NodeReg> {
         }
     }
 
-    pub(crate) fn is_tx_buffer_request_pending(&self, tx_buffer_id: TxBufferId) -> bool {
+    pub(crate) fn is_tx_buffer_request_pending(&self, tx_buffer_id: TxBufferId) -> Result<bool, ()> {
         match tx_buffer_id.0 {
-            0 => unsafe { self.reg.tx().txbrpi().read() }.trp0().get().0 == 1,
-            1 => unsafe { self.reg.tx().txbrpi().read() }.trp1().get().0 == 1,
-            2 => unsafe { self.reg.tx().txbrpi().read() }.trp2().get().0 == 1,
-            3 => unsafe { self.reg.tx().txbrpi().read() }.trp3().get().0 == 1,
-            4 => unsafe { self.reg.tx().txbrpi().read() }.trp4().get().0 == 1,
-            5 => unsafe { self.reg.tx().txbrpi().read() }.trp5().get().0 == 1,
-            6 => unsafe { self.reg.tx().txbrpi().read() }.trp6().get().0 == 1,
-            7 => unsafe { self.reg.tx().txbrpi().read() }.trp7().get().0 == 1,
-            8 => unsafe { self.reg.tx().txbrpi().read() }.trp8().get().0 == 1,
-            // TODO implement trp0..trp31
-            _ => todo!(),
+            0 =>  Ok(unsafe { self.reg.tx().txbrpi().read() }.trp0().get().0 == 1 ),
+            1 =>  Ok(unsafe { self.reg.tx().txbrpi().read() }.trp1().get().0 == 1 ),
+            2 =>  Ok(unsafe { self.reg.tx().txbrpi().read() }.trp2().get().0 == 1 ),
+            3 =>  Ok(unsafe { self.reg.tx().txbrpi().read() }.trp3().get().0 == 1 ),
+            4 =>  Ok(unsafe { self.reg.tx().txbrpi().read() }.trp4().get().0 == 1 ),
+            5 =>  Ok(unsafe { self.reg.tx().txbrpi().read() }.trp5().get().0 == 1 ),
+            6 =>  Ok(unsafe { self.reg.tx().txbrpi().read() }.trp6().get().0 == 1 ),
+            7 =>  Ok(unsafe { self.reg.tx().txbrpi().read() }.trp7().get().0 == 1 ),
+            8 =>  Ok(unsafe { self.reg.tx().txbrpi().read() }.trp8().get().0 == 1 ),
+            9 =>  Ok(unsafe { self.reg.tx().txbrpi().read() }.trp9().get().0 == 1 ),
+            10 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp10().get().0 == 1),
+            11 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp11().get().0 == 1),
+            12 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp12().get().0 == 1),
+            13 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp13().get().0 == 1),
+            14 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp14().get().0 == 1),
+            15 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp15().get().0 == 1),
+            16 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp16().get().0 == 1),
+            17 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp17().get().0 == 1),
+            18 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp18().get().0 == 1),
+            19 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp19().get().0 == 1),
+            20 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp20().get().0 == 1),
+            21 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp21().get().0 == 1),
+            22 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp22().get().0 == 1),
+            23 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp23().get().0 == 1),
+            24 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp24().get().0 == 1),
+            25 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp25().get().0 == 1),
+            26 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp26().get().0 == 1),
+            27 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp27().get().0 == 1),
+            28 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp28().get().0 == 1),
+            29 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp29().get().0 == 1),
+            30 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp30().get().0 == 1),
+            31 => Ok(unsafe { self.reg.tx().txbrpi().read() }.trp31().get().0 == 1),
+            _ => Err(()),
         }
     }
 }

@@ -71,7 +71,11 @@ pub struct NodeConfig {
     pub tx: Option<TxConfig>,
     pub rx: Option<RxConfig>,
     pub message_ram: MessageRAM,
+
+
 }
+
+const TX_BUFFER_START_ADDRESS: u32 = 0x0440u32;
 
 #[derive(Clone, Copy)]
 pub enum NodeId {
@@ -107,6 +111,7 @@ pub enum ConfigError {
 pub enum TransmitError {
     Busy,
     InvalidDataLength,
+    InvalidAccess
 }
 
 macro_rules! impl_can_node {
@@ -407,17 +412,21 @@ impl Node<$NodeReg, $ModuleReg> {
         error_state_indicator: bool,
         data: &[u8],
     ) -> Result<(), TransmitError> {
-        if self.effects.is_tx_buffer_request_pending(buffer_id) {
+        let req_pending = self.effects.is_tx_buffer_request_pending(buffer_id); 
+        if  req_pending.is_err()  {
             return Err(TransmitError::Busy);
         }
+        if  req_pending.unwrap() == true{
+            return Err(TransmitError::InvalidAccess);
+        }
+  
 
         let ram_base_address = self.ram_base_address;
 
-        // FIXME Use real start address
-        let tx_buffers_start_address = 0x0440u16;
+
 
         let tx_buf_el =
-            self.get_tx_element_address(ram_base_address, tx_buffers_start_address, buffer_id);
+            self.get_tx_element_address(ram_base_address, buffer_id);
 
         tx_buf_el.set_msg_id(id);
 
@@ -501,7 +510,6 @@ impl Node<$NodeReg, $ModuleReg> {
     pub fn get_tx_element_address(
         &self,
         ram_base_address: u32,
-        tx_buffers_start_address: u16,
         buffer_number: TxBufferId,
     ) -> Tx {
         let num_of_config_bytes = 8u32;
@@ -510,7 +518,7 @@ impl Node<$NodeReg, $ModuleReg> {
         let tx_buffer_index = tx_buffer_size * u32::from(buffer_number);
 
         let tx_buffer_element_address =
-            ram_base_address + tx_buffers_start_address as u32 + tx_buffer_index;
+            ram_base_address + TX_BUFFER_START_ADDRESS + tx_buffer_index;
 
         Tx::new(tx_buffer_element_address as *mut u8)
     }
@@ -918,6 +926,21 @@ pub enum RxSel {
     _F,
     _G,
     _H,
+}
+
+impl Into<u8> for RxSel {
+    fn into(self) -> u8 {
+        match self {
+            RxSel::_A => 0,
+            RxSel::_B => 1,
+            RxSel::_C => 2,
+            RxSel::_D => 3,
+            RxSel::_E => 4,
+            RxSel::_F => 5,
+            RxSel::_G => 6,
+            RxSel::_H => 7,
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
