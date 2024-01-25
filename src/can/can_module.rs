@@ -182,7 +182,6 @@ pub enum ClockSource {
 impl From<ClockSource> for u8 {
     fn from(x: ClockSource) -> Self {
         match x {
-            //ClockSource::NoClock => 0,
             ClockSource::Asynchronous => 1,
             ClockSource::Synchronous => 2,
             ClockSource::Both => 3,

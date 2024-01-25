@@ -22,16 +22,13 @@ use tc37x_pac::RegisterValue;
 
 #[derive(PartialEq, Debug, Default, Copy, Clone)]
 pub enum FrameMode {
-    // TODO refactor (annabo)
     #[default]
     Standard,
     FdLong,
     FdLongAndFast,
 }
 #[derive(PartialEq, Debug, Default)]
-pub enum FrameType
-// TODO refactor (annabo)
-{
+pub enum FrameType {
     #[default]
     Receive,
     Transmit,
@@ -71,8 +68,6 @@ pub struct NodeConfig {
     pub tx: Option<TxConfig>,
     pub rx: Option<RxConfig>,
     pub message_ram: MessageRAM,
-
-
 }
 
 const TX_BUFFER_START_ADDRESS: u32 = 0x0440u32;
