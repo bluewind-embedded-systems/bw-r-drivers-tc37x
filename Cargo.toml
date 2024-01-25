@@ -29,11 +29,14 @@ rev = "v1.0.0-rc.1"
 
 [dependencies.tc37x-rt]
 optional = true
-path = "../tc37x-rt"
+git = "ssh://git@git.bwlocal.it/bw-rust/tc37x-rt.git"
+branch = "develop"
 features = []
+   
 
 [dependencies.tc37x-pac]
-path = "../tc37x-pac"
+git = "ssh://git@git.bwlocal.it/libralato/tc37x-pac.git"
+branch = "develop"
 features = [
     "scu",
     "smu",
