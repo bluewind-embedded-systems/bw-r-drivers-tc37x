@@ -5,6 +5,8 @@ use crate::{pac, scu};
 use core::marker::PhantomData;
 use core::ops::Deref;
 use pac::hidden::CastFrom;
+use crate::can::can_node::RxdIn;
+use crate::can::can_node::TxdOut;
 
 #[derive(Clone, Copy)]
 pub enum ModuleId {
@@ -63,7 +65,7 @@ macro_rules! impl_can_module {
                 }
             }
 
-            pub fn take_node(&mut self, node_id: NodeId, cfg: NodeConfig) -> Option<Node<$($m)::+::N, $Reg>> {
+            pub fn take_node(&mut self, node_id: NodeId, cfg: NodeConfig, tx_pins:TxdOut, rx_pins:RxdIn) -> Option<Node<$($m)::+::N, $Reg>> {
                 let node_index = match node_id {
                     NodeId::Node0 => 0,
                     NodeId::Node1 => 1,
@@ -77,7 +79,7 @@ macro_rules! impl_can_module {
 
                 self.nodes_taken[node_index] = true;
 
-                Node::<$($m)::+::N, $Reg>::new(self, node_id, cfg).ok()
+                Node::<$($m)::+::N, $Reg>::new(self, node_id, cfg, tx_pins, rx_pins).ok()
             }
 
             pub fn id(&self) -> ModuleId {
@@ -120,7 +122,7 @@ macro_rules! impl_can_module {
 
                 // TODO Is this enough or we need to wait until actual_clock_source == clock_source
                 // Wait for clock switch
-                wait_nop_cycles(10);
+                 wait_nop_cycles(10);
 
                 // Check if clock switch was successful
                 let mcr = self.read_mcr();

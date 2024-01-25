@@ -57,7 +57,7 @@
 //! To make a pin dynamic, use the `into_dynamic` function, and then use the `make_<mode>` functions to
 //! change the mode
 
-// TODO (alepez) Remove this warning suppression
+// TODO Remove this warning suppression
 #![allow(unused)]
 
 use core::fmt;
@@ -80,8 +80,8 @@ mod partially_erased;
 
 mod erased;
 
-// TODO (alepez) mod exti;
-// TODO (alepez) pub use exti::ExtiPin;
+// TODO  mod exti;
+// TODO  pub use exti::ExtiPin;
 mod dynamic;
 
 pub mod group;
@@ -352,7 +352,7 @@ where
     pub fn set_speed(&mut self, speed: Speed) {
         let offset = 2 * { N };
 
-        // TODO (alepez) Implement set speed
+        // TODO Implement set speed
         // unsafe {
         //     (*Gpio::<P>::ptr())
         //         .ospeedr

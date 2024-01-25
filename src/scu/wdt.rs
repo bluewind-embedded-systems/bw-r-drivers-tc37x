@@ -259,21 +259,6 @@ pub fn set_cpu_endinit_inline_cpu2(password: u16) {
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
-// TODO check function clear_safety_endinit_inline
-// #[inline]
-// pub fn clear_safety_endinit_inline_cpu0(password: u16) {
-//     let con0 = pac::SCU.wdts().wdtscon0();
-
-//     if unsafe { con0.read() }.lck().get() {
-//         unsafe { con0.modify(|r| r.endinit().set(true).lck().set(false).pw().set(password)) };
-//     }
-//     unsafe { con0.modify(|r| r.endinit().set(false).lck().set(true).pw().set(password)) }
-
-//     #[cfg(tricore_arch = "tricore")]
-//     while unsafe { con0.read() }.endinit().get() {}
-// }
-
-// TODO check function clear_safety_endinit_inline
 #[inline]
 pub fn set_safety_endinit_inline(password: u16) {
     let con0 = pac::SCU.wdts().wdtscon0();

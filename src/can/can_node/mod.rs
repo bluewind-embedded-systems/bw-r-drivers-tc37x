@@ -106,374 +106,386 @@ pub enum ConfigError {
 pub enum TransmitError {
     Busy,
     InvalidDataLength,
-    InvalidAccess
+    InvalidAccess,
 }
 
 macro_rules! impl_can_node {
     ($ModuleReg:ty, $NodeReg:path) => {
+        impl Node<$NodeReg, $ModuleReg> {
+            /// Only a module can create a node. This function is only accessible from within this crate.
+            pub(super) fn new(
+                module: &mut Module<$ModuleReg, can_module::Enabled>,
+                node_id: NodeId,
+                config: NodeConfig,
+                pins_tx: TxdOut,
+                pins_rx: RxdIn,
+            ) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError> {
+                let node_index: u8 = node_id.into();
+                let node_index: usize = node_index.into();
+                let node_reg = module.registers().n()[node_index];
+                let effects = NodeEffects::<$NodeReg>::new(node_reg);
 
-impl Node<$NodeReg, $ModuleReg> {
-    /// Only a module can create a node. This function is only accessible from within this crate.
-    pub(super) fn new(module: &mut Module<$ModuleReg, can_module::Enabled>, node_id: NodeId, config: NodeConfig) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError> {
-        let node_index : u8 = node_id.into();
-        let node_index : usize = node_index.into();
-        let node_reg = module.registers().n()[node_index];
-        let effects = NodeEffects::<$NodeReg>::new(node_reg);
+                module
+                    .set_clock_source(node_id.into(), config.clock_source)
+                    .map_err(|_| ConfigError::CannotSetClockSource)?;
 
-        module
-            .set_clock_source(node_id.into(), config.clock_source).map_err(|_| ConfigError::CannotSetClockSource)?;
+                let node = Self {
+                    node_id,
+                    effects,
+                    _phantom: PhantomData,
+                    frame_mode: config.frame_mode,
+                    ram_base_address: module.ram_base_address() as u32,
+                };
 
-        let node = Self {
-            node_id,
-            effects,
-            _phantom: PhantomData,
-            frame_mode: config.frame_mode,
-            ram_base_address: module.ram_base_address() as u32,
-        };
+                node.effects.enable_configuration_change();
 
-        node.effects.enable_configuration_change();
+                node.configure_baud_rate(&config.baud_rate);
 
-        node.configure_baud_rate(&config.baud_rate);
-
-        // for CAN FD frames, set fast baud rate
-        if config.frame_mode != FrameMode::Standard {
-            node.configure_fast_baud_rate(&config.fast_baud_rate);
-        }
-
-        // TODO Check if transceiver_delay_offset is needed only for CAN FD
-        if config.transceiver_delay_offset != 0 {
-            node.effects
-                .set_transceiver_delay_compensation_offset(config.transceiver_delay_offset);
-        }
-
-        // transmit frame configuration
-        if let Some(tx_config) = &config.tx {
-            node.set_tx_buffer_data_field_size(tx_config.buffer_data_field_size);
-            node.effects
-                .set_tx_buffer_start_address(config.message_ram.tx_buffers_start_address);
-
-            let mode = tx_config.mode;
-
-            match mode {
-                TxMode::DedicatedBuffers | TxMode::SharedFifo | TxMode::SharedQueue => {
-                    node.effects
-                        .set_dedicated_tx_buffers_number(tx_config.dedicated_tx_buffers_number);
-                    if let TxMode::SharedFifo | TxMode::SharedQueue = mode {
-                        if let TxMode::SharedFifo = mode {
-                            node.set_transmit_fifo_queue_mode(TxMode::Fifo);
-                        }
-                        if let TxMode::SharedQueue = mode {
-                            node.set_transmit_fifo_queue_mode(TxMode::Queue);
-                        }
-                        node.effects
-                            .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
-                    }
-                    for id in 0..tx_config.dedicated_tx_buffers_number + tx_config.fifo_queue_size {
-                        node.effects
-                            .enable_tx_buffer_transmission_interrupt(TxBufferId(id));
-                    }
+                // for CAN FD frames, set fast baud rate
+                if config.frame_mode != FrameMode::Standard {
+                    node.configure_fast_baud_rate(&config.fast_baud_rate);
                 }
-                TxMode::Fifo | TxMode::Queue => {
-                    node.set_transmit_fifo_queue_mode(mode);
-                    node.effects
-                        .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
-                    for id in 0..tx_config.fifo_queue_size {
-                        node.effects
-                            .enable_tx_buffer_transmission_interrupt(TxBufferId(id));
-                    }
-                }
-            }
 
-            if (1..=32).contains(&tx_config.event_fifo_size) {
-                node.effects.set_tx_event_fifo_start_address(
-                    config.message_ram.tx_event_fifo_start_address,
+                // TODO Check if transceiver_delay_offset is needed only for CAN FD
+                if config.transceiver_delay_offset != 0 {
+                    node.effects
+                        .set_transceiver_delay_compensation_offset(config.transceiver_delay_offset);
+                }
+
+                // transmit frame configuration
+                if let Some(tx_config) = &config.tx {
+                    node.set_tx_buffer_data_field_size(tx_config.buffer_data_field_size);
+                    node.effects
+                        .set_tx_buffer_start_address(config.message_ram.tx_buffers_start_address);
+
+                    let mode = tx_config.mode;
+
+                    match mode {
+                        TxMode::DedicatedBuffers | TxMode::SharedFifo | TxMode::SharedQueue => {
+                            node.effects.set_dedicated_tx_buffers_number(
+                                tx_config.dedicated_tx_buffers_number,
+                            );
+                            if let TxMode::SharedFifo | TxMode::SharedQueue = mode {
+                                if let TxMode::SharedFifo = mode {
+                                    node.set_transmit_fifo_queue_mode(TxMode::Fifo);
+                                }
+                                if let TxMode::SharedQueue = mode {
+                                    node.set_transmit_fifo_queue_mode(TxMode::Queue);
+                                }
+                                node.effects
+                                    .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
+                            }
+                            for id in
+                                0..tx_config.dedicated_tx_buffers_number + tx_config.fifo_queue_size
+                            {
+                                node.effects
+                                    .enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+                            }
+                        }
+                        TxMode::Fifo | TxMode::Queue => {
+                            node.set_transmit_fifo_queue_mode(mode);
+                            node.effects
+                                .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
+                            for id in 0..tx_config.fifo_queue_size {
+                                node.effects
+                                    .enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+                            }
+                        }
+                    }
+
+                    if (1..=32).contains(&tx_config.event_fifo_size) {
+                        node.effects.set_tx_event_fifo_start_address(
+                            config.message_ram.tx_event_fifo_start_address,
+                        );
+                        node.effects
+                            .set_tx_event_fifo_size(tx_config.event_fifo_size);
+                    } else {
+                        crate::log::error!(
+                            "Invalid event fifo size: {}",
+                            tx_config.event_fifo_size
+                        );
+                    }
+
+                    node.set_frame_mode(config.frame_mode);
+                }
+
+                if let Some(_rx_config) = &config.rx {
+                    // TODO Configure rx
+                }
+
+                // TODO Interrupt from config
+                node.set_interrupt(
+                    InterruptGroup::Rxf0n,
+                    Interrupt::RxFifo0newMessage,
+                    InterruptLine(1),
+                    2,
+                    Tos::Cpu0,
                 );
-                node.effects
-                    .set_tx_event_fifo_size(tx_config.event_fifo_size);
-            } else {
-                crate::log::error!("Invalid event fifo size: {}", tx_config.event_fifo_size);
+
+                node.connect_pin_rx(
+                    pins_rx, 
+                    InputMode::PULL_UP,
+                    PadDriver::CmosAutomotiveSpeed3,
+                );
+
+                node.connect_pin_tx(
+                    pins_tx, 
+                    OutputMode::PUSH_PULL,
+                    PadDriver::CmosAutomotiveSpeed3,
+                );
+
+                node.effects.disable_configuration_change();
+
+                Ok(node)
+                
             }
 
-            node.set_frame_mode(config.frame_mode);
-        }
-
-        if let Some(_rx_config) = &config.rx {
-            // TODO Configure rx
-        }
-
-        // TODO Interrupt from config
-        node.set_interrupt(
-            InterruptGroup::Rxf0n,
-            Interrupt::RxFifo0newMessage,
-            InterruptLine(1),
-            2,
-            Tos::Cpu0,
-        );
-
-        // TODO Connect pins from config
-        node.connect_pin_rx(
-            RXD00B_P20_7_IN,
-            InputMode::PULL_UP,
-            PadDriver::CmosAutomotiveSpeed3,
-        );
-
-        // TODO Connect pins from config
-        node.connect_pin_tx(
-            TXD00_P20_8_OUT,
-            OutputMode::PUSH_PULL,
-            PadDriver::CmosAutomotiveSpeed3,
-        );
-
-        node.effects.disable_configuration_change();
-
-        Ok(node)
-    }
-
-    fn set_rx_fifo0(&self, data: FifoData) {
-        self.effects.set_rx_fifo0_data_field_size(data.field_size.to_esci_register_value());
-        self.effects.set_rx_fifo0_start_address(data.start_address);
-        self.effects.set_rx_fifo0_size(data.size);
-        self.effects
-            .set_rx_fifo0_operating_mode(data.operation_mode);
-        self.effects
-            .set_rx_fifo0_watermark_level(data.watermark_level);
-    }
-
-    fn set_inner_tx_buffers(&self, dedicated: DedicatedData) {
-        self.set_tx_buffer_data_field_size(dedicated.field_size);
-        self.effects
-            .set_tx_buffer_start_address(dedicated.start_address);
-    }
-
-    fn set_inner_tx_fifo_queue(&self, mode: TxMode, size: u8) {
-        self.effects.set_transmit_fifo_queue_mode(mode);
-        self.effects.set_transmit_fifo_queue_size(size);
-    }
-
-    fn set_inner_tx_int(&self, size: u8) {
-        for id in 0..size {
-            self.effects
-                .enable_tx_buffer_transmission_interrupt(TxBufferId(id));
-        }
-    }
-
-    fn set_transmit_fifo_queue_mode(&self, mode: TxMode) {
-        if let TxMode::Fifo | TxMode::Queue = mode {
-            self.effects.set_transmit_fifo_queue_mode(mode);
-        } else {
-            // TODO Avoid panic
-            panic!("invalid fifo queue mode");
-        }
-    }
-
-    fn configure_baud_rate(&self, baud_rate: &BitTimingConfig) {
-        let bit_timing: NominalBitTiming = match baud_rate {
-            BitTimingConfig::Auto(baud_rate) => {
-                let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
-                calculate_bit_timing(
-                    module_freq,
-                    baud_rate.baud_rate,
-                    baud_rate.sample_point,
-                    baud_rate.sync_jump_width,
-                )
+            fn set_rx_fifo0(&self, data: FifoData) {
+                self.effects
+                    .set_rx_fifo0_data_field_size(data.field_size.to_esci_register_value());
+                self.effects.set_rx_fifo0_start_address(data.start_address);
+                self.effects.set_rx_fifo0_size(data.size);
+                self.effects
+                    .set_rx_fifo0_operating_mode(data.operation_mode);
+                self.effects
+                    .set_rx_fifo0_watermark_level(data.watermark_level);
             }
-            BitTimingConfig::Manual(baud_rate) => *baud_rate,
-        };
 
-        self.effects.set_nominal_bit_timing(&bit_timing);
-    }
-
-    fn configure_fast_baud_rate(&self, baud_rate: &FastBitTimingConfig) {
-        let bit_timing: DataBitTiming = match baud_rate {
-            FastBitTimingConfig::Auto(baud_rate) => {
-                let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
-                calculate_fast_bit_timing(
-                    module_freq,
-                    baud_rate.baud_rate,
-                    baud_rate.sample_point,
-                    baud_rate.sync_jump_width,
-                )
+            fn set_inner_tx_buffers(&self, dedicated: DedicatedData) {
+                self.set_tx_buffer_data_field_size(dedicated.field_size);
+                self.effects
+                    .set_tx_buffer_start_address(dedicated.start_address);
             }
-            FastBitTimingConfig::Manual(baud_rate) => *baud_rate,
-        };
 
-        self.effects.set_data_bit_timing(&bit_timing);
-    }
+            fn set_inner_tx_fifo_queue(&self, mode: TxMode, size: u8) {
+                self.effects.set_transmit_fifo_queue_mode(mode);
+                self.effects.set_transmit_fifo_queue_size(size);
+            }
 
-    #[inline]
-    pub fn set_tx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
-        self.effects.set_tx_buffer_data_field_size(data_field_size.to_esci_register_value());
-    }
+            fn set_inner_tx_int(&self, size: u8) {
+                for id in 0..size {
+                    self.effects
+                        .enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+                }
+            }
 
-    fn set_frame_mode(&self, frame_mode: FrameMode) {
-        let (fdoe, brse) = match frame_mode {
-            FrameMode::Standard => (false, false),
-            FrameMode::FdLong => (true, false),
-            FrameMode::FdLongAndFast => (true, true),
-        };
+            fn set_transmit_fifo_queue_mode(&self, mode: TxMode) {
+                if let TxMode::Fifo | TxMode::Queue = mode {
+                    self.effects.set_transmit_fifo_queue_mode(mode);
+                } else {
+                    // TODO Avoid panic
+                    panic!("invalid fifo queue mode");
+                }
+            }
 
-        self.effects.set_frame_mode(fdoe, brse);
-    }
+            fn configure_baud_rate(&self, baud_rate: &BitTimingConfig) {
+                let bit_timing: NominalBitTiming = match baud_rate {
+                    BitTimingConfig::Auto(baud_rate) => {
+                        let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
+                        calculate_bit_timing(
+                            module_freq,
+                            baud_rate.baud_rate,
+                            baud_rate.sample_point,
+                            baud_rate.sync_jump_width,
+                        )
+                    }
+                    BitTimingConfig::Manual(baud_rate) => *baud_rate,
+                };
 
-    // FIXME Fix set_interrupt. Broken after update of pac (SRC is missing)
-    fn set_interrupt(
-        &self,
-        interrupt_group: InterruptGroup,
-        interrupt: Interrupt,
-        line: InterruptLine,
-        _priority: Priority,
-        _tos: Tos,
-    ) {
-        self.set_group_interrupt_line(interrupt_group, line);
+                self.effects.set_nominal_bit_timing(&bit_timing);
+            }
 
-        // let src = tc37x_pac::SRC;
-        //
-        // use crate::pac::{Reg, RW};
-        //
-        // let can_int: Reg<Can0Int0, RW> = match (self.module.id(), line) {
-        //     // TODO Add other lines and can modules
-        //     (ModuleId::Can0, InterruptLine(0)) => unsafe { transmute(src.can0int0()) },
-        //     (ModuleId::Can0, InterruptLine(1)) => unsafe { transmute(src.can0int1()) },
-        //     (ModuleId::Can1, InterruptLine(0)) => unsafe { transmute(src.can1int0()) },
-        //     (ModuleId::Can1, InterruptLine(1)) => unsafe { transmute(src.can1int1()) },
-        //     _ => unreachable!(),
-        // };
-        //
-        // let priority = priority;
-        // let tos = tos as u8;
+            fn configure_fast_baud_rate(&self, baud_rate: &FastBitTimingConfig) {
+                let bit_timing: DataBitTiming = match baud_rate {
+                    FastBitTimingConfig::Auto(baud_rate) => {
+                        let module_freq = crate::scu::ccu::get_mcan_frequency() as f32;
+                        calculate_fast_bit_timing(
+                            module_freq,
+                            baud_rate.baud_rate,
+                            baud_rate.sample_point,
+                            baud_rate.sync_jump_width,
+                        )
+                    }
+                    FastBitTimingConfig::Manual(baud_rate) => *baud_rate,
+                };
 
-        // Set priority and type of service
-        // unsafe { can_int.modify(|r| r.srpn().set(priority).tos().set(tos)) };
+                self.effects.set_data_bit_timing(&bit_timing);
+            }
 
-        // Clear request
-        // unsafe { can_int.modify(|r| r.clrr().set(true)) };
+            #[inline]
+            pub fn set_tx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
+                self.effects
+                    .set_tx_buffer_data_field_size(data_field_size.to_esci_register_value());
+            }
 
-        // Enable service request
-        // unsafe { can_int.modify(|r| r.sre().set(true)) };
+            fn set_frame_mode(&self, frame_mode: FrameMode) {
+                let (fdoe, brse) = match frame_mode {
+                    FrameMode::Standard => (false, false),
+                    FrameMode::FdLong => (true, false),
+                    FrameMode::FdLongAndFast => (true, true),
+                };
 
-        // Enable interrupt
-        self.effects.enable_interrupt(interrupt);
-    }
+                self.effects.set_frame_mode(fdoe, brse);
+            }
 
-    fn set_group_interrupt_line(
-        &self,
-        interrupt_group: InterruptGroup,
-        interrupt_line: InterruptLine,
-    ) {
-        let line = interrupt_line.0 as u32;
+            // FIXME Fix set_interrupt. Broken after update of pac (SRC is missing)
+            fn set_interrupt(
+                &self,
+                interrupt_group: InterruptGroup,
+                interrupt: Interrupt,
+                line: InterruptLine,
+                _priority: Priority,
+                _tos: Tos,
+            ) {
+                self.set_group_interrupt_line(interrupt_group, line);
 
-        if interrupt_group <= InterruptGroup::Loi {
-            let group = interrupt_group as u32 * 4;
-            self.effects.set_interrupt_routing_group_1(line, group);
-        } else {
-            let group = (interrupt_group as u32 % 8) * 4;
-            self.effects.set_interrupt_routing_group_2(line, group);
+                // let src = tc37x_pac::SRC;
+                //
+                // use crate::pac::{Reg, RW};
+                //
+                // let can_int: Reg<Can0Int0, RW> = match (self.module.id(), line) {
+                //     // TODO Add other lines and can modules
+                //     (ModuleId::Can0, InterruptLine(0)) => unsafe { transmute(src.can0int0()) },
+                //     (ModuleId::Can0, InterruptLine(1)) => unsafe { transmute(src.can0int1()) },
+                //     (ModuleId::Can1, InterruptLine(0)) => unsafe { transmute(src.can1int0()) },
+                //     (ModuleId::Can1, InterruptLine(1)) => unsafe { transmute(src.can1int1()) },
+                //     _ => unreachable!(),
+                // };
+                //
+                // let priority = priority;
+                // let tos = tos as u8;
+
+                // Set priority and type of service
+                // unsafe { can_int.modify(|r| r.srpn().set(priority).tos().set(tos)) };
+
+                // Clear request
+                // unsafe { can_int.modify(|r| r.clrr().set(true)) };
+
+                // Enable service request
+                // unsafe { can_int.modify(|r| r.sre().set(true)) };
+
+                // Enable interrupt
+                self.effects.enable_interrupt(interrupt);
+            }
+
+            fn set_group_interrupt_line(
+                &self,
+                interrupt_group: InterruptGroup,
+                interrupt_line: InterruptLine,
+            ) {
+                let line = interrupt_line.0 as u32;
+
+                if interrupt_group <= InterruptGroup::Loi {
+                    let group = interrupt_group as u32 * 4;
+                    self.effects.set_interrupt_routing_group_1(line, group);
+                } else {
+                    let group = (interrupt_group as u32 % 8) * 4;
+                    self.effects.set_interrupt_routing_group_2(line, group);
+                }
+            }
+
+            fn connect_pin_rx(&self, rxd: RxdIn, mode: InputMode, pad_driver: PadDriver) {
+                let port = Port::new(rxd.port);
+                port.set_pin_mode_input(rxd.pin_index, mode);
+                port.set_pin_pad_driver(rxd.pin_index, pad_driver);
+                self.effects.connect_pin_rx(rxd.select);
+            }
+
+            fn connect_pin_tx(&self, txd: TxdOut, mode: OutputMode, pad_driver: PadDriver) {
+                let port = Port::new(txd.port);
+                port.set_pin_mode_output(txd.pin_index, mode, txd.select);
+                port.set_pin_pad_driver(txd.pin_index, pad_driver);
+                port.set_pin_low(txd.pin_index);
+            }
+
+            pub fn transmit(&self, frame: &Frame) -> Result<(), TransmitError> {
+                let buffer_id = self.get_tx_fifo_queue_put_index();
+                self.transmit_inner(buffer_id, frame.id, false, false, false, frame.data)
+            }
+
+            pub fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
+                let id = self.effects.get_tx_fifo_queue_put_index();
+                TxBufferId::new_const(id)
+            }
+
+            #[allow(unused_variables)]
+            fn transmit_inner(
+                &self,
+                buffer_id: TxBufferId,
+                id: MessageId,
+                tx_event_fifo_control: bool,
+                remote_transmit_request: bool,
+                error_state_indicator: bool,
+                data: &[u8],
+            ) -> Result<(), TransmitError> {
+                let req_pending = self.effects.is_tx_buffer_request_pending(buffer_id);
+                if req_pending.is_err() {
+                    return Err(TransmitError::Busy);
+                }
+                if req_pending.unwrap() == true {
+                    return Err(TransmitError::InvalidAccess);
+                }
+
+                let tx_buf_el = self.get_tx_element_address(self.ram_base_address, buffer_id);
+
+                tx_buf_el.set_msg_id(id);
+
+                if tx_event_fifo_control {
+                    tx_buf_el.set_tx_event_fifo_ctrl(tx_event_fifo_control);
+                    tx_buf_el.set_message_marker(buffer_id);
+                }
+
+                tx_buf_el.set_remote_transmit_req(remote_transmit_request);
+
+                if let FrameMode::FdLong | FrameMode::FdLongAndFast = self.frame_mode {
+                    tx_buf_el.set_err_state_indicator(error_state_indicator)
+                }
+
+                let dlc = DataLenghtCode::from_length(data.len())
+                    .ok_or(TransmitError::InvalidDataLength)?;
+
+                tx_buf_el.set_data_length(dlc);
+                tx_buf_el.write_tx_buf_data(dlc, data.as_ptr());
+                tx_buf_el.set_frame_mode_req(self.frame_mode);
+                let buffer_id = 0; //TODO
+                self.effects.set_tx_buffer_add_request(buffer_id);
+
+                info!("transmit {}#{}", id.data, HexSlice::from(data));
+
+                Ok(())
+            }
         }
-    }
 
-    fn connect_pin_rx(&self, rxd: RxdIn, mode: InputMode, pad_driver: PadDriver) {
-        let port = Port::new(rxd.port);
-        port.set_pin_mode_input(rxd.pin_index, mode);
-        port.set_pin_pad_driver(rxd.pin_index, pad_driver);
-        self.effects.connect_pin_rx(rxd.select);
-    }
+        // IfxLld_Can_Std_Tx_Element_Functions
+        impl Node<$NodeReg, $ModuleReg> {
+            #[inline]
+            pub fn is_tx_buffer_cancellation_finished(&self, tx_buffer_id: TxBufferId) -> bool {
+                self.is_tx_buffer_transmission_occured(tx_buffer_id)
+            }
 
-    fn connect_pin_tx(&self, txd: TxdOut, mode: OutputMode, pad_driver: PadDriver) {
-        let port = Port::new(txd.port);
-        port.set_pin_mode_output(txd.pin_index, mode, txd.select);
-        port.set_pin_pad_driver(txd.pin_index, pad_driver);
-        port.set_pin_low(txd.pin_index);
-    }
+            #[inline]
+            pub fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: TxBufferId) -> bool {
+                self.effects
+                    .is_tx_buffer_transmission_occured(tx_buffer_id.0)
+            }
 
-    pub fn transmit(&self, frame: &Frame) -> Result<(), TransmitError> {
-        let buffer_id = self.get_tx_fifo_queue_put_index();
-        self.transmit_inner(buffer_id, frame.id, false, false, false, frame.data)
-    }
+            pub fn get_tx_element_address(
+                &self,
+                ram_base_address: u32,
+                buffer_number: TxBufferId,
+            ) -> Tx {
+                let num_of_config_bytes = 8u32;
+                let num_of_data_bytes = self.effects.get_tx_buffer_data_field_size() as u32;
+                let tx_buffer_size = num_of_config_bytes + num_of_data_bytes;
+                let tx_buffer_index = tx_buffer_size * u32::from(buffer_number);
 
-    pub fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
-        let id = self.effects.get_tx_fifo_queue_put_index();
-        TxBufferId::new_const(id)
-    }
+                let tx_buffer_element_address =
+                    ram_base_address + TX_BUFFER_START_ADDRESS + tx_buffer_index;
 
-    #[allow(unused_variables)]
-    fn transmit_inner(
-        &self,
-        buffer_id: TxBufferId,
-        id: MessageId,
-        tx_event_fifo_control: bool,
-        remote_transmit_request: bool,
-        error_state_indicator: bool,
-        data: &[u8],
-    ) -> Result<(), TransmitError> {
-        let req_pending = self.effects.is_tx_buffer_request_pending(buffer_id); 
-        if  req_pending.is_err()  {
-            return Err(TransmitError::Busy);
+                Tx::new(tx_buffer_element_address as *mut u8)
+            }
         }
-        if  req_pending.unwrap() == true{
-            return Err(TransmitError::InvalidAccess);
-        }
-
-        let tx_buf_el =
-            self.get_tx_element_address(self.ram_base_address, buffer_id);
-
-        tx_buf_el.set_msg_id(id);
-
-        if tx_event_fifo_control {
-            tx_buf_el.set_tx_event_fifo_ctrl(tx_event_fifo_control);
-            tx_buf_el.set_message_marker(buffer_id);
-        }
-
-        tx_buf_el.set_remote_transmit_req(remote_transmit_request);
-
-        if let FrameMode::FdLong | FrameMode::FdLongAndFast = self.frame_mode {
-            tx_buf_el.set_err_state_indicator(error_state_indicator)
-        }
-
-        let dlc = DataLenghtCode::from_length(data.len()).ok_or(TransmitError::InvalidDataLength)?;
-
-        tx_buf_el.set_data_length(dlc);
-        tx_buf_el.write_tx_buf_data(dlc, data.as_ptr());
-        tx_buf_el.set_frame_mode_req(self.frame_mode);
-        let buffer_id = 0; //TODO 
-        self.effects.set_tx_buffer_add_request(buffer_id);
-
-        info!("transmit {}#{}", id.data, HexSlice::from(data));
-
-        Ok(())
-    }
-}
-
-
-// IfxLld_Can_Std_Tx_Element_Functions
-impl Node<$NodeReg, $ModuleReg> {
-    #[inline]
-    pub fn is_tx_buffer_cancellation_finished(&self, tx_buffer_id: TxBufferId) -> bool {
-        self.is_tx_buffer_transmission_occured(tx_buffer_id)
-    }
-
-    #[inline]
-    pub fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: TxBufferId) -> bool {
-        self.effects
-            .is_tx_buffer_transmission_occured(tx_buffer_id.0)
-    }
-
-    pub fn get_tx_element_address(
-        &self,
-        ram_base_address: u32,
-        buffer_number: TxBufferId,
-    ) -> Tx {
-        let num_of_config_bytes = 8u32;
-        let num_of_data_bytes = self.effects.get_tx_buffer_data_field_size() as u32;
-        let tx_buffer_size = num_of_config_bytes + num_of_data_bytes;
-        let tx_buffer_index = tx_buffer_size * u32::from(buffer_number);
-
-        let tx_buffer_element_address =
-            ram_base_address + TX_BUFFER_START_ADDRESS + tx_buffer_index;
-
-        Tx::new(tx_buffer_element_address as *mut u8)
-    }
-}
-    }
+    };
 }
 
 impl_can_node!(crate::pac::can0::Can0, crate::pac::can0::N);
@@ -597,10 +609,21 @@ pub enum Tos {
     Cpu2,
 }
 
-const RXD00B_P20_7_IN: RxdIn =
+pub const RXD00B_P00_1_IN: RxdIn =
+    RxdIn::new(ModuleId::Can1, NodeId::Node0, PortNumber::_00, 1, RxSel::_B);
+
+pub const TXD00_P00_0_OUT: TxdOut = TxdOut::new(
+    ModuleId::Can1,
+    NodeId::Node0,
+    PortNumber::_00,
+    0,
+    OutputIdx::ALT5,
+);
+
+pub const RXD00B_P20_7_IN: RxdIn =
     RxdIn::new(ModuleId::Can0, NodeId::Node0, PortNumber::_20, 7, RxSel::_B);
 
-const TXD00_P20_8_OUT: TxdOut = TxdOut::new(
+pub const TXD00_P20_8_OUT: TxdOut = TxdOut::new(
     ModuleId::Can0,
     NodeId::Node0,
     PortNumber::_20,
@@ -608,14 +631,13 @@ const TXD00_P20_8_OUT: TxdOut = TxdOut::new(
     OutputIdx::ALT5,
 );
 
-const TXD00_P20_6_OUT: TxdOut = TxdOut::new(
+pub const TXD00_P20_6_OUT: TxdOut = TxdOut::new(
     ModuleId::Can0,
     NodeId::Node0,
     PortNumber::_20,
     6,
     OutputIdx::GENERAL,
 );
-
 #[derive(Clone, Copy)]
 pub struct InputMode(u32);
 impl InputMode {
@@ -827,7 +849,7 @@ impl Mode {
 }
 
 #[derive(Clone, Copy)]
-struct OutputIdx(u32);
+pub struct OutputIdx(u32);
 impl OutputIdx {
     const GENERAL: Self = Self(0x10 << 3);
     const ALT1: Self = Self(0x11 << 3);
@@ -840,7 +862,7 @@ impl OutputIdx {
 }
 
 #[derive(Clone, Copy)]
-struct RxdIn {
+pub struct RxdIn {
     module: ModuleId,
     node_id: NodeId,
     port: PortNumber,
@@ -894,7 +916,7 @@ impl Into<u8> for RxSel {
 }
 
 #[derive(Clone, Copy)]
-struct TxdOut {
+pub struct TxdOut {
     module: ModuleId,
     node_id: NodeId,
     port: PortNumber,
