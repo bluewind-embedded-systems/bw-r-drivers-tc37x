@@ -17,6 +17,21 @@ You should have a workspace with this setup:
     ├── Cargo.toml
     ...
 ```
+## Build & run with scripts 
+
+You can run an example with `tricore-probe`.
+
+
+On linux: 
+- Build project : 
+```
+./tools/build_on_target 
+```
+
+- Build example (`can_send`) can_send: 
+```
+./tools/run_on_target can_send 
+```
 
 ## Examples
 
@@ -31,3 +46,8 @@ launch an example:
 ```sh
 cargo run --example=blinky --features=example
 ```
+
+### Available examples
+- `bliky`to show gpio dirver basic usage
+- `can_send` to use a tc37x-litekit to send message to another device. 
+
