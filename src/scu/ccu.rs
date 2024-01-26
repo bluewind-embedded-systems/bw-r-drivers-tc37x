@@ -54,6 +54,8 @@ fn wait_ccucon5_lock() -> Result<(), ()> {
     })
 }
 
+
+// TODO impl into<bool> 
 fn syspllpwd_to_bool(reg: scu::syspllcon0::Pllpwd) -> bool {
     reg == scu::syspllcon0::Pllpwd::CONST_11
 }
@@ -288,7 +290,6 @@ pub fn modulation_init(config: &Config) -> Result<(), ()> {
     Ok(())
 }
 
-// TODO revise this struct (annabo)
 pub struct RGainValues {
     pub rgain_nom: f32,
     pub rgain_hex: u16,

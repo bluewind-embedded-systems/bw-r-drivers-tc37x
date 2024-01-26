@@ -15,7 +15,6 @@ pub fn enable_interrupts() {
     }
 }
 
-// TODO (annabo) // to be tested
 /* ILLD FUNCTION
  * IFX_INLINE boolean IfxCpu_disableInterrupts(void)
  * {
