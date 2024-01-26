@@ -5,7 +5,7 @@
 //! HAL designed struct from the `pac` struct using the [split](trait.GpioExt.html#tymethod.split) function.
 //! ```rust
 //! use tc37x_pac::PORT_00;
-//! use tc37x_hal::gpio::GpioExt;
+//! use tc37x_driver::gpio::GpioExt;
 //! let mut gpio00 = PORT_00.split();
 //! ```
 //!
@@ -15,7 +15,7 @@
 //!
 //! ```rust
 //! use tc37x_pac::PORT_00;
-//! use tc37x_hal::gpio::GpioExt;
+//! use tc37x_driver::gpio::GpioExt;
 //! let mut gpio00 = PORT_00.split();
 //! let mut output = gpio00.p00_5.into_push_pull_output();
 //! output.set_high();

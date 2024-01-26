@@ -7,16 +7,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in library 'tc37x-hal'",
+            "name": "Debug unit tests in library 'tc37x-driver'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
                     "--lib",
-                    "--package=tc37x-hal"
+                    "--package=tc37x-driver"
                 ],
                 "filter": {
-                    "name": "tc37x-hal",
+                    "name": "tc37x-driver",
                     "kind": "lib"
                 }
             },
@@ -31,7 +31,7 @@
                 "args": [
                     "build",
                     "--example=blinky",
-                    "--package=tc37x-hal"
+                    "--package=tc37x-driver"
                 ],
                 "filter": {
                     "name": "blinky",
@@ -50,7 +50,7 @@
                     "test",
                     "--no-run",
                     "--example=blinky",
-                    "--package=tc37x-hal"
+                    "--package=tc37x-driver"
                 ],
                 "filter": {
                     "name": "blinky",
@@ -68,7 +68,7 @@
                 "args": [
                     "build",
                     "--example=can_test_application",
-                    "--package=tc37x-hal"
+                    "--package=tc37x-driver"
                 ],
                 "filter": {
                     "name": "can_test_application",
@@ -87,7 +87,7 @@
                     "test",
                     "--no-run",
                     "--example=can_test_application",
-                    "--package=tc37x-hal"
+                    "--package=tc37x-driver"
                 ],
                 "filter": {
                     "name": "can_test_application",
@@ -105,7 +105,7 @@
                 "args": [
                     "build",
                     "--example=canky",
-                    "--package=tc37x-hal"
+                    "--package=tc37x-driver"
                 ],
                 "filter": {
                     "name": "canky",
@@ -124,7 +124,7 @@
                     "test",
                     "--no-run",
                     "--example=canky",
-                    "--package=tc37x-hal"
+                    "--package=tc37x-driver"
                 ],
                 "filter": {
                     "name": "canky",
@@ -143,7 +143,7 @@
                     "test",
                     "--no-run",
                     "--test=gpio",
-                    "--package=tc37x-hal"
+                    "--package=tc37x-driver"
                 ],
                 "filter": {
                     "name": "gpio",

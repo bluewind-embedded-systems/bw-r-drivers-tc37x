@@ -9,14 +9,14 @@ tc37x_rt::entry!(main);
 
 use core::time::Duration;
 use embedded_can::ExtendedId;
-use tc37x_hal::can::{
+use tc37x_driver::can::{
     AutoBitTiming, BitTimingConfig, DataFieldSize, Frame, MessageId, Module, Node, NodeConfig, 
     NodeId, TxConfig, TxMode, RXD00B_P20_7_IN, TXD00_P20_8_OUT
 };
-use tc37x_hal::cpu::asm::enable_interrupts;
-use tc37x_hal::gpio::GpioExt;
-use tc37x_hal::log::info;
-use tc37x_hal::{pac, ssw};
+use tc37x_driver::cpu::asm::enable_interrupts;
+use tc37x_driver::gpio::GpioExt;
+use tc37x_driver::log::info;
+use tc37x_driver::{pac, ssw};
 use tc37x_pac::can0::{Can0, N as Can0Node};
 
 fn setup_can() -> Option<Node<Can0Node, Can0>> {
@@ -53,7 +53,7 @@ fn init_can_stb_pin() {
 
 fn main() -> ! {
     #[cfg(not(target_arch = "tricore"))]
-    let _report = tc37x_hal::tracing::print::Report::new();
+    let _report = tc37x_driver::tracing::print::Report::new();
 
     #[cfg(feature = "log_with_env_logger")]
     env_logger::init();
@@ -117,7 +117,7 @@ fn main() -> ! {
 pub fn wait_nop(period: Duration) {
     #[cfg(target_arch = "tricore")]
     {
-        use tc37x_hal::util::wait_nop_cycles;
+        use tc37x_driver::util::wait_nop_cycles;
         let ns = period.as_nanos() as u32;
         let n_cycles = ns / 920;
         wait_nop_cycles(n_cycles);

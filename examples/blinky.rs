@@ -8,9 +8,9 @@ tc37x_rt::entry!(main);
 
 use core::time::Duration;
 use embedded_hal::digital::StatefulOutputPin;
-use tc37x_hal::gpio::GpioExt;
-use tc37x_hal::log::info;
-use tc37x_hal::pac;
+use tc37x_driver::gpio::GpioExt;
+use tc37x_driver::log::info;
+use tc37x_driver::pac;
 
 pub enum State {
     NotChanged = 0,
@@ -21,7 +21,7 @@ pub enum State {
 
 fn main() -> ! {
     #[cfg(not(target_arch = "tricore"))]
-    let _report = tc37x_hal::tracing::print::Report::new();
+    let _report = tc37x_driver::tracing::print::Report::new();
 
     #[cfg(feature = "log_with_env_logger")]
     env_logger::init();
@@ -80,7 +80,7 @@ fn main() -> ! {
 pub fn wait_nop(period: Duration) {
     #[cfg(target_arch = "tricore")]
     {
-        use tc37x_hal::util::wait_nop_cycles;
+        use tc37x_driver::util::wait_nop_cycles;
         let ns = period.as_nanos() as u32;
         let n_cycles = ns / 1412;
         wait_nop_cycles(n_cycles);

@@ -1,5 +1,5 @@
 [package]
-name = "tc37x-hal"
+name = "tc37x-driver"
 version = "0.1.0"
 edition = "2021"
 
