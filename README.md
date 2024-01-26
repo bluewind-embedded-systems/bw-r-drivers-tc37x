@@ -1,4 +1,4 @@
-# tc37x-simple-driver
+# gpio_driver
 
 ## Prerequisites
 
@@ -11,6 +11,9 @@ You should have a workspace with this setup:
 │   ├── Cargo.toml
 │   ...
 ├── tc37x-pac
+│   ├── Cargo.toml
+│    ...
+└── tc37x-rt
     ├── Cargo.toml
     ...
 ```
