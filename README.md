@@ -1,4 +1,4 @@
-# gpio_driver
+# tc37x-simple-driver
 
 ## Prerequisites
 
@@ -7,13 +7,10 @@ Make sure `tc37x-pac` and `tc37x-rt` are available in the parent directory.
 You should have a workspace with this setup:
 
 ```txt
-├── tc37x-hal
+├── tc37x-simple-driver
 │   ├── Cargo.toml
 │   ...
 ├── tc37x-pac
-│   ├── Cargo.toml
-│    ...
-└── tc37x-rt
     ├── Cargo.toml
     ...
 ```
