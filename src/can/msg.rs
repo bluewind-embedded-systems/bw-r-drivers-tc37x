@@ -1,40 +1,5 @@
 use super::frame::DataLenghtCode;
 
-// #[repr(transparent)]
-// #[derive(Clone, Copy)]
-// pub struct NodeId(pub u8);
-
-// impl NodeId {
-//     const MAX: u8 = 3;
-
-//     pub fn new(n: u8) -> Option<Self> {
-//         match n {
-//             ..=Self::MAX => Some(Self(n)),
-//             _ => None,
-//         }
-//     }
-
-//     pub const fn new_const(n: u8) -> Self {
-//         match n {
-//             ..=Self::MAX => Self(n),
-//             _ => panic!("over the max range"),
-//         }
-//     }
-// }
-
-// impl From<NodeId> for usize {
-//     fn from(value: NodeId) -> Self {
-//         value.0.into()
-//     }
-// }
-
-// #[derive(Clone, Copy, Debug)]
-// pub enum ReadFrom {
-//     RxFifo0,
-//     RxFifo1,
-//     Buffer(RxBufferId),
-// }
-
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum MessageIdLenght {
     Standard,
@@ -199,54 +164,6 @@ pub enum ReadFrom {
     RxFifo1,
     Buffer(RxBufferId),
 }
-// #[repr(u8)]
-// #[derive(Clone, Copy)]
-// pub enum DataFieldSize {
-//     _8,
-//     _12,
-//     _16,
-//     _20,
-//     _24,
-//     _32,
-//     _48,
-//     _64,
-// }
-
-// impl From<DataFieldSize> for u8 {
-//     fn from(value: DataFieldSize) -> Self {
-//         value as _
-//     }
-// }
-
-// impl From<DataFieldSize> for pac::can0::node::txesc::Tbds {
-//     fn from(value: DataFieldSize) -> Self {
-//         u64::from(value as u8).cast_to()
-//     }
-// }
-
-// impl TryFrom<u8> for DataFieldSize {
-//     type Error = ();
-
-//     fn try_from(value: u8) -> Result<Self, Self::Error> {
-//         Ok(match value {
-//             0 => Self::_8,
-//             1 => Self::_12,
-//             2 => Self::_16,
-//             3 => Self::_20,
-//             4 => Self::_24,
-//             5 => Self::_32,
-//             6 => Self::_48,
-//             7 => Self::_64,
-//             _ => return Err(()),
-//         })
-//     }
-// }
-
-// impl From<DataFieldSize> for pac::can0::node::rxesc::Rbds {
-//     fn from(value: DataFieldSize) -> Self {
-//         Self(value.into())
-//     }
-// }
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum FilterElementConfiguration {
