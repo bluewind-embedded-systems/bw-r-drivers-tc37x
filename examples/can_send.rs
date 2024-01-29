@@ -9,7 +9,10 @@ tc37x_rt::entry!(main);
 
 use core::time::Duration;
 use embedded_can::ExtendedId;
-use tc37x_driver::can::{AutoBitTiming, BitTimingConfig, DataFieldSize, Frame, MessageId, Module, Node, NodeConfig, NodeId, RXD00B_P20_7_IN, RxConfig, TxConfig, TXD00_P20_8_OUT, TxMode};
+use tc37x_driver::can::{
+    AutoBitTiming, BitTimingConfig, DataFieldSize, Frame, MessageId, Module, Node, NodeConfig,
+    NodeId, RxConfig, TxConfig, TxMode, RXD00B_P20_7_IN, TXD00_P20_8_OUT,
+};
 use tc37x_driver::cpu::asm::enable_interrupts;
 use tc37x_driver::gpio::GpioExt;
 use tc37x_driver::log::info;
@@ -40,7 +43,7 @@ fn setup_can() -> Option<Node<Can0Node, Can0>> {
     });
 
     // TODO Configure other rx parameters
-    cfg.rx = Some(RxConfig{
+    cfg.rx = Some(RxConfig {
         pin: RXD00B_P20_7_IN,
     });
 

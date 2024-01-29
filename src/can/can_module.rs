@@ -1,12 +1,12 @@
 use super::can_node::{Node, NodeConfig, NodeId};
+use crate::can::can_node::RxdIn;
+use crate::can::can_node::TxdOut;
 use crate::log::info;
 use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
 use core::marker::PhantomData;
 use core::ops::Deref;
 use pac::hidden::CastFrom;
-use crate::can::can_node::RxdIn;
-use crate::can::can_node::TxdOut;
 
 #[derive(Clone, Copy)]
 pub enum ModuleId {
@@ -174,7 +174,6 @@ impl From<NodeId> for ClockSelect {
 
 #[derive(Default, Clone, Copy)]
 pub enum ClockSource {
-
     Asynchronous,
     Synchronous,
     #[default]

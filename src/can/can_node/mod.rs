@@ -239,7 +239,6 @@ macro_rules! impl_can_node {
                 node.effects.disable_configuration_change();
 
                 Ok(node)
-                
             }
 
             fn set_rx_fifo0(&self, data: FifoData) {

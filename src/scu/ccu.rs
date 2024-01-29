@@ -54,8 +54,7 @@ fn wait_ccucon5_lock() -> Result<(), ()> {
     })
 }
 
-
-// TODO impl into<bool> 
+// TODO impl into<bool>
 fn syspllpwd_to_bool(reg: scu::syspllcon0::Pllpwd) -> bool {
     reg == scu::syspllcon0::Pllpwd::CONST_11
 }

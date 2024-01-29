@@ -1,6 +1,5 @@
 // FIXME Remove
 #![allow(dead_code)]
-
 #![allow(clippy::needless_bool)]
 #![allow(clippy::if_same_then_else)]
 use tc37x_pac::{self as pac};
