@@ -1,6 +1,5 @@
 // TODO Remove this once the module is more complete
 #![allow(dead_code)]
-#![deny(clippy::result_unit_err)]
 
 mod baud_rate;
 mod can_module;

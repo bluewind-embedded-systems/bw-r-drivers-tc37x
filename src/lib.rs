@@ -11,6 +11,8 @@
 #![deny(clippy::float_cmp)]
 // TODO Remove this once log module correctly handles ignored arguments
 #![allow(unused_imports)]
+// All errors should be described
+#![deny(clippy::result_unit_err)]
 
 #[cfg(target_arch = "tricore")]
 mod runtime;
