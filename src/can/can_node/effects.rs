@@ -406,7 +406,9 @@ impl NodeEffects<$NodeReg> {
                 29 => txbari.modify(|r| r.ar29().set(1u8.into())),
                 30 => txbari.modify(|r| r.ar30().set(1u8.into())),
                 31 => txbari.modify(|r| r.ar31().set(1u8.into())),
-                _ => unreachable!(),
+                _ => {
+                    // Invalid id, nothing to do
+                },
             }
         }
     }
@@ -471,7 +473,7 @@ impl NodeEffects<$NodeReg> {
             29 => txbrpi.trp29().get().0 == 1,
             30 => txbrpi.trp30().get().0 == 1,
             31 => txbrpi.trp31().get().0 == 1,
-            _ => unreachable!(),
+            _ => false,
         }
     }
 }
