@@ -926,7 +926,7 @@ pub struct TxdOut {
 }
 
 impl TxdOut {
-    pub const fn new(
+    const fn new(
         module: ModuleId,
         node_id: NodeId,
         port: PortNumber,
