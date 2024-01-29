@@ -176,7 +176,7 @@ macro_rules! impl_can_node {
                             for id in
                                 0..tx_config.dedicated_tx_buffers_number + tx_config.fifo_queue_size
                             {
-                                if let Some(tx_buffer_id) = TxBufferId::new(id) {
+                                if let Ok(tx_buffer_id) = TxBufferId::try_from(id) {
                                     node.effects
                                         .enable_tx_buffer_transmission_interrupt(tx_buffer_id);
                                 }
@@ -187,7 +187,7 @@ macro_rules! impl_can_node {
                             node.effects
                                 .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
                             for id in 0..tx_config.fifo_queue_size {
-                                if let Some(tx_buffer_id) = TxBufferId::new(id) {
+                                if let Ok(tx_buffer_id) = TxBufferId::try_from(id) {
                                     node.effects
                                         .enable_tx_buffer_transmission_interrupt(tx_buffer_id);
                                 }
@@ -269,7 +269,7 @@ macro_rules! impl_can_node {
 
             fn set_inner_tx_int(&self, size: u8) {
                 for id in 0..size {
-                    if let Some(tx_buffer_id) = TxBufferId::new(id) {
+                    if let Ok(tx_buffer_id) = TxBufferId::try_from(id) {
                         self.effects
                             .enable_tx_buffer_transmission_interrupt(tx_buffer_id);
                     }
@@ -411,9 +411,9 @@ macro_rules! impl_can_node {
             }
 
             pub fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
-                let id = self.effects.get_tx_fifo_queue_put_index();
-                // SAFETY The value is in range because it is read from a register
-                unsafe { TxBufferId::new(id).unwrap_unchecked() }
+                let id = self.effects.get_tx_fifo_queue_put_index() & 0x1F;
+                // SAFETY The value is in range because it is read from a register and masked with 0x1F
+                unsafe { TxBufferId::try_from(id).unwrap_unchecked() }
             }
 
             #[allow(unused_variables)]

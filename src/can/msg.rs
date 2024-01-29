@@ -134,13 +134,15 @@ pub enum FrameType {
 #[repr(transparent)]
 pub struct TxBufferId(u8);
 
-impl TxBufferId {
-    pub const MAX: u8 = 31;
+impl TryFrom<u8> for TxBufferId {
+    type Error = ();
 
-    pub fn new(n: u8) -> Option<Self> {
-        match n {
-            ..=Self::MAX => Some(Self(n)),
-            _ => None,
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        const MAX: u8 = 31;
+        if value > MAX {
+            Err(())
+        } else {
+            Ok(Self(value))
         }
     }
 }
