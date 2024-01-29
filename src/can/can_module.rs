@@ -65,7 +65,7 @@ macro_rules! impl_can_module {
                 }
             }
 
-            pub fn take_node(&mut self, node_id: NodeId, cfg: NodeConfig, tx_pins:TxdOut, rx_pins:RxdIn) -> Option<Node<$($m)::+::N, $Reg>> {
+            pub fn take_node(&mut self, node_id: NodeId, cfg: NodeConfig) -> Option<Node<$($m)::+::N, $Reg>> {
                 let node_index = match node_id {
                     NodeId::Node0 => 0,
                     NodeId::Node1 => 1,
@@ -79,7 +79,7 @@ macro_rules! impl_can_module {
 
                 self.nodes_taken[node_index] = true;
 
-                Node::<$($m)::+::N, $Reg>::new(self, node_id, cfg, tx_pins, rx_pins).ok()
+                Node::<$($m)::+::N, $Reg>::new(self, node_id, cfg).ok()
             }
 
             pub fn id(&self) -> ModuleId {

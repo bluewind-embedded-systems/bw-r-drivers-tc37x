@@ -9,10 +9,7 @@ tc37x_rt::entry!(main);
 
 use core::time::Duration;
 use embedded_can::ExtendedId;
-use tc37x_driver::can::{
-    AutoBitTiming, BitTimingConfig, DataFieldSize, Frame, MessageId, Module, Node, NodeConfig, 
-    NodeId, TxConfig, TxMode, RXD00B_P20_7_IN, TXD00_P20_8_OUT
-};
+use tc37x_driver::can::{AutoBitTiming, BitTimingConfig, DataFieldSize, Frame, MessageId, Module, Node, NodeConfig, NodeId, RXD00B_P20_7_IN, RxConfig, TxConfig, TXD00_P20_8_OUT, TxMode};
 use tc37x_driver::cpu::asm::enable_interrupts;
 use tc37x_driver::gpio::GpioExt;
 use tc37x_driver::log::info;
@@ -39,9 +36,15 @@ fn setup_can() -> Option<Node<Can0Node, Can0>> {
         fifo_queue_size: 0,
         buffer_data_field_size: DataFieldSize::_8,
         event_fifo_size: 1,
+        pin: TXD00_P20_8_OUT,
     });
 
-    can_module.take_node(can_node_id, cfg, TXD00_P20_8_OUT, RXD00B_P20_7_IN)
+    // TODO Configure other rx parameters
+    cfg.rx = Some(RxConfig{
+        pin: RXD00B_P20_7_IN,
+    });
+
+    can_module.take_node(can_node_id, cfg)
 }
 
 /// Initialize the STB pin for the CAN transceiver.

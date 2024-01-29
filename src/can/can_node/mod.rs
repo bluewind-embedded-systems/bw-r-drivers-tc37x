@@ -117,8 +117,6 @@ macro_rules! impl_can_node {
                 module: &mut Module<$ModuleReg, can_module::Enabled>,
                 node_id: NodeId,
                 config: NodeConfig,
-                pins_tx: TxdOut,
-                pins_rx: RxdIn,
             ) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError> {
                 let node_index: u8 = node_id.into();
                 let node_index: usize = node_index.into();
@@ -222,17 +220,21 @@ macro_rules! impl_can_node {
                     Tos::Cpu0,
                 );
 
-                node.connect_pin_rx(
-                    pins_rx, 
-                    InputMode::PULL_UP,
-                    PadDriver::CmosAutomotiveSpeed3,
-                );
+                if let Some(rx_config) = &config.rx {
+                    node.connect_pin_rx(
+                        rx_config.pin,
+                        InputMode::PULL_UP,
+                        PadDriver::CmosAutomotiveSpeed3,
+                    );
+                }
 
-                node.connect_pin_tx(
-                    pins_tx, 
-                    OutputMode::PUSH_PULL,
-                    PadDriver::CmosAutomotiveSpeed3,
-                );
+                if let Some(tx_config) = &config.tx {
+                    node.connect_pin_tx(
+                        tx_config.pin,
+                        OutputMode::PUSH_PULL,
+                        PadDriver::CmosAutomotiveSpeed3,
+                    );
+                }
 
                 node.effects.disable_configuration_change();
 
@@ -947,11 +949,13 @@ pub struct TxConfig {
     pub fifo_queue_size: u8,
     pub buffer_data_field_size: DataFieldSize,
     pub event_fifo_size: u8,
+    pub pin: TxdOut,
 }
 
 #[derive(Clone, Copy)]
 pub struct RxConfig {
     // TODO
+    pub pin: RxdIn,
 }
 
 #[derive(Clone, Copy)]
