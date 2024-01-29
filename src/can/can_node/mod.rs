@@ -639,15 +639,6 @@ pub const TXD00_P20_8_OUT: TxdOut = TxdOut::new(
     OutputIdx::ALT5,
 );
 
-// TODO Move to its own module
-pub const TXD00_P20_6_OUT: TxdOut = TxdOut::new(
-    ModuleId::Can0,
-    NodeId::Node0,
-    PortNumber::_20,
-    6,
-    OutputIdx::GENERAL,
-);
-
 #[derive(Clone, Copy)]
 pub struct InputMode(u32);
 impl InputMode {
