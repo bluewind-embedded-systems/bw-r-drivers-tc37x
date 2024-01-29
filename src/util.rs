@@ -1,5 +1,3 @@
-use core::time::Duration;
-
 #[allow(unused)]
 #[inline(always)]
 pub fn wait_nop_cycles(n_cycles: u32) {

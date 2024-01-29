@@ -1,8 +1,6 @@
 #![allow(unused_variables)]
 
 use crate::can::msg::MessageId;
-use core::hint::unreachable_unchecked;
-use embedded_can::{Id, StandardId};
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, PartialOrd, Debug)]

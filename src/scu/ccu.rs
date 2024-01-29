@@ -3,7 +3,7 @@
 #![allow(clippy::result_unit_err)]
 
 use super::wdt;
-use crate::log::{debug, info};
+use crate::log::debug;
 use tc37x_pac::hidden::RegValue;
 use tc37x_pac::scu;
 use tc37x_pac::{RegisterValue, SCU, SMU};

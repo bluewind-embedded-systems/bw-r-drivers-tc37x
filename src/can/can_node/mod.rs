@@ -6,19 +6,18 @@ mod effects;
 use super::baud_rate::*;
 use super::can_module::{ClockSource, ModuleId};
 use super::frame::{DataLenghtCode, Frame};
-use super::internals::{Rx, Tx};
-use super::msg::{ReadFrom, RxBufferId, TxBufferId};
+use super::internals::Tx;
+use super::msg::TxBufferId;
 use super::{can_module, Module};
 use crate::can::msg::MessageId;
 
 use crate::can::can_node::effects::NodeEffects;
-use crate::log::{info, HexSlice};
+use crate::log::info;
 use crate::scu::wdt_call;
-use crate::util::wait_nop_cycles;
+
 use core::marker::PhantomData;
 use core::mem::transmute;
 use tc37x_pac::hidden::RegValue;
-use tc37x_pac::RegisterValue;
 
 #[derive(PartialEq, Debug, Default, Copy, Clone)]
 pub enum FrameMode {
@@ -455,7 +454,7 @@ macro_rules! impl_can_node {
                 let buffer_id = 0; //TODO
                 self.effects.set_tx_buffer_add_request(buffer_id);
 
-                info!("transmit {}#{}", id.data, HexSlice::from(data));
+                info!("transmit {}#{}", id.data, crate::log::HexSlice::from(data));
 
                 Ok(())
             }

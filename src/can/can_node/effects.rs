@@ -1,18 +1,11 @@
-use core::marker::PhantomData;
-
-use crate::can::baud_rate::{calculate_fast_bit_timing, DataBitTiming, NominalBitTiming};
-use crate::can::can_node::{
-    FrameMode, Interrupt, InterruptGroup, InterruptLine, Priority, RxFifoMode, RxSel, Tos,
-};
+use crate::can::baud_rate::{DataBitTiming, NominalBitTiming};
+use crate::can::can_node::{Interrupt, RxFifoMode, RxSel};
 use crate::can::msg::{ReadFrom, RxBufferId, TxBufferId};
-use crate::can::{DataFieldSize, Module, ModuleId, TxMode};
+use crate::can::{DataFieldSize, TxMode};
 use crate::pac;
-use tc37x_pac::can0::Can0;
-use tc37x_pac::can1::Can1;
+
 use tc37x_pac::hidden::RegValue;
 use tc37x_pac::RegisterValue;
-
-use super::NodeId;
 
 pub(super) struct NodeEffects<T> {
     reg: T,

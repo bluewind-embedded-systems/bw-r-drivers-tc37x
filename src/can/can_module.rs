@@ -1,11 +1,9 @@
 use super::can_node::{Node, NodeConfig, NodeId};
-use crate::can::can_node::RxdIn;
-use crate::can::can_node::TxdOut;
-use crate::log::info;
+
 use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
 use core::marker::PhantomData;
-use core::ops::Deref;
+
 use pac::hidden::CastFrom;
 
 #[derive(Clone, Copy)]

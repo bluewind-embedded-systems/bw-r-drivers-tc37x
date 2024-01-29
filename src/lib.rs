@@ -9,8 +9,6 @@
 #![deny(clippy::result_unit_err)]
 // Allow uninlined format args. We need to switch seamlessly between defmt and log
 #![allow(clippy::uninlined_format_args)]
-// TODO Remove this once log module correctly handles ignored arguments
-#![allow(unused_imports)]
 // no_std is required for the target
 #![cfg_attr(target_arch = "tricore", no_std)]
 
