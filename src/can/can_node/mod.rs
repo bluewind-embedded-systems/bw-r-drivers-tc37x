@@ -613,32 +613,6 @@ pub enum Tos {
     Cpu2,
 }
 
-// TODO Move to its own module
-pub const RXD00B_P00_1_IN: RxdIn =
-    RxdIn::new(ModuleId::Can1, NodeId::Node0, PortNumber::_00, 1, RxSel::_B);
-
-// TODO Move to its own module
-pub const RXD00B_P20_7_IN: RxdIn =
-    RxdIn::new(ModuleId::Can0, NodeId::Node0, PortNumber::_20, 7, RxSel::_B);
-
-// TODO Move to its own module
-pub const TXD00_P00_0_OUT: TxdOut = TxdOut::new(
-    ModuleId::Can1,
-    NodeId::Node0,
-    PortNumber::_00,
-    0,
-    OutputIdx::ALT5,
-);
-
-// TODO Move to its own module
-pub const TXD00_P20_8_OUT: TxdOut = TxdOut::new(
-    ModuleId::Can0,
-    NodeId::Node0,
-    PortNumber::_20,
-    8,
-    OutputIdx::ALT5,
-);
-
 #[derive(Clone, Copy)]
 pub struct InputMode(u32);
 impl InputMode {
@@ -852,14 +826,14 @@ impl Mode {
 #[derive(Clone, Copy)]
 pub struct OutputIdx(u32);
 impl OutputIdx {
-    const GENERAL: Self = Self(0x10 << 3);
-    const ALT1: Self = Self(0x11 << 3);
-    const ALT2: Self = Self(0x12 << 3);
-    const ALT3: Self = Self(0x13 << 3);
-    const ALT4: Self = Self(0x14 << 3);
-    const ALT5: Self = Self(0x15 << 3);
-    const ALT6: Self = Self(0x16 << 3);
-    const ALT7: Self = Self(0x17 << 3);
+    pub(crate) const GENERAL: Self = Self(0x10 << 3);
+    pub(crate) const ALT1: Self = Self(0x11 << 3);
+    pub(crate) const ALT2: Self = Self(0x12 << 3);
+    pub(crate) const ALT3: Self = Self(0x13 << 3);
+    pub(crate) const ALT4: Self = Self(0x14 << 3);
+    pub(crate) const ALT5: Self = Self(0x15 << 3);
+    pub(crate) const ALT6: Self = Self(0x16 << 3);
+    pub(crate) const ALT7: Self = Self(0x17 << 3);
 }
 
 #[derive(Clone, Copy)]
@@ -872,7 +846,7 @@ pub struct RxdIn {
 }
 
 impl RxdIn {
-    const fn new(
+    pub(crate) const fn new(
         module: ModuleId,
         node_id: NodeId,
         port: PortNumber,
@@ -926,7 +900,7 @@ pub struct TxdOut {
 }
 
 impl TxdOut {
-    const fn new(
+    pub(crate) const fn new(
         module: ModuleId,
         node_id: NodeId,
         port: PortNumber,
