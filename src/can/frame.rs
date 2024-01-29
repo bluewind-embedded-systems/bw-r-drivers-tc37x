@@ -48,7 +48,7 @@ impl DataLenghtCode {
         }
     }
 
-    pub const fn to_length(&self) -> usize {
+    pub const fn to_length(self) -> usize {
         match self {
             Self::_0 => 0,
             Self::_1 => 1,

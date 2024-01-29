@@ -80,9 +80,9 @@ pub enum NodeId {
     Node3,
 }
 
-impl Into<u8> for NodeId {
-    fn into(self) -> u8 {
-        match self {
+impl From<NodeId> for u8 {
+    fn from(value: NodeId) -> Self {
+        match value {
             NodeId::Node0 => 0,
             NodeId::Node1 => 1,
             NodeId::Node2 => 2,
@@ -519,7 +519,7 @@ pub enum DataFieldSize {
 
 impl DataFieldSize {
     fn to_esci_register_value(self) -> u8 {
-        let value = match self {
+        match self {
             DataFieldSize::_8 => 0,
             DataFieldSize::_12 => 1,
             DataFieldSize::_16 => 2,
@@ -528,8 +528,7 @@ impl DataFieldSize {
             DataFieldSize::_32 => 5,
             DataFieldSize::_48 => 6,
             DataFieldSize::_64 => 7,
-        };
-        value
+        }
     }
 }
 
@@ -707,23 +706,23 @@ impl Port {
 
         let inner: Port00 = unsafe {
             match port {
-                PortNumber::_00 => core::mem::transmute(PORT_00),
-                PortNumber::_01 => core::mem::transmute(PORT_01),
-                PortNumber::_02 => core::mem::transmute(PORT_02),
-                PortNumber::_10 => core::mem::transmute(PORT_10),
-                PortNumber::_11 => core::mem::transmute(PORT_11),
-                PortNumber::_12 => core::mem::transmute(PORT_12),
-                PortNumber::_13 => core::mem::transmute(PORT_13),
-                PortNumber::_14 => core::mem::transmute(PORT_14),
-                PortNumber::_15 => core::mem::transmute(PORT_15),
-                PortNumber::_20 => core::mem::transmute(PORT_20),
-                PortNumber::_21 => core::mem::transmute(PORT_21),
-                PortNumber::_22 => core::mem::transmute(PORT_22),
-                PortNumber::_23 => core::mem::transmute(PORT_23),
-                PortNumber::_32 => core::mem::transmute(PORT_32),
-                PortNumber::_33 => core::mem::transmute(PORT_33),
-                PortNumber::_34 => core::mem::transmute(PORT_34),
-                PortNumber::_40 => core::mem::transmute(PORT_40),
+                PortNumber::_00 => PORT_00,
+                PortNumber::_01 => transmute(PORT_01),
+                PortNumber::_02 => transmute(PORT_02),
+                PortNumber::_10 => transmute(PORT_10),
+                PortNumber::_11 => transmute(PORT_11),
+                PortNumber::_12 => transmute(PORT_12),
+                PortNumber::_13 => transmute(PORT_13),
+                PortNumber::_14 => transmute(PORT_14),
+                PortNumber::_15 => transmute(PORT_15),
+                PortNumber::_20 => transmute(PORT_20),
+                PortNumber::_21 => transmute(PORT_21),
+                PortNumber::_22 => transmute(PORT_22),
+                PortNumber::_23 => transmute(PORT_23),
+                PortNumber::_32 => transmute(PORT_32),
+                PortNumber::_33 => transmute(PORT_33),
+                PortNumber::_34 => transmute(PORT_34),
+                PortNumber::_40 => transmute(PORT_40),
             }
         };
         Self { inner }
@@ -897,9 +896,9 @@ pub enum RxSel {
     _H,
 }
 
-impl Into<u8> for RxSel {
-    fn into(self) -> u8 {
-        match self {
+impl From<RxSel> for u8 {
+    fn from(value: RxSel) -> Self {
+        match value {
             RxSel::_A => 0,
             RxSel::_B => 1,
             RxSel::_C => 2,
