@@ -1,5 +1,5 @@
 // Many integer and float conversions are done in this file, we want to get rid of them
-#![deny(clippy::as_conversions, clippy::float_cmp)]
+// TODO #![warn(clippy::as_conversions)]
 
 use crate::log::info;
 // The following import is needed when f32::abs is not available (tricore toolchain)

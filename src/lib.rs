@@ -8,6 +8,10 @@
 // Allow uninlined format args. We need to switch seamlessly between defmt and log
 #![allow(clippy::uninlined_format_args)]
 
+// Floating point calculations are usually imprecise, so asking if two values
+// are exactly equal is asking for trouble.
+#![deny(clippy::float_cmp)]
+
 // TODO Remove this once log module correctly handles ignored arguments
 #![allow(unused_imports)]
 
