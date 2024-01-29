@@ -419,11 +419,8 @@ macro_rules! impl_can_node {
                 data: &[u8],
             ) -> Result<(), TransmitError> {
                 let req_pending = self.effects.is_tx_buffer_request_pending(buffer_id);
-                if req_pending.is_err() {
+                if req_pending {
                     return Err(TransmitError::Busy);
-                }
-                if req_pending.unwrap() == true {
-                    return Err(TransmitError::InvalidAccess);
                 }
 
                 let tx_buf_el = self.get_tx_element_address(self.ram_base_address, buffer_id);
