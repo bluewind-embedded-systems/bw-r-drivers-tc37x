@@ -56,7 +56,7 @@ pub(super) fn get_best_baud_rate(
     module_freq: f32,
     baudrate: u32,
 ) -> BestBaudRate {
-    /* search for best baudrate */
+    // Search for best baudrate
 
     let max_brp = brp_msk as i32 + 1;
     let min_brp = 1;
@@ -75,14 +75,17 @@ pub(super) fn get_best_baud_rate(
         tmp_tbaud = (f_quanta / baudrate as f32) as _;
 
         if tmp_tbaud == 0 {
-            break; /* to avoid division by 0 */
+            // Avoid division by 0
+            break;
         }
 
         let temp_baudrate = f_quanta / tmp_tbaud as f32;
         let error = (temp_baudrate - baudrate as f32).abs();
 
         if tmp_tbaud < min_tbaud {
-            break; /* below the minimum allowed limits, break is required otherwise TSEG1 and TSEG2 may result in negitive values */
+            // Below the minimum allowed limits, break is required otherwise
+            // TSEG1 and TSEG2 may result in negative values
+            break;
         }
 
         if (tmp_tbaud <= max_tbaud) && (best_error >= error) {
@@ -91,7 +94,8 @@ pub(super) fn get_best_baud_rate(
             best_error = error;
 
             if (tmp_tbaud <= 20) && (error < 0.1) {
-                break; /* optimal condition */
+                // Optimal condition
+                break;
             }
         }
         tmp_brp += 1;
@@ -121,9 +125,10 @@ pub(super) fn get_best_sample_point(
     best_tbaud: i32,
     sample_point: u16,
 ) -> (i32, i32) {
-    /* search for best sample point */
+    // Search for best sample point
 
-    let mut best_error = sample_point as f32 * 0.25; /* 25% tolerance in sample point as max error */
+    // 25% tolerance in sample point as max error
+    let mut best_error = sample_point as f32 * 0.25;
     let max_tseg1 = tseg1_msk as i32 + 1;
     let min_tseg1 = 3;
     let max_tseg2 = tseg2_msk as i32 + 1;
@@ -147,8 +152,8 @@ pub(super) fn get_best_sample_point(
         }
 
         if temp_sample_point < sample_point as _ {
-            /*least possible error */
-            break; /* least possible error has already occured */
+            // Least possible error has already occurred
+            break;
         }
     }
 
