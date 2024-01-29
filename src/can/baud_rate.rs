@@ -36,13 +36,13 @@ pub struct AutoBitTiming {
     pub sync_jump_width: u16,
 }
 
-pub(super) const NBTP_NBRP_MSK: usize = 0x1ff;
-pub(super) const NBTP_NTSEG1_MSK: usize = 0xff;
-pub(super) const NBTP_NTSEG2_MSK: usize = 0x7f;
+pub(super) const NBTP_NBRP_MSK: i32 = 0x1ff;
+pub(super) const NBTP_NTSEG1_MSK: i32 = 0xff;
+pub(super) const NBTP_NTSEG2_MSK: i32 = 0x7f;
 
-pub(super) const DBTP_DBRP_MSK: usize = 0x1f;
-pub(super) const DBTP_DTSEG1_MSK: usize = 0x1f;
-pub(super) const DBTP_DTSEG2_MSK: usize = 0xf;
+pub(super) const DBTP_DBRP_MSK: i32 = 0x1f;
+pub(super) const DBTP_DTSEG1_MSK: i32 = 0x1f;
+pub(super) const DBTP_DTSEG2_MSK: i32 = 0xf;
 
 pub(super) struct BestBaudRate {
     pub(super) tbaud: i32,
@@ -50,18 +50,18 @@ pub(super) struct BestBaudRate {
 }
 
 pub(super) fn get_best_baud_rate(
-    brp_msk: usize,
-    tseg1_msk: usize,
-    tseg2_msk: usize,
+    brp_msk: i32,
+    tseg1_msk: i32,
+    tseg2_msk: i32,
     module_freq: f32,
     baudrate: u32,
 ) -> BestBaudRate {
     // Search for best baudrate
 
-    let max_brp = brp_msk as i32 + 1;
+    let max_brp = brp_msk + 1;
     let min_brp = 1;
 
-    let max_tbaud = (tseg1_msk as i32 + 1) + (tseg2_msk as i32 + 1) + 1;
+    let max_tbaud = (tseg1_msk + 1) + (tseg2_msk + 1) + 1;
     let min_tbaud = 8;
 
     let mut best_error = baudrate as f32;
@@ -120,8 +120,8 @@ pub(super) fn get_best_baud_rate(
 }
 
 pub(super) fn get_best_sample_point(
-    tseg1_msk: usize,
-    tseg2_msk: usize,
+    tseg1_msk: i32,
+    tseg2_msk: i32,
     best_tbaud: i32,
     sample_point: u16,
 ) -> (i32, i32) {
@@ -129,9 +129,9 @@ pub(super) fn get_best_sample_point(
 
     // 25% tolerance in sample point as max error
     let mut best_error = sample_point as f32 * 0.25;
-    let max_tseg1 = tseg1_msk as i32 + 1;
+    let max_tseg1 = tseg1_msk + 1;
     let min_tseg1 = 3;
-    let max_tseg2 = tseg2_msk as i32 + 1;
+    let max_tseg2 = tseg2_msk + 1;
     let min_tseg2 = 2;
 
     let max_tseg1 = if best_tbaud < max_tseg1 {
