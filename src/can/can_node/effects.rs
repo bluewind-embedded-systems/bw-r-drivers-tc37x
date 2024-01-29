@@ -64,9 +64,10 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn enable_tx_buffer_transmission_interrupt(&self, tx_buffer_id: TxBufferId) {
+                let id: u8 = tx_buffer_id.into();
                 unsafe {
                     self.reg.tx().txbtiei().modify(|mut r| {
-                        *r.data_mut_ref() |= 1 << tx_buffer_id.0;
+                        *r.data_mut_ref() |= 1 << id;
                         r
                     })
                 };
@@ -437,7 +438,8 @@ macro_rules! impl_can_node_effect {
 
             pub(crate) fn is_tx_buffer_request_pending(&self, tx_buffer_id: TxBufferId) -> bool {
                 let txbrpi = unsafe { self.reg.tx().txbrpi().read() };
-                match tx_buffer_id.0 {
+                let id: u8 = tx_buffer_id.into();
+                match id {
                     0 => txbrpi.trp0().get().0 == 1,
                     1 => txbrpi.trp1().get().0 == 1,
                     2 => txbrpi.trp2().get().0 == 1,

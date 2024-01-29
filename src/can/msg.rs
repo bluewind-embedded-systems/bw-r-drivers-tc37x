@@ -132,7 +132,7 @@ pub enum FrameType {
 
 #[derive(Clone, Copy, Debug)]
 #[repr(transparent)]
-pub struct TxBufferId(pub u8);
+pub struct TxBufferId(u8);
 
 impl TxBufferId {
     pub const MAX: u8 = 31;
@@ -143,32 +143,11 @@ impl TxBufferId {
             _ => None,
         }
     }
-
-    // TODO Despite the constness, this panics at runtime
-    // TODO This can probably be fixed with const generics
-    pub const fn new_const(n: u8) -> Self {
-        match n {
-            ..=Self::MAX => Self(n),
-            _ => panic!("over the max range"),
-        }
-    }
 }
 
 impl From<TxBufferId> for u8 {
     fn from(value: TxBufferId) -> Self {
         value.0
-    }
-}
-
-impl From<TxBufferId> for u16 {
-    fn from(value: TxBufferId) -> Self {
-        value.0.into()
-    }
-}
-
-impl From<TxBufferId> for u32 {
-    fn from(value: TxBufferId) -> Self {
-        value.0.into()
     }
 }
 

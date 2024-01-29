@@ -176,8 +176,10 @@ macro_rules! impl_can_node {
                             for id in
                                 0..tx_config.dedicated_tx_buffers_number + tx_config.fifo_queue_size
                             {
-                                node.effects
-                                    .enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+                                if let Some(tx_buffer_id) = TxBufferId::new(id) {
+                                    node.effects
+                                        .enable_tx_buffer_transmission_interrupt(tx_buffer_id);
+                                }
                             }
                         }
                         TxMode::Fifo | TxMode::Queue => {
@@ -185,8 +187,10 @@ macro_rules! impl_can_node {
                             node.effects
                                 .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
                             for id in 0..tx_config.fifo_queue_size {
-                                node.effects
-                                    .enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+                                if let Some(tx_buffer_id) = TxBufferId::new(id) {
+                                    node.effects
+                                        .enable_tx_buffer_transmission_interrupt(tx_buffer_id);
+                                }
                             }
                         }
                     }
@@ -265,8 +269,10 @@ macro_rules! impl_can_node {
 
             fn set_inner_tx_int(&self, size: u8) {
                 for id in 0..size {
-                    self.effects
-                        .enable_tx_buffer_transmission_interrupt(TxBufferId(id));
+                    if let Some(tx_buffer_id) = TxBufferId::new(id) {
+                        self.effects
+                            .enable_tx_buffer_transmission_interrupt(tx_buffer_id);
+                    }
                 }
             }
 
@@ -406,7 +412,8 @@ macro_rules! impl_can_node {
 
             pub fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
                 let id = self.effects.get_tx_fifo_queue_put_index();
-                TxBufferId::new_const(id)
+                // SAFETY The value is in range because it is read from a register
+                unsafe { TxBufferId::new(id).unwrap_unchecked() }
             }
 
             #[allow(unused_variables)]
@@ -464,7 +471,7 @@ macro_rules! impl_can_node {
             #[inline]
             pub fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: TxBufferId) -> bool {
                 self.effects
-                    .is_tx_buffer_transmission_occured(tx_buffer_id.0)
+                    .is_tx_buffer_transmission_occured(tx_buffer_id.into())
             }
 
             pub fn get_tx_element_address(
@@ -475,7 +482,7 @@ macro_rules! impl_can_node {
                 let num_of_config_bytes = 8u32;
                 let num_of_data_bytes = self.effects.get_tx_buffer_data_field_size() as u32;
                 let tx_buffer_size = num_of_config_bytes + num_of_data_bytes;
-                let tx_buffer_index = tx_buffer_size * u32::from(buffer_number);
+                let tx_buffer_index = tx_buffer_size * u32::from(u8::from(buffer_number));
 
                 let tx_buffer_element_address =
                     ram_base_address + TX_BUFFER_START_ADDRESS + tx_buffer_index;
