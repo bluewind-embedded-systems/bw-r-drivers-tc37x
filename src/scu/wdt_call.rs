@@ -1,22 +1,4 @@
 use crate::scu::wdt;
-use tc37x_pac::{self as pac};
-
-pub fn disable_safety_watchdog() {
-    wdt::clear_safety_endinit_inline();
-    unsafe {
-        pac::SCU
-            .wdts()
-            .wdtscon1()
-            .modify(|p| p.dr().set(pac::scu::wdts::wdtscon1::Dr::CONST_11))
-    };
-    wdt::set_safety_endinit_inline();
-}
-
-pub fn disable_cpu_watchdog() {
-    wdt::clear_cpu_endinit_inline();
-    unsafe { pac::SCU.wdtcpu0con1().modify(|p| p.dr().set(true)) };
-    wdt::set_cpu_endinit_inline();
-}
 
 pub fn call_without_endinit<R>(f: impl FnOnce() -> R) -> R {
     call_without_cpu_endinit(|| call_without_safety_endinit(f))

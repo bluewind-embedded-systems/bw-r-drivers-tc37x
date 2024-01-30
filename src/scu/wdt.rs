@@ -167,6 +167,23 @@ pub fn set_safety_endinit_inline() {
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
+pub fn disable_safety_watchdog() {
+    clear_safety_endinit_inline();
+    unsafe {
+        pac::SCU
+            .wdts()
+            .wdtscon1()
+            .modify(|p| p.dr().set(pac::scu::wdts::wdtscon1::Dr::CONST_11))
+    };
+    set_safety_endinit_inline();
+}
+
+pub fn disable_cpu_watchdog() {
+    clear_cpu_endinit_inline();
+    unsafe { pac::SCU.wdtcpu0con1().modify(|p| p.dr().set(true)) };
+    set_cpu_endinit_inline();
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
