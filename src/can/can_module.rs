@@ -39,7 +39,6 @@ macro_rules! impl_can_module {
             }
 
             pub fn enable(self) -> Module<$Reg, Enabled> {
-                let passw = scu::wdt::get_cpu_watchdog_password();
                 scu::wdt::clear_cpu_endinit_inline();
 
                 unsafe { $reg.clc().modify_atomic(|r| r.disr().set(false)) };
