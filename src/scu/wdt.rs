@@ -32,6 +32,14 @@ unsafe fn get_wdt_con0(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con0, pac::RW> 
 }
 
 #[inline]
+unsafe fn get_wdt_con1(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con1, pac::RW> {
+    // unsafe cast to get the valid SCU WDT based on the core id
+    let off: *mut u8 = unsafe { core::mem::transmute(pac::SCU.wdtcpu0con1()) };
+    let off = unsafe { off.add(core::mem::size_of::<u32>() * 3 * core_id as usize) };
+    unsafe { core::mem::transmute(off) }
+}
+
+#[inline]
 pub fn clear_cpu_endinit_inline() {
     let password = get_cpu_watchdog_password();
     let core_id = read_cpu_core_id();
