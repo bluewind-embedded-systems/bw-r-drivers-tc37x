@@ -188,7 +188,11 @@ pub fn disable_safety_watchdog() {
 
 pub fn disable_cpu_watchdog() {
     clear_cpu_endinit_inline();
-    unsafe { pac::SCU.wdtcpu0con1().modify(|p| p.dr().set(true)) };
+
+    let core_id = read_cpu_core_id();
+    let con1 = unsafe { get_wdt_con1(core_id as _) };
+    unsafe { con1.modify(|p| p.dr().set(true)) };
+
     set_cpu_endinit_inline();
 }
 
