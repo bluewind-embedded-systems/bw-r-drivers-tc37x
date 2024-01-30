@@ -103,62 +103,6 @@ pub fn set_cpu_endinit_inline() {
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
-#[inline]
-unsafe fn get_wdt_con0_cpu2() -> pac::Reg<pac::scu::Wdtcpu2Con0, pac::RW> {
-    // unsafe cast to get the valid SCU WDT based on the core id
-    let off: *mut u8 = unsafe { core::mem::transmute(pac::SCU.wdtcpu0con0()) };
-    let off = unsafe { off.add(core::mem::size_of::<u32>() * 3 * 2usize) };
-    unsafe { core::mem::transmute(off) }
-}
-#[inline]
-unsafe fn get_wdt_con0_cpu1() -> pac::Reg<pac::scu::Wdtcpu1Con0, pac::RW> {
-    // unsafe cast to get the valid SCU WDT based on the core id
-    let off: *mut u8 = unsafe { core::mem::transmute(pac::SCU.wdtcpu0con0()) };
-    let off = unsafe { off.add(core::mem::size_of::<u32>() * 3) };
-    unsafe { core::mem::transmute(off) }
-}
-#[inline]
-unsafe fn get_wdt_con0_cpu0() -> pac::Reg<pac::scu::Wdtcpu0Con0, pac::RW> {
-    // unsafe cast to get the valid SCU WDT based on the core id
-    let off: *mut u8 = unsafe { core::mem::transmute(pac::SCU.wdtcpu0con0()) };
-    unsafe { core::mem::transmute(off) }
-}
-
-#[inline]
-pub fn set_cpu_endinit_inline_cpu0(password: u16) {
-    let con0 = unsafe { get_wdt_con0_cpu0() };
-
-    if unsafe { con0.read() }.lck().get() {
-        let rel = unsafe { con0.read() }.rel().get();
-        let data = pac::scu::Wdtcpu0Con0::default()
-            .endinit()
-            .set(true)
-            .lck()
-            .set(false)
-            .pw()
-            .set(password)
-            .rel()
-            .set(rel);
-        unsafe { con0.write(data) };
-    }
-
-    let rel = unsafe { con0.read() }.rel().get();
-    let data = pac::scu::Wdtcpu0Con0::default()
-        .endinit()
-        .set(true)
-        .lck()
-        .set(true)
-        .pw()
-        .set(password)
-        .rel()
-        .set(rel);
-
-    unsafe { con0.write(data) };
-
-    #[cfg(tricore_arch = "tricore")]
-    while !unsafe { con0.read() }.endinit().get() {}
-}
-
 fn wdtscon0lock_to_bool(reg: pac::scu::wdts::wdtscon0::Lck) -> bool {
     reg == pac::scu::wdts::wdtscon0::Lck::CONST_11
 }
@@ -192,76 +136,6 @@ pub fn clear_safety_endinit_inline(password: u16) {
 
     #[cfg(tricore_arch = "tricore")]
     while unsafe { con0.read() }.endinit().get() {}
-}
-
-#[inline]
-pub fn set_cpu_endinit_inline_cpu1(password: u16) {
-    let con0 = unsafe { get_wdt_con0_cpu1() };
-
-    if unsafe { con0.read() }.lck().get() {
-        let rel = unsafe { con0.read() }.rel().get();
-        let data = pac::scu::Wdtcpu1Con0::default()
-            .endinit()
-            .set(true)
-            .lck()
-            .set(false)
-            .pw()
-            .set(password)
-            .rel()
-            .set(rel);
-        unsafe { con0.write(data) };
-    }
-
-    let rel = unsafe { con0.read() }.rel().get();
-    let data = pac::scu::Wdtcpu1Con0::default()
-        .endinit()
-        .set(true)
-        .lck()
-        .set(true)
-        .pw()
-        .set(password)
-        .rel()
-        .set(rel);
-
-    unsafe { con0.write(data) };
-
-    #[cfg(tricore_arch = "tricore")]
-    while !unsafe { con0.read() }.endinit().get() {}
-}
-
-#[inline]
-pub fn set_cpu_endinit_inline_cpu2(password: u16) {
-    let con0 = unsafe { get_wdt_con0_cpu2() };
-
-    if unsafe { con0.read() }.lck().get() {
-        let rel = unsafe { con0.read() }.rel().get();
-        let data = pac::scu::Wdtcpu2Con0::default()
-            .endinit()
-            .set(true)
-            .lck()
-            .set(false)
-            .pw()
-            .set(password)
-            .rel()
-            .set(rel);
-        unsafe { con0.write(data) };
-    }
-
-    let rel = unsafe { con0.read() }.rel().get();
-    let data = pac::scu::Wdtcpu2Con0::default()
-        .endinit()
-        .set(true)
-        .lck()
-        .set(true)
-        .pw()
-        .set(password)
-        .rel()
-        .set(rel);
-
-    unsafe { con0.write(data) };
-
-    #[cfg(tricore_arch = "tricore")]
-    while !unsafe { con0.read() }.endinit().get() {}
 }
 
 #[inline]
