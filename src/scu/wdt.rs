@@ -68,7 +68,8 @@ pub fn clear_cpu_endinit_inline() {
 }
 
 #[inline]
-pub fn set_cpu_endinit_inline(password: u16) {
+pub fn set_cpu_endinit_inline() {
+    let password = get_cpu_watchdog_password();
     let core_id = read_cpu_core_id();
     let con0 = unsafe { get_wdt_con0(core_id as _) };
 

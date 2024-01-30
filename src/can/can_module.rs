@@ -45,7 +45,7 @@ macro_rules! impl_can_module {
                 unsafe { $reg.clc().modify_atomic(|r| r.disr().set(false)) };
                 while !self.is_enabled() {}
 
-                scu::wdt::set_cpu_endinit_inline(passw);
+                scu::wdt::set_cpu_endinit_inline();
 
                 Module::<$Reg, Enabled> {
                     nodes_taken: [false; 4],
