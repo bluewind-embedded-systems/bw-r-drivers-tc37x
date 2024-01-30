@@ -262,7 +262,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         wait_ccucon0_lock()?;
     }
 
-    wdt::set_safety_endinit_inline(endinit_sfty_pw);
+    wdt::set_safety_endinit_inline();
 
     Ok(())
 }
@@ -284,7 +284,7 @@ pub fn modulation_init(config: &Config) -> Result<(), ()> {
                 .modify(|r| r.moden().set(scu::syspllcon0::Moden::CONST_11))
         };
 
-        wdt::set_safety_endinit_inline(endinit_sfty_pw);
+        wdt::set_safety_endinit_inline();
     }
     Ok(())
 }
@@ -453,7 +453,7 @@ pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         };
     }
 
-    wdt::set_safety_endinit_inline(endinit_sfty_pw);
+    wdt::set_safety_endinit_inline();
 
     Ok(())
 }
@@ -475,7 +475,7 @@ pub fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
             })
         };
 
-        wdt::set_safety_endinit_inline(endinit_sfty_pw);
+        wdt::set_safety_endinit_inline();
     }
     Ok(())
 }

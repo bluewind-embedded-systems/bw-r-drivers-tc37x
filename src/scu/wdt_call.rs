@@ -9,7 +9,7 @@ pub fn disable_safety_watchdog(passw: u16) {
             .wdtscon1()
             .modify(|p| p.dr().set(pac::scu::wdts::wdtscon1::Dr::CONST_11))
     };
-    wdt::set_safety_endinit_inline(passw);
+    wdt::set_safety_endinit_inline();
 }
 
 pub fn disable_cpu_watchdog() {
@@ -37,6 +37,6 @@ pub fn call_without_safety_endinit<R>(f: impl FnOnce() -> R) -> R {
 pub fn call_without_safety_endinit_passw<R>(passw: u16, f: impl FnOnce() -> R) -> R {
     wdt::clear_safety_endinit_inline();
     let result = f();
-    wdt::set_safety_endinit_inline(passw);
+    wdt::set_safety_endinit_inline();
     result
 }

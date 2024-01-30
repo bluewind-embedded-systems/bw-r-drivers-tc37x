@@ -140,7 +140,8 @@ pub fn clear_safety_endinit_inline() {
 }
 
 #[inline]
-pub fn set_safety_endinit_inline(password: u16) {
+pub fn set_safety_endinit_inline() {
+    let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
     if wdtscon0lock_to_bool(unsafe { con0.read() }.lck().get()) {
