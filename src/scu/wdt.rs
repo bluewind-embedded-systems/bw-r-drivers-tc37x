@@ -11,12 +11,15 @@ pub fn get_cpu_watchdog_password() -> u16 {
         _ => unreachable!(),
     };
 
+    // If PAS=0: WDTxCON0.PW[7:2] must be written with inverted current value read from WDTxCON0.PW[7:2]
     password ^ 0x003F
 }
 
 #[inline]
 pub fn get_safety_watchdog_password() -> u16 {
     let password = unsafe { pac::SCU.wdts().wdtscon0().read() }.pw().get();
+
+    // If PAS=0: WDTxCON0.PW[7:2] must be written with inverted current value read from WDTxCON0.PW[7:2]
     password ^ 0x003F
 }
 
