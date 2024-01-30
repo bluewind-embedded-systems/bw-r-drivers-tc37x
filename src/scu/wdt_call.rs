@@ -2,7 +2,7 @@ use crate::scu::wdt;
 use tc37x_pac::{self as pac};
 
 pub fn disable_safety_watchdog(passw: u16) {
-    wdt::clear_safety_endinit_inline(passw);
+    wdt::clear_safety_endinit_inline();
     unsafe {
         pac::SCU
             .wdts()
@@ -35,7 +35,7 @@ pub fn call_without_safety_endinit<R>(f: impl FnOnce() -> R) -> R {
 }
 
 pub fn call_without_safety_endinit_passw<R>(passw: u16, f: impl FnOnce() -> R) -> R {
-    wdt::clear_safety_endinit_inline(passw);
+    wdt::clear_safety_endinit_inline();
     let result = f();
     wdt::set_safety_endinit_inline(passw);
     result

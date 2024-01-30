@@ -108,7 +108,8 @@ fn wdtscon0lock_to_bool(reg: pac::scu::wdts::wdtscon0::Lck) -> bool {
 }
 
 #[inline]
-pub fn clear_safety_endinit_inline(password: u16) {
+pub fn clear_safety_endinit_inline() {
+    let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
     if wdtscon0lock_to_bool(unsafe { con0.read() }.lck().get()) {

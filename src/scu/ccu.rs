@@ -109,7 +109,7 @@ fn set_pll_power(
 
 pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     let endinit_sfty_pw = wdt::get_safety_watchdog_password();
-    wdt::clear_safety_endinit_inline(endinit_sfty_pw);
+    wdt::clear_safety_endinit_inline();
 
     wait_ccucon0_lock()?;
 
@@ -272,7 +272,7 @@ pub fn modulation_init(config: &Config) -> Result<(), ()> {
         let rgain_p = calc_rgain_parameters(config.modulation.amp);
 
         let endinit_sfty_pw = wdt::get_safety_watchdog_password();
-        wdt::clear_safety_endinit_inline(endinit_sfty_pw);
+        wdt::clear_safety_endinit_inline();
 
         unsafe {
             SCU.syspllcon2()
@@ -314,7 +314,7 @@ fn calc_rgain_parameters(modamp: ModulationAmplitude) -> RGainValues {
 
 pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     let endinit_sfty_pw = wdt::get_safety_watchdog_password();
-    wdt::clear_safety_endinit_inline(endinit_sfty_pw);
+    wdt::clear_safety_endinit_inline();
 
     // CCUCON0 config
     {
@@ -462,7 +462,7 @@ pub fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
     let endinit_sfty_pw = wdt::get_safety_watchdog_password();
 
     for pll_step_count in 0..config.sys_pll_throttle.len() {
-        wdt::clear_safety_endinit_inline(endinit_sfty_pw);
+        wdt::clear_safety_endinit_inline();
 
         wait_cond(PLL_KRDY_TIMEOUT_COUNT, || {
             !syspllk2rdy_to_bool(unsafe { SCU.syspllstat().read() }.k2rdy().get())
