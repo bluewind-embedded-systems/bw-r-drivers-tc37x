@@ -103,16 +103,12 @@ pub fn set_cpu_endinit_inline() {
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
-fn wdtscon0lock_to_bool(reg: pac::scu::wdts::wdtscon0::Lck) -> bool {
-    reg == pac::scu::wdts::wdtscon0::Lck::CONST_11
-}
-
 #[inline]
 pub fn clear_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
-    if wdtscon0lock_to_bool(unsafe { con0.read() }.lck().get()) {
+    if unsafe { con0.read() }.lck().get() == pac::scu::wdts::wdtscon0::Lck::CONST_11 {
         unsafe {
             con0.modify(|r| {
                 r.endinit()
@@ -144,7 +140,7 @@ pub fn set_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
-    if wdtscon0lock_to_bool(unsafe { con0.read() }.lck().get()) {
+    if unsafe { con0.read() }.lck().get() == pac::scu::wdts::wdtscon0::Lck::CONST_11 {
         unsafe {
             con0.modify(|r| {
                 r.endinit()
