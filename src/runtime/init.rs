@@ -1,9 +1,9 @@
 use tc37x_rt::{
-    asm_calls::read_cpu_core_id,
     isr::load_interrupt_table,
     post_init, pre_init,
-    wdtcon::{disable_cpu_watchdog, disable_safety_watchdog},
 };
+use crate::cpu::asm::read_cpu_core_id;
+use crate::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
 
 pre_init!(pre_init_fn);
 fn pre_init_fn() {
