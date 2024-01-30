@@ -32,7 +32,8 @@ unsafe fn get_wdt_con0(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con0, pac::RW> 
 }
 
 #[inline]
-pub fn clear_cpu_endinit_inline(password: u16) {
+pub fn clear_cpu_endinit_inline() {
+    let password = get_cpu_watchdog_password();
     let core_id = read_cpu_core_id();
     let con0 = unsafe { get_wdt_con0(core_id as _) };
 
