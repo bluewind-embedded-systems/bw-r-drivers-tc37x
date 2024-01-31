@@ -6,11 +6,13 @@ use crate::{pac, scu};
 use core::marker::PhantomData;
 use pac::hidden::CastFrom;
 
-#[derive(Clone, Copy)]
-pub enum ModuleId {
-    Can0,
-    Can1,
-}
+pub trait ModuleId {}
+
+pub struct Module0;
+impl ModuleId for Module0 {}
+
+pub struct Module1;
+impl ModuleId for Module1 {}
 
 #[derive(Default)]
 pub struct ModuleConfig {}
@@ -19,25 +21,29 @@ pub struct ModuleConfig {}
 pub struct Disabled;
 pub struct Enabled;
 
-pub struct Module<Reg, State = Disabled> {
+pub struct Module<ModuleId, Reg, State = Disabled> {
     nodes_taken: [bool; 4],
-    _phantom: PhantomData<(Reg, State)>,
+    _phantom: PhantomData<(ModuleId, Reg, State)>,
+}
+
+impl<ModuleId, Reg> Module<ModuleId, Reg, Disabled> {
+    /// Create a new (disabled) CAN module
+    pub fn new(_module_id: ModuleId) -> Self {
+        Self {
+            nodes_taken: [false; 4],
+            _phantom: PhantomData,
+        }
+    }
 }
 
 macro_rules! impl_can_module {
-    ($reg:path, $($m:ident)::+, $Reg:ty, $id: expr) => {
-        impl Module<$Reg, Disabled> {
-            pub const fn new() -> Self {
-                Self {
-                    nodes_taken: [false; 4],
-                    _phantom: PhantomData,
-                }
-            }
-
+    ($reg:path, $($m:ident)::+, $Reg:ty, $id: ty) => {
+        impl Module<$id, $Reg, Disabled> {
             fn is_enabled(&self) -> bool {
                 !unsafe { $reg.clc().read() }.diss().get()
             }
 
+            /// Enable the CAN module
             pub fn enable(self) -> Module<$Reg, Enabled> {
                 scu::wdt::clear_cpu_endinit_inline();
 
@@ -54,14 +60,7 @@ macro_rules! impl_can_module {
         }
 
         impl Module<$Reg, Enabled> {
-            // This method is private to prevent the user from creating a new instance of an enabled module
-            const fn new() -> Self {
-                Self {
-                    nodes_taken: [false; 4],
-                    _phantom: PhantomData,
-                }
-            }
-
+            /// Take ownership of a CAN node and configure it
             pub fn take_node<I>(&mut self, node_id: I, cfg: NodeConfig<$Reg, I>) -> Option<Node<$($m)::+::N, $Reg>> where I: NodeId {
                 let node_index = node_id.as_index();
 
@@ -75,10 +74,6 @@ macro_rules! impl_can_module {
 
                 // Create node
                 Node::<$($m)::+::N, $Reg>::new(self, node_id, cfg).ok()
-            }
-
-            pub fn id(&self) -> ModuleId {
-                $id
             }
 
             pub(crate) fn set_clock_source(
@@ -156,8 +151,8 @@ macro_rules! impl_can_module {
     };
 }
 
-impl_can_module!(pac::CAN0, pac::can0, pac::can0::Can0, ModuleId::Can0);
-impl_can_module!(pac::CAN1, pac::can1, pac::can1::Can1, ModuleId::Can1);
+impl_can_module!(pac::CAN0, pac::can0, pac::can0::Can0, Module0);
+impl_can_module!(pac::CAN1, pac::can1, pac::can1::Can1, Module1);
 
 pub(crate) struct ClockSelect(pub(crate) u8);
 

@@ -18,10 +18,8 @@ use tc37x_driver::{pac, ssw};
 use tc37x_pac::can0::{Can0, N as Can0Node};
 
 fn setup_can() -> Option<Node<Can0Node, Can0>> {
-    let can_module = Module::<Can0>::new();
+    let can_module = Module::new(Module0);
     let mut can_module = can_module.enable();
-
-    let can_node_id = NodeId::Node0;
 
     let mut cfg = NodeConfig::default();
 
