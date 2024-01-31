@@ -106,3 +106,31 @@ post_init!(post_init_fn);
 fn post_init_fn() {
     load_interrupt_table();
 }
+
+#[allow(unused_variables)]
+#[panic_handler]
+fn panic(panic: &core::panic::PanicInfo<'_>) -> ! {
+    defmt::error!("Panic! {}", defmt::Display2Format(panic));
+    #[allow(clippy::empty_loop)]
+    loop {}
+}
+
+use core::arch::asm;
+use critical_section::RawRestoreState;
+
+struct Section;
+
+critical_section::set_impl!(Section);
+
+unsafe impl critical_section::Impl for Section {
+    unsafe fn acquire() -> RawRestoreState {
+        unsafe { asm!("disable") };
+        true
+    }
+
+    unsafe fn release(token: RawRestoreState) {
+        if token {
+            unsafe { asm!("enable") }
+        }
+    }
+}

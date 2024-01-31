@@ -12,9 +12,6 @@
 // no_std is required for the target
 #![cfg_attr(target_arch = "tricore", no_std)]
 
-#[cfg(target_arch = "tricore")]
-mod runtime;
-
 #[cfg(not(target_arch = "tricore"))]
 pub mod tracing;
 
