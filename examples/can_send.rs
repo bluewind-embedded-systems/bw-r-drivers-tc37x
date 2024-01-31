@@ -45,7 +45,7 @@ fn setup_can() -> Option<Node<Can0Node, Can0>> {
         pin: PIN_RX_0_0_P20_7,
     });
 
-    can_module.take_node(can_node_id, cfg)
+    can_module.take_node(Node0, cfg)
 }
 
 /// Initialize the STB pin for the CAN transceiver.
