@@ -57,16 +57,33 @@ pub enum RxMode {
     SharedAll,
 }
 
-#[derive(Default)]
-pub struct NodeConfig {
+pub struct NodeConfig<M> {
     pub clock_source: ClockSource,
     pub baud_rate: BitTimingConfig,
     pub fast_baud_rate: FastBitTimingConfig,
     pub transceiver_delay_offset: u8,
     pub frame_mode: FrameMode,
-    pub tx: Option<TxConfig>,
+    pub tx: Option<TxConfig<M>>,
     pub rx: Option<RxConfig>,
     pub message_ram: MessageRAM,
+}
+
+// Note: the Default trait implementation must be explicitly defined because
+// the derive macro needs all generic parameters to implement Default, even
+// if it is not necessary.
+impl<M> Default for NodeConfig<M> {
+    fn default() -> Self {
+        Self {
+            clock_source: Default::default(),
+            baud_rate: Default::default(),
+            fast_baud_rate: Default::default(),
+            transceiver_delay_offset: 0,
+            frame_mode: Default::default(),
+            tx: None,
+            rx: None,
+            message_ram: Default::default(),
+        }
+    }
 }
 
 const TX_BUFFER_START_ADDRESS: u32 = 0x0440u32;
@@ -115,7 +132,7 @@ macro_rules! impl_can_node {
             pub(super) fn new(
                 module: &mut Module<$ModuleReg, can_module::Enabled>,
                 node_id: NodeId,
-                config: NodeConfig,
+                config: NodeConfig<$ModuleReg>,
             ) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError> {
                 let node_index: u8 = node_id.into();
                 let node_index: usize = node_index.into();
@@ -397,7 +414,12 @@ macro_rules! impl_can_node {
                 self.effects.connect_pin_rx(rxd.select);
             }
 
-            fn connect_pin_tx(&self, txd: TxdOut, mode: OutputMode, pad_driver: PadDriver) {
+            fn connect_pin_tx(
+                &self,
+                txd: TxdOut<$ModuleReg>,
+                mode: OutputMode,
+                pad_driver: PadDriver,
+            ) {
                 let port = Port::new(txd.port);
                 port.set_pin_mode_output(txd.pin_index, mode, txd.select);
                 port.set_pin_pad_driver(txd.pin_index, pad_driver);
@@ -890,15 +912,16 @@ impl From<RxSel> for u8 {
 }
 
 #[derive(Clone, Copy)]
-pub struct TxdOut {
+pub struct TxdOut<M> {
     module: ModuleId,
     node_id: NodeId,
     port: PortNumber,
     pin_index: u8,
     select: OutputIdx,
+    _phantom: PhantomData<M>,
 }
 
-impl TxdOut {
+impl<T> TxdOut<T> {
     pub(crate) const fn new(
         module: ModuleId,
         node_id: NodeId,
@@ -912,6 +935,7 @@ impl TxdOut {
             port,
             pin_index,
             select,
+            _phantom: PhantomData,
         }
     }
 }
@@ -919,13 +943,13 @@ impl TxdOut {
 pub type Priority = u8;
 
 #[derive(Clone, Copy)]
-pub struct TxConfig {
+pub struct TxConfig<M> {
     pub mode: TxMode,
     pub dedicated_tx_buffers_number: u8,
     pub fifo_queue_size: u8,
     pub buffer_data_field_size: DataFieldSize,
     pub event_fifo_size: u8,
-    pub pin: TxdOut,
+    pub pin: TxdOut<M>,
 }
 
 #[derive(Clone, Copy)]
