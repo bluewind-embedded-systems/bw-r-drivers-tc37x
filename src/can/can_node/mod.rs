@@ -4,7 +4,7 @@
 mod effects;
 
 use super::baud_rate::*;
-use super::can_module::{ClockSource, ModuleId};
+use super::can_module::ClockSource;
 use super::frame::{DataLenghtCode, Frame};
 use super::internals::Tx;
 use super::msg::TxBufferId;
@@ -864,7 +864,6 @@ impl OutputIdx {
 
 #[derive(Clone, Copy)]
 pub struct RxdIn<M> {
-    module: ModuleId,
     node_id: NodeId,
     port: PortNumber,
     pin_index: u8,
@@ -874,14 +873,12 @@ pub struct RxdIn<M> {
 
 impl<M> RxdIn<M> {
     pub(crate) const fn new(
-        module: ModuleId,
         node_id: NodeId,
         port: PortNumber,
         pin_index: u8,
         select: RxSel,
     ) -> Self {
         Self {
-            module,
             node_id,
             port,
             pin_index,
@@ -920,7 +917,6 @@ impl From<RxSel> for u8 {
 
 #[derive(Clone, Copy)]
 pub struct TxdOut<M> {
-    module: ModuleId,
     node_id: NodeId,
     port: PortNumber,
     pin_index: u8,
@@ -930,14 +926,12 @@ pub struct TxdOut<M> {
 
 impl<T> TxdOut<T> {
     pub(crate) const fn new(
-        module: ModuleId,
         node_id: NodeId,
         port: PortNumber,
         pin_index: u8,
         select: OutputIdx,
     ) -> Self {
         Self {
-            module,
             node_id,
             port,
             pin_index,
