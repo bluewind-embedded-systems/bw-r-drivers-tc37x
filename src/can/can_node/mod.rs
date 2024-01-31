@@ -67,6 +67,7 @@ pub struct NodeConfig<M, N> {
     pub tx: Option<TxConfig<M, N>>,
     pub rx: Option<RxConfig<M, N>>,
     pub message_ram: MessageRAM,
+    pub pins: Option<Pins<M, N>>,
 }
 
 // Note: the Default trait implementation must be explicitly defined because
@@ -83,6 +84,7 @@ impl<M, N> Default for NodeConfig<M, N> {
             tx: None,
             rx: None,
             message_ram: Default::default(),
+            pins: None,
         }
     }
 }
@@ -249,17 +251,14 @@ macro_rules! impl_can_node {
                     Tos::Cpu0,
                 );
 
-                if let Some(rx_config) = &config.rx {
+                if let Some(pins) = &config.pins {
                     node.connect_pin_rx(
-                        &rx_config.pin,
+                        &pins.rx,
                         InputMode::PULL_UP,
                         PadDriver::CmosAutomotiveSpeed3,
                     );
-                }
-
-                if let Some(tx_config) = &config.tx {
                     node.connect_pin_tx(
-                        &tx_config.pin,
+                        &pins.tx,
                         OutputMode::PUSH_PULL,
                         PadDriver::CmosAutomotiveSpeed3,
                     );
@@ -945,13 +944,19 @@ pub struct TxConfig<M, N> {
     pub fifo_queue_size: u8,
     pub buffer_data_field_size: DataFieldSize,
     pub event_fifo_size: u8,
-    pub pin: TxdOut<M, N>,
+    pub _phantom: PhantomData<(M, N)>, // TODO Remove
 }
 
 #[derive(Clone, Copy)]
 pub struct RxConfig<M, N> {
     // TODO
-    pub pin: RxdIn<M, N>,
+    pub _phantom: PhantomData<(M, N)>, // TODO Remove
+}
+
+#[derive(Clone, Copy)]
+pub struct Pins<M, N> {
+    pub tx: TxdOut<M, N>,
+    pub rx: RxdIn<M, N>,
 }
 
 #[derive(Clone, Copy)]
