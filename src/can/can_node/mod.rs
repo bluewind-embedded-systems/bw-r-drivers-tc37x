@@ -64,7 +64,7 @@ pub struct NodeConfig<M> {
     pub transceiver_delay_offset: u8,
     pub frame_mode: FrameMode,
     pub tx: Option<TxConfig<M>>,
-    pub rx: Option<RxConfig>,
+    pub rx: Option<RxConfig<M>>,
     pub message_ram: MessageRAM,
 }
 
@@ -407,7 +407,12 @@ macro_rules! impl_can_node {
                 }
             }
 
-            fn connect_pin_rx(&self, rxd: RxdIn, mode: InputMode, pad_driver: PadDriver) {
+            fn connect_pin_rx(
+                &self,
+                rxd: RxdIn<$ModuleReg>,
+                mode: InputMode,
+                pad_driver: PadDriver,
+            ) {
                 let port = Port::new(rxd.port);
                 port.set_pin_mode_input(rxd.pin_index, mode);
                 port.set_pin_pad_driver(rxd.pin_index, pad_driver);
@@ -858,15 +863,16 @@ impl OutputIdx {
 }
 
 #[derive(Clone, Copy)]
-pub struct RxdIn {
+pub struct RxdIn<M> {
     module: ModuleId,
     node_id: NodeId,
     port: PortNumber,
     pin_index: u8,
     select: RxSel,
+    _phantom: PhantomData<M>,
 }
 
-impl RxdIn {
+impl<M> RxdIn<M> {
     pub(crate) const fn new(
         module: ModuleId,
         node_id: NodeId,
@@ -880,6 +886,7 @@ impl RxdIn {
             port,
             pin_index,
             select,
+            _phantom: PhantomData,
         }
     }
 }
@@ -953,9 +960,9 @@ pub struct TxConfig<M> {
 }
 
 #[derive(Clone, Copy)]
-pub struct RxConfig {
+pub struct RxConfig<M> {
     // TODO
-    pub pin: RxdIn,
+    pub pin: RxdIn<M>,
 }
 
 #[derive(Clone, Copy)]
