@@ -18,9 +18,10 @@ use tc37x_driver::log::info;
 use tc37x_driver::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
 use tc37x_driver::{pac, ssw};
 use tc37x_pac::can0::{Can0, N as Can0Node};
+use tc37x_pac::can1::{Can1, N as Can1Node};
 use tc37x_rt::{isr::load_interrupt_table, post_init, pre_init};
 
-fn setup_can() -> Option<Node<Can0Node, Can0>> {
+fn setup_can0() -> Option<Node<Can0Node, Can0>> {
     let can_module = Module::new(Module0);
     let mut can_module = can_module.enable();
 
@@ -45,6 +46,36 @@ fn setup_can() -> Option<Node<Can0Node, Can0>> {
     cfg.pins = Some(Pins {
         tx: PIN_TX_0_0_P20_8,
         rx: PIN_RX_0_0_P20_7,
+    });
+
+    can_module.take_node(Node0, cfg)
+}
+
+fn setup_can1() -> Option<Node<Can1Node, Can1>> {
+    let can_module = Module::new(Module1);
+    let mut can_module = can_module.enable();
+
+    let mut cfg = NodeConfig::default();
+
+    cfg.baud_rate = BitTimingConfig::Auto(AutoBitTiming {
+        baud_rate: 1_000_000,
+        sample_point: 8_000,
+        sync_jump_width: 3,
+    });
+
+    cfg.tx = Some(TxConfig {
+        mode: TxMode::DedicatedBuffers,
+        dedicated_tx_buffers_number: 2,
+        fifo_queue_size: 0,
+        buffer_data_field_size: DataFieldSize::_8,
+        event_fifo_size: 1,
+    });
+
+    // TODO Configure rx parameters
+
+    cfg.pins = Some(Pins {
+        tx: PIN_TX_1_0_P00_0,
+        rx: PIN_RX_1_0_P13_1,
     });
 
     can_module.take_node(Node0, cfg)
@@ -82,7 +113,15 @@ fn main() -> ! {
     init_can_stb_pin();
 
     info!("Create CAN module ... ");
-    let can = match setup_can() {
+    let can0 = match setup_can0() {
+        Some(can) => can,
+        None => {
+            info!("Can initialization error");
+            loop {}
+        }
+    };
+
+    let can1 = match setup_can1() {
         Some(can) => can,
         None => {
             info!("Can initialization error");
@@ -108,7 +147,11 @@ fn main() -> ! {
 
         let tx_frame = Frame::new(tx_msg_id, tx_msg_data.as_slice()).unwrap();
 
-        if can.transmit(&tx_frame).is_err() {
+        if can0.transmit(&tx_frame).is_err() {
+            info!("Cannot send frame");
+        }
+
+        if can1.transmit(&tx_frame).is_err() {
             info!("Cannot send frame");
         }
 
