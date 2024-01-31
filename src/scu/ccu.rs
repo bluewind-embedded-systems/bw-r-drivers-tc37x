@@ -54,42 +54,15 @@ fn wait_ccucon5_lock() -> Result<(), ()> {
     })
 }
 
-// TODO impl into<bool>
-fn syspllpwd_to_bool(reg: scu::syspllcon0::Pllpwd) -> bool {
-    reg == scu::syspllcon0::Pllpwd::CONST_11
-}
-fn perpllpwd_to_bool(reg: scu::perpllcon0::Pllpwd) -> bool {
-    reg == scu::perpllcon0::Pllpwd::CONST_11
-}
-fn syspllpwdstat_to_bool(reg: scu::syspllstat::Pwdstat) -> bool {
-    reg == scu::syspllstat::Pwdstat::CONST_11
-}
-fn sysplllock_to_bool(reg: scu::syspllstat::Lock) -> bool {
-    reg == scu::syspllstat::Lock::CONST_11
-}
-fn perplllock_to_bool(reg: scu::perpllstat::Lock) -> bool {
-    reg == scu::perpllstat::Lock::CONST_11
-}
-fn perpllpwdstat_to_bool(reg: scu::perpllstat::Pwdstat) -> bool {
-    reg == scu::perpllstat::Pwdstat::CONST_11
-}
-fn syspllk2rdy_to_bool(reg: scu::syspllstat::K2Rdy) -> bool {
-    reg == scu::syspllstat::K2Rdy::CONST_11
-}
-fn perpllk2rdy_to_bool(reg: scu::perpllstat::K2Rdy) -> bool {
-    reg == scu::perpllstat::K2Rdy::CONST_11
-}
-fn perpllk3rdy_to_bool(reg: scu::perpllstat::K3Rdy) -> bool {
-    reg == scu::perpllstat::K3Rdy::CONST_11
-}
-fn perplldivby_to_bool(reg: scu::perpllcon0::Divby) -> bool {
-    reg == scu::perpllcon0::Divby::CONST_11
-}
-fn oscconplllv_to_bool(reg: scu::osccon::Plllv) -> bool {
-    reg == scu::osccon::Plllv::CONST_11
-}
-fn oscconpllhv_to_bool(reg: scu::osccon::Pllhv) -> bool {
-    reg == scu::osccon::Pllhv::CONST_11
+fn wait_divider() -> Result<(), ()> {
+    wait_cond(PLL_KRDY_TIMEOUT_COUNT, || {
+        let sys = unsafe { SCU.syspllstat().read() };
+        let per = unsafe { SCU.perpllstat().read() };
+        let sys_k2 = sys.k2rdy().get();
+        let per_k2 = sys.k2rdy().get();
+        let per_k3 = per.k3rdy().get();
+        sys_k2.0 == 0 || per_k2.0 == 0 || per_k3.0 == 0
+    })
 }
 
 fn set_pll_power(
@@ -100,10 +73,8 @@ fn set_pll_power(
     unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(perpllpower)) };
 
     wait_cond(SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT, || {
-        syspllpwd_to_bool(syspllpower)
-            == syspllpwdstat_to_bool(unsafe { SCU.syspllstat().read() }.pwdstat().get())
-            || perpllpwd_to_bool(perpllpower)
-                == perpllpwdstat_to_bool(unsafe { SCU.perpllstat().read() }.pwdstat().get())
+        (syspllpower.0) == (unsafe { SCU.syspllstat().read() }.pwdstat().get().0)
+            || (perpllpower.0) == (unsafe { SCU.perpllstat().read() }.pwdstat().get().0)
     })
 }
 
@@ -127,16 +98,6 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     wait_ccucon0_lock()?;
 
     // disable SMU
-    {
-        // TODO Explain this or use field accessors
-        //unsafe { SMU.keys().write(RegValue::new(0xBC, 0)) };
-        // FIXME After pac update, this is a cluster
-        // unsafe { SMU.ag8cf0().modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
-        // unsafe { SMU.ag8cf1().modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
-        // unsafe { SMU.ag8cf2().modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
-
-        //unsafe { SMU.keys().write(RegValue::new(0, 0)) };
-    }
     {
         // TODO Explain this or use field accessors
         unsafe { SMU.keys().write(RegValue::new(0xBC, 0)) };
@@ -177,7 +138,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         };
     }
 
-    /* Configure the initial steps for the peripheral PLL*/
+    // Configure the initial steps for the system PLL
     unsafe {
         SCU.syspllcon0().modify(|r| {
             r.pdiv()
@@ -195,9 +156,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     unsafe {
         SCU.perpllcon0().modify(|r| {
             r.divby()
-                .set(scu::perpllcon0::Divby(
-                    plls_params.per_pll.k3_divider_bypass,
-                ))
+                .set(plls_params.per_pll.k3_divider_bypass.into())
                 .pdiv()
                 .set(plls_params.per_pll.p_divider)
                 .ndiv()
@@ -210,16 +169,26 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         scu::perpllcon0::Pllpwd::CONST_11,
     )?;
 
-    wait_cond(PLL_KRDY_TIMEOUT_COUNT, || {
-        syspllk2rdy_to_bool(unsafe { SCU.syspllstat().read() }.k2rdy().get()) || {
-            let stat = unsafe { SCU.perpllstat().read() };
-            perpllk2rdy_to_bool(stat.k2rdy().get()) || perpllk3rdy_to_bool(stat.k3rdy().get())
-        }
-    })?;
+    wait_divider()?;
 
+    unsafe {
+        SCU.syspllcon1()
+            .modify(|r| r.k2div().set(plls_params.sys_pll.k2_divider));
+
+        SCU.perpllcon1().modify(|r| {
+            r.k2div()
+                .set(plls_params.per_pll.k2_divider)
+                .k3div()
+                .set(plls_params.per_pll.k3_divider.into())
+        })
+    };
+
+    wait_divider()?;
+
+    // Check if OSC frequencies are in the limit
     wait_cond(OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT, || {
         let osccon = unsafe { SCU.osccon().read() };
-        !oscconplllv_to_bool(osccon.plllv().get()) && !oscconpllhv_to_bool(osccon.pllhv().get())
+        osccon.plllv().get().0 == 0 && osccon.pllhv().get().0 == 0
     })?;
 
     // Start PLL locking for latest set values
@@ -228,8 +197,9 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         unsafe { SCU.perpllcon0().modify(|r| r.resld().set(true)) };
 
         wait_cond(PLL_LOCK_TIMEOUT_COUNT, || {
-            !sysplllock_to_bool(unsafe { SCU.syspllstat().read() }.lock().get())
-                || !perplllock_to_bool(unsafe { SCU.perpllstat().read() }.lock().get())
+            let sys = unsafe { SCU.syspllstat().read() };
+            let per = unsafe { SCU.perpllstat().read() };
+            sys.lock().get().0 == 0 || per.lock().get().0 == 0
         })?;
     }
 
@@ -460,7 +430,7 @@ pub fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
         wdt::clear_safety_endinit_inline();
 
         wait_cond(PLL_KRDY_TIMEOUT_COUNT, || {
-            !syspllk2rdy_to_bool(unsafe { SCU.syspllstat().read() }.k2rdy().get())
+            !(unsafe { SCU.syspllstat().read() }.k2rdy().get().0 == 1)
         })?;
 
         unsafe {
@@ -475,6 +445,7 @@ pub fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
     Ok(())
 }
 
+/// Wait until cond return true or timeout
 #[inline]
 pub fn wait_cond(timeout_cycle_count: usize, cond: impl Fn() -> bool) -> Result<(), ()> {
     let mut timeout_cycle_count = timeout_cycle_count;
@@ -527,7 +498,7 @@ pub fn get_per_pll_frequency2() -> u32 {
     let perpllcon0 = unsafe { SCU.perpllcon0().read() };
     let perpllcon1 = unsafe { SCU.perpllcon1().read() };
 
-    let multiplier = if !perplldivby_to_bool(perpllcon0.divby().get()) {
+    let multiplier = if !(perpllcon0.divby().get().0 == 1) {
         1.6
     } else {
         2.0
