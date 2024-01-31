@@ -27,11 +27,6 @@ package = "embedded-hal"
 git = "https://github.com/rust-embedded/embedded-hal.git"
 rev = "v1.0.0-rc.1"
 
-[dependencies.tc37x-rt]
-optional = true
-path = "../tc37x-rt"
-features = []
-
 [dependencies.tc37x-pac]
 path = "../tc37x-pac"
 features = [
@@ -73,12 +68,17 @@ optional = true
 version = "1.34.0"
 features = ["ron"]
 
+[dev-dependencies]
+
+[dev-dependencies.tc37x-rt]
+path = "../tc37x-rt"
+features = []
+
 [features]
 default = []
-example = ["rt", "panic_handler", "disable_watchdogs"]
+example = ["panic_handler", "disable_watchdogs", "dep:critical-section"]
 log_with_defmt = ["dep:defmt", "dep:defmt-rtt"]
 log_with_env_logger = ["dep:log", "dep:env_logger"]
-rt = ["dep:tc37x-rt", "dep:critical-section"]
 panic_handler = []
 disable_watchdogs = []
 tracing = ["dep:insta"]
