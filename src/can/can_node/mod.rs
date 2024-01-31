@@ -64,8 +64,8 @@ pub struct NodeConfig<M, N> {
     pub fast_baud_rate: FastBitTimingConfig,
     pub transceiver_delay_offset: u8,
     pub frame_mode: FrameMode,
-    pub tx: Option<TxConfig<M, N>>,
-    pub rx: Option<RxConfig<M, N>>,
+    pub tx: Option<TxConfig>,
+    pub rx: Option<RxConfig>,
     pub message_ram: MessageRAM,
     pub pins: Option<Pins<M, N>>,
 }
@@ -938,19 +938,17 @@ impl<M, N> TxdOut<M, N> {
 pub type Priority = u8;
 
 #[derive(Clone, Copy)]
-pub struct TxConfig<M, N> {
+pub struct TxConfig {
     pub mode: TxMode,
     pub dedicated_tx_buffers_number: u8,
     pub fifo_queue_size: u8,
     pub buffer_data_field_size: DataFieldSize,
     pub event_fifo_size: u8,
-    pub _phantom: PhantomData<(M, N)>, // TODO Remove
 }
 
 #[derive(Clone, Copy)]
-pub struct RxConfig<M, N> {
+pub struct RxConfig {
     // TODO
-    pub _phantom: PhantomData<(M, N)>, // TODO Remove
 }
 
 #[derive(Clone, Copy)]

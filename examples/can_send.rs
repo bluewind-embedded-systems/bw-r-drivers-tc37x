@@ -7,7 +7,6 @@
 #[cfg(target_arch = "tricore")]
 tc37x_rt::entry!(main);
 
-use core::marker::PhantomData;
 use core::time::Duration;
 use embedded_can::ExtendedId;
 use tc37x_driver::can::pin_map::*;
@@ -36,7 +35,6 @@ fn setup_can() -> Option<Node<Can0Node, Can0>> {
         fifo_queue_size: 0,
         buffer_data_field_size: DataFieldSize::_8,
         event_fifo_size: 1,
-        _phantom: PhantomData,
     });
 
     // TODO Configure rx parameters
