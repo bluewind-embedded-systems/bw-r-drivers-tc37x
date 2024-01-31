@@ -9,11 +9,8 @@ tc37x_rt::entry!(main);
 
 use core::time::Duration;
 use embedded_can::ExtendedId;
-use tc37x_driver::can::pin_map::{PIN_RX_0_0_P20_7, PIN_TX_0_0_P20_8};
-use tc37x_driver::can::{
-    AutoBitTiming, BitTimingConfig, DataFieldSize, Frame, MessageId, Module, Node, NodeConfig,
-    NodeId, RxConfig, TxConfig, TxMode,
-};
+use tc37x_driver::can::pin_map::*;
+use tc37x_driver::can::*;
 use tc37x_driver::cpu::asm::enable_interrupts;
 use tc37x_driver::gpio::GpioExt;
 use tc37x_driver::log::info;

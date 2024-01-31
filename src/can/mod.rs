@@ -10,10 +10,8 @@ pub mod msg;
 pub mod pin_map;
 mod reg;
 
-pub use baud_rate::{AutoBitTiming, BitTimingConfig, DataBitTiming, NominalBitTiming};
-pub use can_module::{Module, ModuleConfig, ModuleId};
-pub use can_node::{
-    DataFieldSize, Node, Node0, Node1, Node2, Node3, NodeConfig, NodeId, RxConfig, TxConfig, TxMode,
-};
+pub use baud_rate::*;
+pub use can_module::*;
+pub use can_node::*;
 pub use frame::Frame;
 pub use msg::MessageId;
