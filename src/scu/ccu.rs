@@ -73,8 +73,9 @@ fn set_pll_power(
     unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(perpllpower)) };
 
     wait_cond(SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT, || {
-        (syspllpower.0) == (unsafe { SCU.syspllstat().read() }.pwdstat().get().0)
-            || (perpllpower.0) == (unsafe { SCU.perpllstat().read() }.pwdstat().get().0)
+        let sys = unsafe { SCU.syspllstat().read() };
+        let per = unsafe { SCU.perpllstat().read() };
+        (syspllpower.0) == (sys.pwdstat().get().0) || (perpllpower.0) == (per.pwdstat().get().0)
     })
 }
 
@@ -99,15 +100,15 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
 
     // disable SMU
     {
-        // TODO Explain this or use field accessors
-        unsafe { SMU.keys().write(RegValue::new(0xBC, 0)) };
+        // The SMU core configuration is only possible if this field is set to 0xBC
+        unsafe { SMU.keys().init(|r| r.cfglck().set(0xBC)) };
 
         // FIXME After pac update, this is a BW patch on pac
         unsafe { SMU.ag8cfj()[0].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
         unsafe { SMU.ag8cfj()[1].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
         unsafe { SMU.ag8cfj()[2].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
 
-        unsafe { SMU.keys().write(RegValue::new(0, 0)) };
+        unsafe { SMU.keys().init(|r| r.cfglck().set(0)) };
     }
 
     // Power down the both the PLLs before configuring registers
@@ -215,12 +216,9 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     }
 
     {
-        // TODO Should be an enum variant in the pac crate
-        const CLKSEL_PLL: u8 = 1;
-
         let ccucon0 = unsafe { SCU.ccucon0().read() }
             .clksel()
-            .set(scu::ccucon0::Clksel(CLKSEL_PLL))
+            .set(scu::ccucon0::Clksel::CONST_11)
             .up()
             .set(scu::ccucon0::Up::CONST_11);
 
