@@ -5,7 +5,7 @@ ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && cd ../ && pwd
 main() {
   cd "${ROOT_DIR}" || exit
   ./tools/set_build_profile host
-  cargo run --features=tracing,example --example=$1
+  cargo run --features=tracing --example=$1
 }
 
 main $1

@@ -10,7 +10,7 @@ main() {
   while docker ps | grep tricore-probe &>/dev/null; do sleep 1; done
   export DEFMT_LOG=trace
   export RUST_LOG=info
-  cargo run --features=example,log_with_defmt --example=$1
+  cargo run --features=log_with_defmt --example=$1
 }
 
 main $1
