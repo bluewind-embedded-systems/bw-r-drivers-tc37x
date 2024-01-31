@@ -12,6 +12,8 @@ mod reg;
 
 pub use baud_rate::{AutoBitTiming, BitTimingConfig, DataBitTiming, NominalBitTiming};
 pub use can_module::{Module, ModuleConfig, ModuleId};
-pub use can_node::{DataFieldSize, Node, NodeConfig, NodeId, RxConfig, TxConfig, TxMode};
+pub use can_node::{
+    DataFieldSize, Node, Node0, Node1, Node2, Node3, NodeConfig, NodeId, RxConfig, TxConfig, TxMode,
+};
 pub use frame::Frame;
 pub use msg::MessageId;

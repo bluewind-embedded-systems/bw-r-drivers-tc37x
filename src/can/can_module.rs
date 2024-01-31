@@ -1,9 +1,9 @@
-use super::can_node::{Node, NodeConfig, NodeId};
+use super::can_node::{Node, NodeConfig};
 
+use crate::can::NodeId;
 use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
 use core::marker::PhantomData;
-
 use pac::hidden::CastFrom;
 
 #[derive(Clone, Copy)]
@@ -62,20 +62,18 @@ macro_rules! impl_can_module {
                 }
             }
 
-            pub fn take_node(&mut self, node_id: NodeId, cfg: NodeConfig<$Reg>) -> Option<Node<$($m)::+::N, $Reg>> {
-                let node_index = match node_id {
-                    NodeId::Node0 => 0,
-                    NodeId::Node1 => 1,
-                    NodeId::Node2 => 2,
-                    NodeId::Node3 => 3,
-                };
+            pub fn take_node<I>(&mut self, node_id: I, cfg: NodeConfig<$Reg, I>) -> Option<Node<$($m)::+::N, $Reg>> where I: NodeId {
+                let node_index = node_id.as_index();
 
+                // Check if node is already taken, return None if it is
                 if self.nodes_taken[node_index] {
                     return None;
                 }
 
+                // Mark node as taken
                 self.nodes_taken[node_index] = true;
 
+                // Create node
                 Node::<$($m)::+::N, $Reg>::new(self, node_id, cfg).ok()
             }
 
@@ -161,11 +159,14 @@ macro_rules! impl_can_module {
 impl_can_module!(pac::CAN0, pac::can0, pac::can0::Can0, ModuleId::Can0);
 impl_can_module!(pac::CAN1, pac::can1, pac::can1::Can1, ModuleId::Can1);
 
-pub(crate) struct ClockSelect(u8);
+pub(crate) struct ClockSelect(pub(crate) u8);
 
-impl From<NodeId> for ClockSelect {
-    fn from(node_id: NodeId) -> Self {
-        Self(node_id.into())
+impl<T> From<T> for ClockSelect
+where
+    T: NodeId,
+{
+    fn from(value: T) -> Self {
+        ClockSelect(value.as_index() as u8)
     }
 }
 

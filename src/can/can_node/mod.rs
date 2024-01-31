@@ -9,6 +9,7 @@ use super::frame::{DataLenghtCode, Frame};
 use super::internals::Tx;
 use super::msg::TxBufferId;
 use super::{can_module, Module};
+use crate::can::can_module::ClockSelect;
 use crate::can::msg::MessageId;
 
 use crate::can::can_node::effects::NodeEffects;
@@ -57,21 +58,21 @@ pub enum RxMode {
     SharedAll,
 }
 
-pub struct NodeConfig<M> {
+pub struct NodeConfig<M, N> {
     pub clock_source: ClockSource,
     pub baud_rate: BitTimingConfig,
     pub fast_baud_rate: FastBitTimingConfig,
     pub transceiver_delay_offset: u8,
     pub frame_mode: FrameMode,
-    pub tx: Option<TxConfig<M>>,
-    pub rx: Option<RxConfig<M>>,
+    pub tx: Option<TxConfig<M, N>>,
+    pub rx: Option<RxConfig<M, N>>,
     pub message_ram: MessageRAM,
 }
 
 // Note: the Default trait implementation must be explicitly defined because
 // the derive macro needs all generic parameters to implement Default, even
 // if it is not necessary.
-impl<M> Default for NodeConfig<M> {
+impl<M, N> Default for NodeConfig<M, N> {
     fn default() -> Self {
         Self {
             clock_source: Default::default(),
@@ -88,27 +89,33 @@ impl<M> Default for NodeConfig<M> {
 
 const TX_BUFFER_START_ADDRESS: u32 = 0x0440u32;
 
-#[derive(Clone, Copy)]
-pub enum NodeId {
-    Node0,
-    Node1,
-    Node2,
-    Node3,
-}
+pub trait NodeId {
+    const INDEX: usize;
 
-impl From<NodeId> for u8 {
-    fn from(value: NodeId) -> Self {
-        match value {
-            NodeId::Node0 => 0,
-            NodeId::Node1 => 1,
-            NodeId::Node2 => 2,
-            NodeId::Node3 => 3,
-        }
+    fn as_index(&self) -> usize {
+        Self::INDEX
     }
 }
 
+pub struct Node0;
+pub struct Node1;
+pub struct Node2;
+pub struct Node3;
+
+impl NodeId for Node0 {
+    const INDEX: usize = 0;
+}
+impl NodeId for Node1 {
+    const INDEX: usize = 1;
+}
+impl NodeId for Node2 {
+    const INDEX: usize = 2;
+}
+impl NodeId for Node3 {
+    const INDEX: usize = 3;
+}
+
 pub struct Node<N, M> {
-    node_id: NodeId,
     effects: NodeEffects<N>,
     frame_mode: FrameMode,
     _phantom: PhantomData<M>,
@@ -129,22 +136,24 @@ macro_rules! impl_can_node {
     ($ModuleReg:ty, $NodeReg:path) => {
         impl Node<$NodeReg, $ModuleReg> {
             /// Only a module can create a node. This function is only accessible from within this crate.
-            pub(super) fn new(
+            pub(super) fn new<I>(
                 module: &mut Module<$ModuleReg, can_module::Enabled>,
-                node_id: NodeId,
-                config: NodeConfig<$ModuleReg>,
-            ) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError> {
-                let node_index: u8 = node_id.into();
-                let node_index: usize = node_index.into();
+                node_id: I,
+                config: NodeConfig<$ModuleReg, I>,
+            ) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError>
+            where
+                I: NodeId,
+            {
+                let node_index = node_id.as_index();
                 let node_reg = module.registers().n()[node_index];
                 let effects = NodeEffects::<$NodeReg>::new(node_reg);
+                let clock_select = ClockSelect::from(node_id);
 
                 module
-                    .set_clock_source(node_id.into(), config.clock_source)
+                    .set_clock_source(clock_select, config.clock_source)
                     .map_err(|_| ConfigError::CannotSetClockSource)?;
 
                 let node = Self {
-                    node_id,
                     effects,
                     _phantom: PhantomData,
                     frame_mode: config.frame_mode,
@@ -242,7 +251,7 @@ macro_rules! impl_can_node {
 
                 if let Some(rx_config) = &config.rx {
                     node.connect_pin_rx(
-                        rx_config.pin,
+                        &rx_config.pin,
                         InputMode::PULL_UP,
                         PadDriver::CmosAutomotiveSpeed3,
                     );
@@ -250,7 +259,7 @@ macro_rules! impl_can_node {
 
                 if let Some(tx_config) = &config.tx {
                     node.connect_pin_tx(
-                        tx_config.pin,
+                        &tx_config.pin,
                         OutputMode::PUSH_PULL,
                         PadDriver::CmosAutomotiveSpeed3,
                     );
@@ -407,9 +416,9 @@ macro_rules! impl_can_node {
                 }
             }
 
-            fn connect_pin_rx(
+            fn connect_pin_rx<NodeId>(
                 &self,
-                rxd: RxdIn<$ModuleReg>,
+                rxd: &RxdIn<$ModuleReg, NodeId>,
                 mode: InputMode,
                 pad_driver: PadDriver,
             ) {
@@ -419,9 +428,9 @@ macro_rules! impl_can_node {
                 self.effects.connect_pin_rx(rxd.select);
             }
 
-            fn connect_pin_tx(
+            fn connect_pin_tx<NodeId>(
                 &self,
-                txd: TxdOut<$ModuleReg>,
+                txd: &TxdOut<$ModuleReg, NodeId>,
                 mode: OutputMode,
                 pad_driver: PadDriver,
             ) {
@@ -863,23 +872,16 @@ impl OutputIdx {
 }
 
 #[derive(Clone, Copy)]
-pub struct RxdIn<M> {
-    node_id: NodeId,
+pub struct RxdIn<M, N> {
     port: PortNumber,
     pin_index: u8,
     select: RxSel,
-    _phantom: PhantomData<M>,
+    _phantom: PhantomData<(M, N)>,
 }
 
-impl<M> RxdIn<M> {
-    pub(crate) const fn new(
-        node_id: NodeId,
-        port: PortNumber,
-        pin_index: u8,
-        select: RxSel,
-    ) -> Self {
+impl<M, N> RxdIn<M, N> {
+    pub(crate) const fn new(port: PortNumber, pin_index: u8, select: RxSel) -> Self {
         Self {
-            node_id,
             port,
             pin_index,
             select,
@@ -916,23 +918,16 @@ impl From<RxSel> for u8 {
 }
 
 #[derive(Clone, Copy)]
-pub struct TxdOut<M> {
-    node_id: NodeId,
+pub struct TxdOut<M, N> {
     port: PortNumber,
     pin_index: u8,
     select: OutputIdx,
-    _phantom: PhantomData<M>,
+    _phantom: PhantomData<(M, N)>,
 }
 
-impl<T> TxdOut<T> {
-    pub(crate) const fn new(
-        node_id: NodeId,
-        port: PortNumber,
-        pin_index: u8,
-        select: OutputIdx,
-    ) -> Self {
+impl<M, N> TxdOut<M, N> {
+    pub(crate) const fn new(port: PortNumber, pin_index: u8, select: OutputIdx) -> Self {
         Self {
-            node_id,
             port,
             pin_index,
             select,
@@ -944,19 +939,19 @@ impl<T> TxdOut<T> {
 pub type Priority = u8;
 
 #[derive(Clone, Copy)]
-pub struct TxConfig<M> {
+pub struct TxConfig<M, N> {
     pub mode: TxMode,
     pub dedicated_tx_buffers_number: u8,
     pub fifo_queue_size: u8,
     pub buffer_data_field_size: DataFieldSize,
     pub event_fifo_size: u8,
-    pub pin: TxdOut<M>,
+    pub pin: TxdOut<M, N>,
 }
 
 #[derive(Clone, Copy)]
-pub struct RxConfig<M> {
+pub struct RxConfig<M, N> {
     // TODO
-    pub pin: RxdIn<M>,
+    pub pin: RxdIn<M, N>,
 }
 
 #[derive(Clone, Copy)]
