@@ -8,9 +8,12 @@ tc37x_rt::entry!(main);
 
 use core::time::Duration;
 use embedded_hal::digital::StatefulOutputPin;
+use tc37x_driver::cpu::asm::read_cpu_core_id;
 use tc37x_driver::gpio::GpioExt;
 use tc37x_driver::log::info;
 use tc37x_driver::pac;
+use tc37x_driver::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
+use tc37x_rt::{isr::load_interrupt_table, post_init, pre_init};
 
 pub enum State {
     NotChanged = 0,
@@ -88,4 +91,18 @@ pub fn wait_nop(period: Duration) {
 
     #[cfg(not(target_arch = "tricore"))]
     std::thread::sleep(period);
+}
+
+// Note: without this, the watchdog will reset the CPU
+pre_init!(pre_init_fn);
+fn pre_init_fn() {
+    if read_cpu_core_id() == 0 {
+        disable_safety_watchdog();
+    }
+    disable_cpu_watchdog();
+}
+
+post_init!(post_init_fn);
+fn post_init_fn() {
+    load_interrupt_table();
 }

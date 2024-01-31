@@ -12,10 +12,13 @@ use embedded_can::ExtendedId;
 use tc37x_driver::can::pin_map::*;
 use tc37x_driver::can::*;
 use tc37x_driver::cpu::asm::enable_interrupts;
+use tc37x_driver::cpu::asm::read_cpu_core_id;
 use tc37x_driver::gpio::GpioExt;
 use tc37x_driver::log::info;
+use tc37x_driver::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
 use tc37x_driver::{pac, ssw};
 use tc37x_pac::can0::{Can0, N as Can0Node};
+use tc37x_rt::{isr::load_interrupt_table, post_init, pre_init};
 
 fn setup_can() -> Option<Node<Can0Node, Can0>> {
     let can_module = Module::new(Module0);
@@ -130,23 +133,16 @@ pub fn wait_nop(period: Duration) {
     std::thread::sleep(period);
 }
 
-use tc37x_driver::cpu::asm::read_cpu_core_id;
-use tc37x_driver::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
-use tc37x_rt::{isr::load_interrupt_table, post_init, pre_init};
-
+// Note: without this, the watchdog will reset the CPU
 pre_init!(pre_init_fn);
 fn pre_init_fn() {
-    disable_watchdogs();
+    if read_cpu_core_id() == 0 {
+        disable_safety_watchdog();
+    }
+    disable_cpu_watchdog();
 }
 
 post_init!(post_init_fn);
 fn post_init_fn() {
     load_interrupt_table();
-}
-
-fn disable_watchdogs() {
-    if read_cpu_core_id() == 0 {
-        disable_safety_watchdog();
-    }
-    disable_cpu_watchdog();
 }
