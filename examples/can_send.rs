@@ -136,7 +136,6 @@ use tc37x_rt::{isr::load_interrupt_table, post_init, pre_init};
 
 pre_init!(pre_init_fn);
 fn pre_init_fn() {
-    #[cfg(feature = "disable_watchdogs")]
     disable_watchdogs();
 }
 

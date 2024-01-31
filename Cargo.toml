@@ -76,10 +76,9 @@ features = []
 
 [features]
 default = []
-example = ["disable_watchdogs", "dep:critical-section"]
+example = ["dep:critical-section"]
 log_with_defmt = ["dep:defmt", "dep:defmt-rtt"]
 log_with_env_logger = ["dep:log", "dep:env_logger"]
-disable_watchdogs = []
 tracing = ["dep:insta"]
 
 [[example]]
