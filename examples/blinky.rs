@@ -104,6 +104,11 @@ fn pre_init_fn() {
 
 post_init!(post_init_fn);
 fn post_init_fn() {
+    if let Err(_) = ssw::init_clock() {
+        info!("Error in ssw init");
+        loop {}
+    }
+
     load_interrupt_table();
 }
 
