@@ -21,6 +21,12 @@ use tc37x_pac::can0::{Can0, N as Can0Node};
 use tc37x_pac::can1::{Can1, N as Can1Node};
 use tc37x_rt::{isr::load_interrupt_table, post_init, pre_init};
 
+pub static mut INT_COUNTS: u32 = 0;
+#[no_mangle]
+pub extern "C" fn __INTERRUPT_HANDLER_2() {
+    unsafe { INT_COUNTS = INT_COUNTS + 1; }
+}
+
 fn setup_can0() -> Option<Node<Can0Node, Can0>> {
     let can_module = Module::new(Module0);
     let mut can_module = can_module.enable();

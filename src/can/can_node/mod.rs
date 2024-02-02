@@ -428,15 +428,16 @@ macro_rules! impl_can_node {
                 interrupt_group: InterruptGroup,
                 interrupt: Interrupt,
                 line: InterruptLine,
-                _priority: Priority,
-                _tos: Tos,
+                priority: Priority,
+                tos: Tos,
             ) {
                 self.set_group_interrupt_line(interrupt_group, line);
 
+                // TODO Set interrupt from module id and interrupt line
                 // let src = tc37x_pac::SRC;
-                //
+                
                 // use crate::pac::{Reg, RW};
-                //
+                
                 // let can_int: Reg<Can0Int0, RW> = match (self.module.id(), line) {
                 //     // TODO Add other lines and can modules
                 //     (ModuleId::Can0, InterruptLine(0)) => unsafe { transmute(src.can0int0()) },
@@ -445,18 +446,19 @@ macro_rules! impl_can_node {
                 //     (ModuleId::Can1, InterruptLine(1)) => unsafe { transmute(src.can1int1()) },
                 //     _ => unreachable!(),
                 // };
-                //
-                // let priority = priority;
-                // let tos = tos as u8;
+                
+                let can_int = tc37x_pac::SRC.can1int1();
+                let priority = priority;
+                let tos = tos as u8;
 
                 // Set priority and type of service
-                // unsafe { can_int.modify(|r| r.srpn().set(priority).tos().set(tos)) };
+                unsafe { can_int.modify(|r| r.srpn().set(priority).tos().set(tos)) };
 
                 // Clear request
-                // unsafe { can_int.modify(|r| r.clrr().set(true)) };
+                unsafe { can_int.modify(|r| r.clrr().set(true)) };
 
                 // Enable service request
-                // unsafe { can_int.modify(|r| r.sre().set(true)) };
+                unsafe { can_int.modify(|r| r.sre().set(true)) };
 
                 // Enable interrupt
                 self.effects.enable_interrupt(interrupt);
