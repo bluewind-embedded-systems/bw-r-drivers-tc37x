@@ -32,7 +32,7 @@ path = "../tc37x-pac"
 features = [
     "scu",
     "smu",
-    # "src",
+    "src",
     "cpu0",
     "smu",
     "can0", 
