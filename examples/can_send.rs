@@ -72,6 +72,18 @@ fn setup_can1() -> Option<Node<Can1Node, Can1>> {
     });
 
     // TODO Configure rx parameters
+    cfg.rx = Some(RxConfig {
+        mode: RxMode::SharedFifo0,
+        buffer_data_field_size: DataFieldSize::_8,
+        fifo0_data_field_size: DataFieldSize::_8,
+        fifo1_data_field_size: DataFieldSize::_8,
+        fifo0_operating_mode: RxFifoMode::Blocking,
+        fifo1_operating_mode: RxFifoMode::Blocking,
+        fifo0_watermark_level: 0,
+        fifo1_watermark_level: 0,
+        fifo0_size: 4,
+        fifo1_size: 0,
+    });
 
     cfg.pins = Some(Pins {
         tx: PIN_TX_1_0_P00_0,
