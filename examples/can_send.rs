@@ -146,9 +146,9 @@ fn main() -> ! {
             info!("Cannot send frame");
         }
 
-        if can1.transmit(&tx_frame).is_err() {
-            info!("Cannot send frame");
-        }
+        // if can1.transmit(&tx_frame).is_err() {
+        //     info!("Cannot send frame");
+        // }
 
         wait_nop(Duration::from_millis(100));
         led1.set_low();
