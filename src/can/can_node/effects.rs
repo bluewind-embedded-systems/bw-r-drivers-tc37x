@@ -18,8 +18,16 @@ macro_rules! impl_can_node_effect {
                 NodeEffects { reg }
             }
 
+            pub(crate) fn set_rx_buffer_data_field_size(&self, size: u8) {
+                unsafe { self.reg.rx().rxesci().modify(|r| r.rbds().set(size.into())) };
+            }
+
             pub(crate) fn set_rx_fifo0_data_field_size(&self, size: u8) {
                 unsafe { self.reg.rx().rxesci().modify(|r| r.f0ds().set(size.into())) };
+            }
+
+            pub(crate) fn set_rx_fifo1_data_field_size(&self, size: u8) {
+                unsafe { self.reg.rx().rxesci().modify(|r| r.f1ds().set(size.into())) };
             }
 
             pub(crate) fn set_rx_fifo0_start_address(&self, address: u16) {
@@ -56,6 +64,18 @@ macro_rules! impl_can_node_effect {
                 };
             }
 
+            // TODO Move logic to the caller
+            pub(crate) fn set_rx_fifo1_operating_mode(&self, mode: RxFifoMode) {
+                let overwrite = mode == RxFifoMode::Overwrite;
+                let overwrite = u8::from(overwrite);
+                unsafe {
+                    self.reg
+                        .rx()
+                        .rxf1ci()
+                        .modify(|r| r.f1om().set(overwrite.into()))
+                };
+            }
+            
             pub(crate) fn enable_tx_buffer_transmission_interrupt(&self, tx_buffer_id: TxBufferId) {
                 let id: u8 = tx_buffer_id.into();
                 unsafe {
@@ -171,6 +191,10 @@ macro_rules! impl_can_node_effect {
 
             pub(crate) fn set_tx_buffer_start_address(&self, address: u16) {
                 unsafe { self.reg.tx().txbci().modify(|r| r.tbsa().set(address >> 2)) };
+            }
+
+            pub(crate) fn set_rx_buffer_start_address(&self, address: u16) {
+                unsafe { self.reg.rx().rxbci().modify(|r| r.rbsa().set(address >> 2)) };
             }
 
             pub(crate) fn set_frame_mode(&self, fdoe: bool, brse: bool) {

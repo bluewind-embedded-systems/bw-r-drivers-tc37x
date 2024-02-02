@@ -238,8 +238,54 @@ macro_rules! impl_can_node {
                     node.set_frame_mode(config.frame_mode);
                 }
 
-                if let Some(_rx_config) = &config.rx {
-                    // TODO Configure rx
+                if let Some(rx_config) = &config.rx {
+                    let mode = rx_config.mode;
+
+                    match mode {
+                        RxMode::DedicatedBuffers | RxMode::SharedFifo0 | RxMode::SharedFifo1 | RxMode::SharedAll => {
+                            node.set_rx_buffer_data_field_size(rx_config.buffer_data_field_size);
+                            node.effects.set_rx_buffer_start_address(config.message_ram.rx_buffers_start_address);
+    
+                            if let RxMode::SharedFifo0 | RxMode::SharedAll = mode {
+                                node.set_rx_fifo0(FifoData {
+                                    field_size: rx_config.fifo0_data_field_size,
+                                    operation_mode: rx_config.fifo0_operating_mode,
+                                    watermark_level: rx_config.fifo0_watermark_level,
+                                    size: rx_config.fifo0_size,
+                                    start_address: config.message_ram.rx_fifo0_start_address,
+                                });
+                            }
+                            if let RxMode::SharedFifo1 | RxMode::SharedAll = mode {
+                                node.set_rx_fifo1(FifoData {
+                                    field_size: rx_config.fifo1_data_field_size,
+                                    operation_mode: rx_config.fifo1_operating_mode,
+                                    watermark_level: rx_config.fifo1_watermark_level,
+                                    size: rx_config.fifo1_size,
+                                    start_address: config.message_ram.rx_fifo1_start_address,
+                                });
+                            }
+                        }
+                        RxMode::Fifo0 => {
+                            node.set_rx_fifo0(FifoData {
+                                field_size: rx_config.fifo0_data_field_size,
+                                operation_mode: rx_config.fifo0_operating_mode,
+                                watermark_level: rx_config.fifo0_watermark_level,
+                                size: rx_config.fifo0_size,
+                                start_address: config.message_ram.rx_fifo0_start_address,
+                            });
+                        }
+                        RxMode::Fifo1 => {
+                                node.set_rx_fifo1(FifoData {
+                                    field_size: rx_config.fifo1_data_field_size,
+                                    operation_mode: rx_config.fifo1_operating_mode,
+                                    watermark_level: rx_config.fifo1_watermark_level,
+                                    size: rx_config.fifo1_size,
+                                    start_address: config.message_ram.rx_fifo1_start_address,
+                                });
+                        }
+                    }
+
+                    node.set_frame_mode(config.frame_mode);
                 }
 
                 // TODO Interrupt from config
@@ -278,6 +324,17 @@ macro_rules! impl_can_node {
                     .set_rx_fifo0_operating_mode(data.operation_mode);
                 self.effects
                     .set_rx_fifo0_watermark_level(data.watermark_level);
+            }
+
+            fn set_rx_fifo1(&self, data: FifoData) {
+                self.effects
+                    .set_rx_fifo1_data_field_size(data.field_size.to_esci_register_value());
+                self.effects.set_rx_fifo1_start_address(data.start_address);
+                self.effects.set_rx_fifo1_size(data.size);
+                self.effects
+                    .set_rx_fifo1_operating_mode(data.operation_mode);
+                self.effects
+                    .set_rx_fifo1_watermark_level(data.watermark_level);
             }
 
             fn set_inner_tx_buffers(&self, dedicated: DedicatedData) {
@@ -347,6 +404,12 @@ macro_rules! impl_can_node {
             pub fn set_tx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
                 self.effects
                     .set_tx_buffer_data_field_size(data_field_size.to_esci_register_value());
+            }
+
+            #[inline]
+            pub fn set_rx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
+                self.effects
+                    .set_rx_buffer_data_field_size(data_field_size.to_esci_register_value());
             }
 
             fn set_frame_mode(&self, frame_mode: FrameMode) {
@@ -948,7 +1011,17 @@ pub struct TxConfig {
 
 #[derive(Clone, Copy)]
 pub struct RxConfig {
-    // TODO
+    pub mode: RxMode,
+    pub buffer_data_field_size: DataFieldSize,
+    pub fifo0_data_field_size: DataFieldSize,
+    pub fifo1_data_field_size: DataFieldSize,
+    pub fifo0_operating_mode: RxFifoMode,
+    pub fifo1_operating_mode: RxFifoMode,
+    pub fifo0_watermark_level: u8,
+    pub fifo1_watermark_level: u8,
+    pub fifo0_size: u8,
+    pub fifo1_size: u8 
+
 }
 
 #[derive(Clone, Copy)]
