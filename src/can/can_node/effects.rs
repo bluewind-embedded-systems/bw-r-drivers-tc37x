@@ -221,6 +221,16 @@ macro_rules! impl_can_node_effect {
                 };
             }
 
+            #[inline]
+            pub(crate) fn clear_interrupt_flag(&self, interrupt: Interrupt) {
+                unsafe {
+                    self.reg.iri().init(|mut r| {
+                        *r.data_mut_ref() = 1 << interrupt as u32;
+                        r
+                    })
+                };
+            }
+
             pub(crate) fn set_interrupt_routing_group_1(&self, line: u32, group: u32) {
                 unsafe {
                     self.reg.grint1i().modify(|mut r| {

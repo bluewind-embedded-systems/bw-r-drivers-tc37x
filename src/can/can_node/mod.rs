@@ -320,6 +320,11 @@ macro_rules! impl_can_node {
                 Ok(node)
             }
 
+            // TODO This does not feel to be the right place for this function
+            pub fn clear_interrupt_flag(&self, interrupt: Interrupt) {
+                self.effects.clear_interrupt_flag(interrupt);
+            }
+
             fn set_rx_fifo0(&self, data: FifoData) {
                 self.effects
                     .set_rx_fifo0_data_field_size(data.field_size.to_esci_register_value());
