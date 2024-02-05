@@ -151,6 +151,7 @@ macro_rules! impl_can_node {
                 module: &mut Module<$ModuleId, $ModuleReg, can_module::Enabled>,
                 node_id: I,
                 config: NodeConfig<$ModuleReg, I>,
+                // TODO interrupts should be nested into config
                 interrupts: &[NodeInterruptConfig],
             ) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError>
             where
