@@ -1,22 +1,22 @@
 // TODO Remove asap
 #![allow(dead_code)]
 
+pub mod config;
 mod effects;
 
 use super::baud_rate::*;
-use super::can_module::ClockSource;
 use super::frame::{DataLenghtCode, Frame};
 use super::internals::Tx;
 use super::msg::TxBufferId;
 use super::{can_module, Module};
 use crate::can::can_module::ClockSelect;
-use crate::can::msg::MessageId;
-
 use crate::can::can_node::effects::NodeEffects;
+use crate::can::config::NodeInterruptConfig;
+use crate::can::msg::MessageId;
+use crate::cpu::Priority;
 use crate::log::info;
 use crate::scu::wdt_call;
-
-use crate::cpu::Priority;
+pub use config::NodeConfig;
 use core::marker::PhantomData;
 use core::mem::transmute;
 use tc37x_pac::hidden::RegValue;
@@ -57,45 +57,6 @@ pub enum RxMode {
     SharedFifo0,
     SharedFifo1,
     SharedAll,
-}
-
-pub struct NodeInterruptConfig {
-    pub interrupt_group: InterruptGroup,
-    pub interrupt: Interrupt,
-    pub line: InterruptLine,
-    pub priority: Priority,
-    pub tos: Tos,
-}
-
-pub struct NodeConfig<M, N> {
-    pub clock_source: ClockSource,
-    pub baud_rate: BitTimingConfig,
-    pub fast_baud_rate: FastBitTimingConfig,
-    pub transceiver_delay_offset: u8,
-    pub frame_mode: FrameMode,
-    pub tx: Option<TxConfig>,
-    pub rx: Option<RxConfig>,
-    pub message_ram: MessageRAM,
-    pub pins: Option<Pins<M, N>>,
-}
-
-// Note: the Default trait implementation must be explicitly defined because
-// the derive macro needs all generic parameters to implement Default, even
-// if it is not necessary.
-impl<M, N> Default for NodeConfig<M, N> {
-    fn default() -> Self {
-        Self {
-            clock_source: Default::default(),
-            baud_rate: Default::default(),
-            fast_baud_rate: Default::default(),
-            transceiver_delay_offset: 0,
-            frame_mode: Default::default(),
-            tx: None,
-            rx: None,
-            message_ram: Default::default(),
-            pins: None,
-        }
-    }
 }
 
 const TX_BUFFER_START_ADDRESS: u32 = 0x0440u32;

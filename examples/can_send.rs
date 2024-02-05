@@ -9,6 +9,7 @@ tc37x_rt::entry!(main);
 
 use core::time::Duration;
 use embedded_can::ExtendedId;
+use tc37x_driver::can::config::NodeInterruptConfig;
 use tc37x_driver::can::pin_map::*;
 use tc37x_driver::can::*;
 use tc37x_driver::cpu::asm::enable_interrupts;

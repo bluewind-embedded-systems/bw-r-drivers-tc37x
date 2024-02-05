@@ -1,8 +1,8 @@
 mod service_request;
 
 use super::can_node::{Node, NodeConfig};
+use crate::can::config::NodeInterruptConfig;
 use crate::can::NodeId;
-use crate::can::NodeInterruptConfig;
 use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
 use core::marker::PhantomData;
