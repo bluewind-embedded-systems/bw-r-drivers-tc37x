@@ -42,7 +42,7 @@ fn setup_can0() -> Option<Node<Can0Node, Can0, Node0, Configured>> {
         ..Default::default()
     };
 
-    let node = can_module.take_node(Node0, cfg)?;
+    let mut node = can_module.take_node(Node0, cfg)?;
 
     node.setup_tx(&TxConfig {
         mode: TxMode::DedicatedBuffers,
@@ -54,7 +54,7 @@ fn setup_can0() -> Option<Node<Can0Node, Can0, Node0, Configured>> {
         tx_buffers_start_address: 0x440,
     });
 
-    node.setup_rx(&RxConfig {
+    node.setup_rx(RxConfig {
         mode: RxMode::SharedFifo0,
         buffer_data_field_size: DataFieldSize::_8,
         fifo0_data_field_size: DataFieldSize::_8,
@@ -130,6 +130,7 @@ fn main() -> ! {
 
     info!("Allocate a buffer for the message data");
     let mut tx_msg_data: [u8; 8] = [0, 1, 2, 3, 4, 5, 6, 7];
+    let mut rx_msg_data: [u8; 8] = Default::default();
 
     loop {
         // Transmit a different message each time (changing the first byte)
@@ -154,6 +155,12 @@ fn main() -> ! {
         if can0_node0_received {
             info!("msg received");
             CAN0_NODE0_NEW_MSG.store(false, Ordering::SeqCst);
+
+            // TODO For symmetry, it should receive a frame, with can id too
+            can0.receive(ReadFrom::RxFifo0, &mut rx_msg_data);
+
+            tx_msg_data.copy_from_slice(&rx_msg_data);
+
             can0.clear_interrupt_flag(Interrupt::RxFifo0newMessage);
         }
     }
@@ -204,6 +211,7 @@ fn panic(panic: &core::panic::PanicInfo<'_>) -> ! {
 use core::arch::asm;
 use core::sync::atomic::{AtomicBool, Ordering};
 use critical_section::RawRestoreState;
+use tc37x_driver::can::msg::ReadFrom;
 use tc37x_driver::cpu::Priority;
 
 struct Section;

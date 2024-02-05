@@ -1,10 +1,5 @@
 use crate::can::msg::MessageIdLenght;
-use crate::can::{
-    can_node::FrameMode,
-    frame::DataLenghtCode,
-    //types::{DataLenghtCode, FrameMode, MessageIdLenght},
-    reg,
-};
+use crate::can::{frame::DataLenghtCode, reg, FrameMode};
 use crate::log::debug;
 
 // create RxMsg using pac structure and unsafe transmute

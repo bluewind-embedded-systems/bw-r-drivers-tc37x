@@ -12,7 +12,10 @@ use super::{can_module, Module, ModuleId};
 use crate::can::can_module::ClockSelect;
 use crate::can::can_node::effects::NodeEffects;
 use crate::can::config::NodeInterruptConfig;
+use crate::can::msg::FrameMode;
 use crate::can::msg::MessageId;
+use crate::can::msg::ReadFrom;
+use crate::can::msg::RxMessage;
 use crate::cpu::Priority;
 use crate::log::info;
 use crate::scu::wdt_call;
@@ -21,13 +24,6 @@ use core::marker::PhantomData;
 use core::mem::transmute;
 use tc37x_pac::hidden::RegValue;
 
-#[derive(PartialEq, Debug, Default, Copy, Clone)]
-pub enum FrameMode {
-    #[default]
-    Standard,
-    FdLong,
-    FdLongAndFast,
-}
 #[derive(PartialEq, Debug, Default)]
 pub enum FrameType {
     #[default]
@@ -96,6 +92,9 @@ pub struct Node<N, M, I: NodeId, State> {
     frame_mode: FrameMode,
     ram_base_address: u32,
     _phantom: PhantomData<(M, I, State)>,
+
+    // TODO Not all of rx_config fields are used, keep only the ones that are used
+    rx_config: Option<RxConfig>,
 }
 
 pub enum ConfigError {
@@ -132,6 +131,7 @@ macro_rules! impl_can_node {
                     _phantom: PhantomData,
                     frame_mode: config.frame_mode,
                     ram_base_address: module.ram_base_address(),
+                    rx_config: None,
                 };
 
                 node.effects.enable_configuration_change();
@@ -160,6 +160,7 @@ macro_rules! impl_can_node {
                     _phantom: PhantomData,
                     frame_mode: self.frame_mode,
                     ram_base_address: self.ram_base_address,
+                    rx_config: self.rx_config,
                 }
             }
 
@@ -218,7 +219,9 @@ macro_rules! impl_can_node {
                 self.set_frame_mode(self.frame_mode);
             }
 
-            pub fn setup_rx(&self, rx_config: &RxConfig) {
+            pub fn setup_rx(&mut self, rx_config: RxConfig) {
+                self.rx_config = Some(rx_config);
+
                 let mode = rx_config.mode;
 
                 match mode {
@@ -466,6 +469,58 @@ macro_rules! impl_can_node {
             pub fn transmit(&self, frame: &Frame) -> Result<(), TransmitError> {
                 let buffer_id = self.get_tx_fifo_queue_put_index();
                 self.transmit_inner(buffer_id, frame.id, false, false, false, frame.data)
+            }
+
+            pub fn receive(&self, from: ReadFrom, data: &mut [u8]) -> Option<RxMessage> {
+                let Some(rx_config) = self.rx_config else {
+                                                                                    return None;
+                                                                                };
+
+                let buffer_id = match from {
+                    ReadFrom::RxFifo0 => self.effects.get_rx_fifo0_get_index(),
+                    ReadFrom::RxFifo1 => self.effects.get_rx_fifo1_get_index(),
+                    ReadFrom::Buffer(id) => id,
+                };
+
+                let rx_buf_elem = self.effects.get_rx_element_address(
+                    self.ram_base_address,
+                    match from {
+                        ReadFrom::RxFifo0 => rx_config.rx_fifo0_start_address,
+                        ReadFrom::RxFifo1 => rx_config.rx_fifo1_start_address,
+                        ReadFrom::Buffer(_) => rx_config.rx_buffers_start_address,
+                    },
+                    from,
+                    buffer_id,
+                );
+
+                // info!("read message on buffer_id: {}", buffer_id.0);
+                // info!("rx_buf_elem at: {:x}", rx_buf_elem.get_ptr());
+
+                let id = MessageId {
+                    data: rx_buf_elem.get_message_id(),
+                    length: rx_buf_elem.get_message_id_length(),
+                };
+
+                let data_length_code = rx_buf_elem.get_data_length();
+                let frame_mode = rx_buf_elem.get_frame_mode();
+
+                rx_buf_elem.read_data(data_length_code, data.as_mut_ptr());
+
+                match from {
+                    ReadFrom::RxFifo0 => self.effects.set_rx_fifo0_acknowledge_index(buffer_id),
+                    ReadFrom::RxFifo1 => self.effects.set_rx_fifo1_acknowledge_index(buffer_id),
+                    ReadFrom::Buffer(_) => (),
+                }
+
+                self.effects.clear_rx_buffer_new_data_flag(buffer_id);
+
+                Some(RxMessage {
+                    id,
+                    data_length_code,
+                    frame_mode,
+                    buffer_id,
+                    from,
+                })
             }
 
             fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {

@@ -127,6 +127,79 @@ macro_rules! impl_can_node_effect {
                 };
             }
 
+            pub(crate) fn get_rx_element_address(
+                &self,
+                ram_base_address: u32,
+                tx_buffers_start_address: u16,
+                buf_from: ReadFrom,
+                buffer_number: RxBufferId,
+            ) -> crate::can::internals::Rx {
+                let num_of_config_bytes = 8u32;
+                let num_of_data_bytes = self.get_data_field_size(buf_from) as u32;
+                let tx_buffer_size = num_of_config_bytes + num_of_data_bytes;
+                let tx_buffer_index = tx_buffer_size * u32::from(buffer_number);
+
+                let tx_buffer_element_address =
+                    ram_base_address + tx_buffers_start_address as u32 + tx_buffer_index;
+
+                crate::can::internals::Rx::new(tx_buffer_element_address as *mut u8)
+            }
+
+            pub(crate) fn clear_rx_buffer_new_data_flag(&self, rx_buffer_id: RxBufferId) {
+                if rx_buffer_id < RxBufferId::new_const(32) {
+                    // SAFETY: rx_buffer_id is between 0 and 31
+                    unsafe {
+                        self.reg
+                            .ndat1i()
+                            .init(|r| r.set_raw(1u32 << (u8::from(rx_buffer_id))));
+
+                        // TODO A (safer?) alternative is being more explicit. Discuss about it.
+                        // self.reg.ndat1i().init(|r| match rx_buffer_id.0 {
+                        //     0 => r.nd0().set(1u8.into()),
+                        //     1 => r.nd1().set(1u8.into()),
+                        //     2 => r.nd2().set(1u8.into()),
+                        //     3 => r.nd3().set(1u8.into()),
+                        //     4 => r.nd4().set(1u8.into()),
+                        //     5 => r.nd5().set(1u8.into()),
+                        //     6 => r.nd6().set(1u8.into()),
+                        //     7 => r.nd7().set(1u8.into()),
+                        //     8 => r.nd8().set(1u8.into()),
+                        //     9 => r.nd9().set(1u8.into()),
+                        //     10 => r.nd10().set(1u8.into()),
+                        //     11 => r.nd11().set(1u8.into()),
+                        //     12 => r.nd12().set(1u8.into()),
+                        //     13 => r.nd13().set(1u8.into()),
+                        //     14 => r.nd14().set(1u8.into()),
+                        //     15 => r.nd15().set(1u8.into()),
+                        //     16 => r.nd16().set(1u8.into()),
+                        //     17 => r.nd17().set(1u8.into()),
+                        //     18 => r.nd18().set(1u8.into()),
+                        //     19 => r.nd19().set(1u8.into()),
+                        //     20 => r.nd20().set(1u8.into()),
+                        //     21 => r.nd21().set(1u8.into()),
+                        //     22 => r.nd22().set(1u8.into()),
+                        //     23 => r.nd23().set(1u8.into()),
+                        //     24 => r.nd24().set(1u8.into()),
+                        //     25 => r.nd25().set(1u8.into()),
+                        //     26 => r.nd26().set(1u8.into()),
+                        //     27 => r.nd27().set(1u8.into()),
+                        //     28 => r.nd28().set(1u8.into()),
+                        //     29 => r.nd29().set(1u8.into()),
+                        //     30 => r.nd30().set(1u8.into()),
+                        //     31 => r.nd31().set(1u8.into()),
+                        //     _ => unreachable!(),
+                        // });
+                    };
+                } else {
+                    // SAFETY: rx_buffer_id is between 32 and 63
+                    unsafe {
+                        self.reg
+                            .ndat2i()
+                            .init(|r| r.set_raw(1u32 << (u8::from(rx_buffer_id) - 32)));
+                    };
+                }
+            }
+
             // TODO Return a different type which implements methods needing configuration change enabled
             pub(crate) fn enable_configuration_change(&self) {
                 let cccr = self.reg.cccri();
@@ -343,12 +416,12 @@ macro_rules! impl_can_node_effect {
                 unsafe { self.reg.tx().txfqsi().read() }.tfqpi().get()
             }
 
-            pub(crate) fn get_rx_fifo0_get_index(&self) -> u8 {
-                unsafe { self.reg.rx().rxf0si().read() }.f0gi().get()
+            pub(crate) fn get_rx_fifo0_get_index(&self) -> RxBufferId {
+                RxBufferId(unsafe { self.reg.rx().rxf0si().read() }.f0gi().get())
             }
 
-            pub(crate) fn get_rx_fifo1_get_index(&self) -> u8 {
-                unsafe { self.reg.rx().rxf1si().read() }.f1gi().get()
+            pub(crate) fn get_rx_fifo1_get_index(&self) -> RxBufferId {
+                RxBufferId(unsafe { self.reg.rx().rxf1si().read() }.f1gi().get())
             }
 
             pub(crate) fn is_rx_buffer_new_data_updated(&self, rx_buffer_id: u8) -> bool {

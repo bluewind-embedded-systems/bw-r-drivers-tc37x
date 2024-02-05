@@ -40,8 +40,9 @@ impl From<embedded_can::ExtendedId> for MessageId {
     }
 }
 
-#[derive(PartialEq, Clone, Copy, Debug)]
+#[derive(PartialEq, Debug, Default, Copy, Clone)]
 pub enum FrameMode {
+    #[default]
     Standard,
     FdLong,
     FdLongAndFast,
@@ -132,6 +133,7 @@ impl RxBufferId {
         }
     }
 
+    // TODO This can cause a runtime panic
     pub const fn new_const(n: u8) -> Self {
         match n {
             ..=Self::MAX => Self(n),
