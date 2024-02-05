@@ -29,7 +29,7 @@ pub extern "C" fn __INTERRUPT_HANDLER_2() {
     CAN0_NODE0_NEW_MSG.store(true, Ordering::SeqCst);
 }
 
-fn setup_can0() -> Option<Node<Can0Node, Can0, Node0>> {
+fn setup_can0() -> Option<Node<Can0Node, Can0, Node0, Configured>> {
     let can_module = Module::new(Module0);
     let mut can_module = can_module.enable();
 
@@ -83,7 +83,7 @@ fn setup_can0() -> Option<Node<Can0Node, Can0, Node0>> {
         tos: Tos::Cpu0,
     });
 
-    Some(node)
+    Some(node.lock_configuration())
 }
 
 /// Initialize the STB pin for the CAN transceiver.

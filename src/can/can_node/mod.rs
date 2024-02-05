@@ -87,11 +87,15 @@ impl NodeId for Node3 {
     const INDEX: usize = 3;
 }
 
-pub struct Node<N, M, I: NodeId> {
+// Type state of Node
+pub struct Configured;
+pub struct Configurable;
+
+pub struct Node<N, M, I: NodeId, State> {
     effects: NodeEffects<N>,
     frame_mode: FrameMode,
-    _phantom: PhantomData<(M, I)>,
     ram_base_address: u32,
+    _phantom: PhantomData<(M, I, State)>,
 }
 
 pub enum ConfigError {
@@ -106,13 +110,14 @@ pub enum TransmitError {
 
 macro_rules! impl_can_node {
     ($ModuleReg:ty, $NodeReg:path, $ModuleId: ty) => {
-        impl<I: NodeId> Node<$NodeReg, $ModuleReg, I> {
+        // Methods only valid on a configurable node
+        impl<I: NodeId> Node<$NodeReg, $ModuleReg, I, Configurable> {
             /// Only a module can create a self. This function is only accessible from within this crate.
             pub(super) fn new(
                 module: &mut Module<$ModuleId, $ModuleReg, can_module::Enabled>,
                 node_id: I,
                 config: NodeConfig,
-            ) -> Result<Node<$NodeReg, $ModuleReg, I>, ConfigError> {
+            ) -> Result<Node<$NodeReg, $ModuleReg, I, Configurable>, ConfigError> {
                 let node_index = node_id.as_index();
                 let node_reg = module.registers().n()[node_index];
                 let effects = NodeEffects::<$NodeReg>::new(node_reg);
@@ -144,9 +149,17 @@ macro_rules! impl_can_node {
                         .set_transceiver_delay_compensation_offset(config.transceiver_delay_offset);
                 }
 
-                node.effects.disable_configuration_change();
-
                 Ok(node)
+            }
+
+            pub fn lock_configuration(self) -> Node<$NodeReg, $ModuleReg, I, Configured> {
+                self.effects.disable_configuration_change();
+                Node {
+                    effects: self.effects,
+                    _phantom: PhantomData,
+                    frame_mode: self.frame_mode,
+                    ram_base_address: self.ram_base_address,
+                }
             }
 
             pub fn setup_tx(&self, tx_config: &TxConfig) {
@@ -295,11 +308,6 @@ macro_rules! impl_can_node {
                 self.effects.disable_configuration_change();
             }
 
-            // TODO This does not feel to be the right place for this function
-            pub fn clear_interrupt_flag(&self, interrupt: Interrupt) {
-                self.effects.clear_interrupt_flag(interrupt);
-            }
-
             fn set_rx_fifo0(&self, data: FifoData) {
                 self.effects
                     .set_rx_fifo0_data_field_size(data.field_size.to_esci_register_value());
@@ -386,13 +394,13 @@ macro_rules! impl_can_node {
             }
 
             #[inline]
-            pub fn set_tx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
+            fn set_tx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
                 self.effects
                     .set_tx_buffer_data_field_size(data_field_size.to_esci_register_value());
             }
 
             #[inline]
-            pub fn set_rx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
+            fn set_rx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
                 self.effects
                     .set_rx_buffer_data_field_size(data_field_size.to_esci_register_value());
             }
@@ -459,13 +467,21 @@ macro_rules! impl_can_node {
                 port.set_pin_pad_driver(txd.pin_index, pad_driver);
                 port.set_pin_low(txd.pin_index);
             }
+        }
+
+        // Methods only valid on a configured node
+        impl<I: NodeId> Node<$NodeReg, $ModuleReg, I, Configured> {
+            // TODO This does not feel to be the right place for this function
+            pub fn clear_interrupt_flag(&self, interrupt: Interrupt) {
+                self.effects.clear_interrupt_flag(interrupt);
+            }
 
             pub fn transmit(&self, frame: &Frame) -> Result<(), TransmitError> {
                 let buffer_id = self.get_tx_fifo_queue_put_index();
                 self.transmit_inner(buffer_id, frame.id, false, false, false, frame.data)
             }
 
-            pub fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
+            fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
                 let id = self.effects.get_tx_fifo_queue_put_index() & 0x1F;
                 // SAFETY The value is in range because it is read from a register and masked with 0x1F
                 unsafe { TxBufferId::try_from(id).unwrap_unchecked() }
@@ -515,18 +531,7 @@ macro_rules! impl_can_node {
                 Ok(())
             }
 
-            #[inline]
-            pub fn is_tx_buffer_cancellation_finished(&self, tx_buffer_id: TxBufferId) -> bool {
-                self.is_tx_buffer_transmission_occured(tx_buffer_id)
-            }
-
-            #[inline]
-            pub fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: TxBufferId) -> bool {
-                self.effects
-                    .is_tx_buffer_transmission_occured(tx_buffer_id.into())
-            }
-
-            pub fn get_tx_element_address(
+            fn get_tx_element_address(
                 &self,
                 ram_base_address: u32,
                 buffer_number: TxBufferId,
@@ -540,6 +545,19 @@ macro_rules! impl_can_node {
                     ram_base_address + TX_BUFFER_START_ADDRESS + tx_buffer_index;
 
                 Tx::new(tx_buffer_element_address as *mut u8)
+            }
+
+            // TODO Untested, example missing
+            #[inline]
+            fn is_tx_buffer_cancellation_finished(&self, tx_buffer_id: TxBufferId) -> bool {
+                self.is_tx_buffer_transmission_occured(tx_buffer_id)
+            }
+
+            // TODO Untested, example missing
+            #[inline]
+            fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: TxBufferId) -> bool {
+                self.effects
+                    .is_tx_buffer_transmission_occured(tx_buffer_id.into())
             }
         }
     };
@@ -781,7 +799,7 @@ enum State {
 }
 
 impl Port {
-    pub fn new(port: PortNumber) -> Self {
+    fn new(port: PortNumber) -> Self {
         use tc37x_pac::port_00::Port00;
         use tc37x_pac::*;
 
