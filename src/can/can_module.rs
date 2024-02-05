@@ -42,31 +42,31 @@ impl<ModuleId, Reg> Module<ModuleId, Reg, Disabled> {
 }
 
 macro_rules! impl_can_module {
-    ($reg:path, $($m:ident)::+, $Reg:ty, $ModuleId: ty) => {
-        impl Module<$ModuleId, $Reg, Disabled> {
+    ($module_reg:path, $($m:ident)::+, $ModuleReg:ty, $ModuleId: ty) => {
+        impl Module<$ModuleId, $ModuleReg, Disabled> {
             fn is_enabled(&self) -> bool {
-                !unsafe { $reg.clc().read() }.diss().get()
+                !unsafe { $module_reg.clc().read() }.diss().get()
             }
 
             /// Enable the CAN module
-            pub fn enable(self) -> Module<$ModuleId, $Reg, Enabled> {
+            pub fn enable(self) -> Module<$ModuleId, $ModuleReg, Enabled> {
                 scu::wdt::clear_cpu_endinit_inline();
 
-                unsafe { $reg.clc().modify_atomic(|r| r.disr().set(false)) };
+                unsafe { $module_reg.clc().modify_atomic(|r| r.disr().set(false)) };
                 while !self.is_enabled() {}
 
                 scu::wdt::set_cpu_endinit_inline();
 
-                Module::<$ModuleId, $Reg, Enabled> {
+                Module::<$ModuleId, $ModuleReg, Enabled> {
                     nodes_taken: [false; 4],
                     _phantom: PhantomData,
                 }
             }
         }
 
-        impl Module<$ModuleId, $Reg, Enabled> {
+        impl Module<$ModuleId, $ModuleReg, Enabled> {
             /// Take ownership of a CAN node and configure it
-            pub fn take_node<I>(&mut self, node_id: I, cfg: NodeConfig<$Reg, I>) -> Option<Node<$($m)::+::N, $Reg>> where I: NodeId {
+            pub fn take_node<I>(&mut self, node_id: I, cfg: NodeConfig<$ModuleReg, I>) -> Option<Node<$($m)::+::N, $ModuleReg>> where I: NodeId {
                 let node_index = node_id.as_index();
 
                 // Check if node is already taken, return None if it is
@@ -78,7 +78,7 @@ macro_rules! impl_can_module {
                 self.nodes_taken[node_index] = true;
 
                 // Create node
-                Node::<$($m)::+::N, $Reg>::new(self, node_id, cfg).ok()
+                Node::<$($m)::+::N, $ModuleReg>::new(self, node_id, cfg).ok()
             }
 
             pub(crate) fn set_clock_source(
@@ -158,20 +158,20 @@ macro_rules! impl_can_module {
                 unsafe { can_int.modify(|r| r.sre().set(true)) };
             }
 
-            pub(crate) fn registers(&self) -> &$Reg {
-                &$reg
+            pub(crate) fn registers(&self) -> &$ModuleReg {
+                &$module_reg
             }
 
             fn read_mcr(&self) -> $($m)::+::Mcr {
-                unsafe { $reg.mcr().read() }
+                unsafe { $module_reg.mcr().read() }
             }
 
             fn write_mcr(&self, mcr: $($m)::+::Mcr) {
-                unsafe { $reg.mcr().write(mcr) }
+                unsafe { $module_reg.mcr().write(mcr) }
             }
 
             pub(crate) fn ram_base_address(&self) -> usize {
-                $reg.0 as usize
+                $module_reg.0 as usize
             }
         }
     };
