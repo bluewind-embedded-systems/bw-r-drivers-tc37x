@@ -66,7 +66,15 @@ fn setup_can0() -> Option<Node<Can0Node, Can0>> {
         rx: PIN_RX_0_0_P20_7,
     });
 
-    can_module.take_node(Node0, cfg)
+    let interrupts: [NodeInterruptConfig; 1] = [NodeInterruptConfig {
+        interrupt_group: InterruptGroup::Rxf0n,
+        interrupt: Interrupt::RxFifo0newMessage,
+        line: InterruptLine::Line1,
+        priority: Priority::try_from(2).unwrap(),
+        tos: Tos::Cpu0,
+    }];
+
+    can_module.take_node(Node0, cfg, &interrupts)
 }
 
 fn setup_can1() -> Option<Node<Can1Node, Can1>> {
@@ -107,19 +115,15 @@ fn setup_can1() -> Option<Node<Can1Node, Can1>> {
         rx: PIN_RX_1_0_P13_1,
     });
 
-    let node = can_module.take_node(Node0, cfg)?;
+    let interrupts: [NodeInterruptConfig; 1] = [NodeInterruptConfig {
+        interrupt_group: InterruptGroup::Rxf0n,
+        interrupt: Interrupt::RxFifo0newMessage,
+        line: InterruptLine::Line1,
+        priority: Priority::try_from(2).unwrap(),
+        tos: Tos::Cpu0,
+    }];
 
-    // let interrupts: [NodeInterruptConfig; 1] = [NodeInterruptConfig {
-    //     interrupt_group: InterruptGroup::Rxf0n,
-    //     interrupt: Interrupt::RxFifo0newMessage,
-    //     line: InterruptLine::Line1,
-    //     priority: Priority::try_from(2).unwrap(),
-    //     tos: Tos::Cpu0,
-    // }];
-    //
-    // for interrupt in interrupts.iter() {
-    //     node.setup_interrupt(interrupt);
-    // }
+    let node = can_module.take_node(Node0, cfg, &interrupts)?;
 
     Some(node)
 }
@@ -250,6 +254,7 @@ fn panic(panic: &core::panic::PanicInfo<'_>) -> ! {
 use core::arch::asm;
 use core::sync::atomic::{AtomicBool, Ordering};
 use critical_section::RawRestoreState;
+use tc37x_driver::cpu::Priority;
 
 struct Section;
 

@@ -151,6 +151,7 @@ macro_rules! impl_can_node {
                 module: &mut Module<$ModuleId, $ModuleReg, can_module::Enabled>,
                 node_id: I,
                 config: NodeConfig<$ModuleReg, I>,
+                interrupts: &[NodeInterruptConfig],
             ) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError>
             where
                 I: NodeId,
@@ -301,15 +302,6 @@ macro_rules! impl_can_node {
 
                     node.set_frame_mode(config.frame_mode);
                 }
-
-                // TODO Interrupt from config
-                let interrupts: [NodeInterruptConfig; 1] = [NodeInterruptConfig {
-                    interrupt_group: InterruptGroup::Rxf0n,
-                    interrupt: Interrupt::RxFifo0newMessage,
-                    line: InterruptLine::Line1,
-                    priority: Priority::try_from(2).unwrap(),
-                    tos: Tos::Cpu0,
-                }];
 
                 for interrupt in interrupts.iter() {
                     node.setup_interrupt(interrupt);
