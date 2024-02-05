@@ -21,10 +21,11 @@ use tc37x_pac::can0::{Can0, N as Can0Node};
 use tc37x_pac::can1::{Can1, N as Can1Node};
 use tc37x_rt::{isr::load_interrupt_table, post_init, pre_init};
 
-pub static mut INT_COUNTS: u32 = 0;
+pub static CAN0_NODE0_NEW_MSG: AtomicBool = AtomicBool::new(false);
+
 #[no_mangle]
 pub extern "C" fn __INTERRUPT_HANDLER_2() {
-    unsafe { INT_COUNTS = INT_COUNTS + 1; }
+    CAN0_NODE0_NEW_MSG.store(true, Ordering::SeqCst);
 }
 
 fn setup_can0() -> Option<Node<Can0Node, Can0>> {
@@ -47,7 +48,18 @@ fn setup_can0() -> Option<Node<Can0Node, Can0>> {
         event_fifo_size: 1,
     });
 
-    // TODO Configure rx parameters
+    cfg.rx = Some(RxConfig {
+        mode: RxMode::SharedFifo0,
+        buffer_data_field_size: DataFieldSize::_8,
+        fifo0_data_field_size: DataFieldSize::_8,
+        fifo1_data_field_size: DataFieldSize::_8,
+        fifo0_operating_mode: RxFifoMode::Blocking,
+        fifo1_operating_mode: RxFifoMode::Blocking,
+        fifo0_watermark_level: 0,
+        fifo1_watermark_level: 0,
+        fifo0_size: 4,
+        fifo1_size: 0,
+    });
 
     cfg.pins = Some(Pins {
         tx: PIN_TX_0_0_P20_8,
@@ -77,7 +89,6 @@ fn setup_can1() -> Option<Node<Can1Node, Can1>> {
         event_fifo_size: 1,
     });
 
-    // TODO Configure rx parameters
     cfg.rx = Some(RxConfig {
         mode: RxMode::SharedFifo0,
         buffer_data_field_size: DataFieldSize::_8,
@@ -153,8 +164,6 @@ fn main() -> ! {
     let mut tx_msg_data: [u8; 8] = [0, 1, 2, 3, 4, 5, 6, 7];
 
     loop {
-        led1.set_high();
-
         // Transmit a different message each time (changing the first byte)
         tx_msg_data[0] = tx_msg_data[0].wrapping_add(1);
 
@@ -168,9 +177,17 @@ fn main() -> ! {
         //     info!("Cannot send frame");
         // }
 
+        led1.set_high();
         wait_nop(Duration::from_millis(100));
         led1.set_low();
         wait_nop(Duration::from_millis(900));
+
+        let can0_node0_received = CAN0_NODE0_NEW_MSG.load(Ordering::SeqCst);
+        if can0_node0_received {
+            info!("msg received");
+            CAN0_NODE0_NEW_MSG.store(false, Ordering::SeqCst);
+            can0.clear_interrupt_flag(Interrupt::RxFifo0newMessage);
+        }
     }
 }
 
@@ -217,6 +234,7 @@ fn panic(panic: &core::panic::PanicInfo<'_>) -> ! {
 }
 
 use core::arch::asm;
+use core::sync::atomic::{AtomicBool, Ordering};
 use critical_section::RawRestoreState;
 
 struct Section;

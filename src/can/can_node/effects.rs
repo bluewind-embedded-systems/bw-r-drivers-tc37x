@@ -75,7 +75,7 @@ macro_rules! impl_can_node_effect {
                         .modify(|r| r.f1om().set(overwrite.into()))
                 };
             }
-            
+
             pub(crate) fn enable_tx_buffer_transmission_interrupt(&self, tx_buffer_id: TxBufferId) {
                 let id: u8 = tx_buffer_id.into();
                 unsafe {
