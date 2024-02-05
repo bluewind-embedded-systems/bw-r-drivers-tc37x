@@ -1,10 +1,8 @@
 mod service_request;
 
 use super::can_node::{Node, NodeConfig};
+use crate::can::NodeId;
 use crate::can::NodeInterruptConfig;
-use crate::can::Tos;
-use crate::can::{InterruptLine, NodeId};
-use crate::cpu::Priority;
 use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
 use core::marker::PhantomData;
@@ -132,15 +130,6 @@ macro_rules! impl_can_module {
                 }
 
                 Ok(())
-            }
-
-            pub(crate) fn set_interrupt(
-                &self,
-                line: InterruptLine,
-                priority: Priority,
-                tos: Tos,
-            ) {
-                <$ModuleId>::service_request(line).enable(priority, tos)
             }
 
             pub(crate) fn registers(&self) -> &$ModuleReg {
