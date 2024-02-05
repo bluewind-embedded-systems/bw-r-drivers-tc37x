@@ -8,7 +8,7 @@ use super::baud_rate::*;
 use super::frame::{DataLenghtCode, Frame};
 use super::internals::Tx;
 use super::msg::TxBufferId;
-use super::{can_module, Module};
+use super::{can_module, Module, ModuleId};
 use crate::can::can_module::ClockSelect;
 use crate::can::can_node::effects::NodeEffects;
 use crate::can::config::NodeInterruptConfig;
@@ -266,7 +266,7 @@ macro_rules! impl_can_node {
                 self.effects.disable_configuration_change();
             }
 
-            pub fn setup_pins(&self, pins: &Pins<$ModuleReg, I>) {
+            pub fn setup_pins(&self, pins: &Pins<$ModuleId, I>) {
                 self.effects.enable_configuration_change();
                 self.connect_pin_rx(
                     &pins.rx,
@@ -436,9 +436,9 @@ macro_rules! impl_can_node {
                 }
             }
 
-            fn connect_pin_rx<NodeId>(
+            fn connect_pin_rx(
                 &self,
-                rxd: &RxdIn<$ModuleReg, NodeId>,
+                rxd: &RxdIn<$ModuleId, I>,
                 mode: InputMode,
                 pad_driver: PadDriver,
             ) {
@@ -448,9 +448,9 @@ macro_rules! impl_can_node {
                 self.effects.connect_pin_rx(rxd.select);
             }
 
-            fn connect_pin_tx<NodeId>(
+            fn connect_pin_tx(
                 &self,
-                txd: &TxdOut<$ModuleReg, NodeId>,
+                txd: &TxdOut<$ModuleId, I>,
                 mode: OutputMode,
                 pad_driver: PadDriver,
             ) {
@@ -987,14 +987,14 @@ impl From<RxSel> for u8 {
 }
 
 #[derive(Clone, Copy)]
-pub struct TxdOut<M, N> {
+pub struct TxdOut<M: ModuleId, N: NodeId> {
     port: PortNumber,
     pin_index: u8,
     select: OutputIdx,
     _phantom: PhantomData<(M, N)>,
 }
 
-impl<M, N> TxdOut<M, N> {
+impl<M: ModuleId, N: NodeId> TxdOut<M, N> {
     pub(crate) const fn new(port: PortNumber, pin_index: u8, select: OutputIdx) -> Self {
         Self {
             port,
@@ -1036,9 +1036,8 @@ pub struct RxConfig {
     pub rx_buffers_start_address: u16,
 }
 
-// TODO M gen param should be ModuleId
 #[derive(Clone, Copy)]
-pub struct Pins<M, N: NodeId> {
+pub struct Pins<M: ModuleId, N: NodeId> {
     pub tx: TxdOut<M, N>,
     pub rx: RxdIn<M, N>,
 }
