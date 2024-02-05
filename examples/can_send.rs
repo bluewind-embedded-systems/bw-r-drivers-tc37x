@@ -19,7 +19,7 @@ use tc37x_driver::log::info;
 use tc37x_driver::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
 use tc37x_driver::{pac, ssw};
 use tc37x_pac::can0::{Can0, N as Can0Node};
-use tc37x_pac::can1::{Can1, N as Can1Node};
+// use tc37x_pac::can1::{Can1, N as Can1Node};
 use tc37x_rt::{isr::load_interrupt_table, post_init, pre_init};
 
 pub static CAN0_NODE0_NEW_MSG: AtomicBool = AtomicBool::new(false);
@@ -29,7 +29,7 @@ pub extern "C" fn __INTERRUPT_HANDLER_2() {
     CAN0_NODE0_NEW_MSG.store(true, Ordering::SeqCst);
 }
 
-fn setup_can0() -> Option<Node<Can0Node, Can0>> {
+fn setup_can0() -> Option<Node<Can0Node, Can0, Node0>> {
     let can_module = Module::new(Module0);
     let mut can_module = can_module.enable();
 
@@ -39,33 +39,41 @@ fn setup_can0() -> Option<Node<Can0Node, Can0>> {
             sample_point: 8_000,
             sync_jump_width: 3,
         }),
-        tx: Some(TxConfig {
-            mode: TxMode::DedicatedBuffers,
-            dedicated_tx_buffers_number: 2,
-            fifo_queue_size: 0,
-            buffer_data_field_size: DataFieldSize::_8,
-            event_fifo_size: 1,
-        }),
-        rx: Some(RxConfig {
-            mode: RxMode::SharedFifo0,
-            buffer_data_field_size: DataFieldSize::_8,
-            fifo0_data_field_size: DataFieldSize::_8,
-            fifo1_data_field_size: DataFieldSize::_8,
-            fifo0_operating_mode: RxFifoMode::Blocking,
-            fifo1_operating_mode: RxFifoMode::Blocking,
-            fifo0_watermark_level: 0,
-            fifo1_watermark_level: 0,
-            fifo0_size: 4,
-            fifo1_size: 0,
-        }),
-        pins: Some(Pins {
-            tx: PIN_TX_0_0_P20_8,
-            rx: PIN_RX_0_0_P20_7,
-        }),
         ..Default::default()
     };
 
     let node = can_module.take_node(Node0, cfg)?;
+
+    node.setup_tx(&TxConfig {
+        mode: TxMode::DedicatedBuffers,
+        dedicated_tx_buffers_number: 2,
+        fifo_queue_size: 0,
+        buffer_data_field_size: DataFieldSize::_8,
+        event_fifo_size: 1,
+        tx_event_fifo_start_address: 0x400,
+        tx_buffers_start_address: 0x440,
+    });
+
+    node.setup_rx(&RxConfig {
+        mode: RxMode::SharedFifo0,
+        buffer_data_field_size: DataFieldSize::_8,
+        fifo0_data_field_size: DataFieldSize::_8,
+        fifo1_data_field_size: DataFieldSize::_8,
+        fifo0_operating_mode: RxFifoMode::Blocking,
+        fifo1_operating_mode: RxFifoMode::Blocking,
+        fifo0_watermark_level: 0,
+        fifo1_watermark_level: 0,
+        fifo0_size: 4,
+        fifo1_size: 0,
+        rx_fifo0_start_address: 0x100,
+        rx_fifo1_start_address: 0x200,
+        rx_buffers_start_address: 0x300,
+    });
+
+    node.setup_pins(&Pins {
+        tx: PIN_TX_0_0_P20_8,
+        rx: PIN_RX_0_0_P20_7,
+    });
 
     node.setup_interrupt(&NodeInterruptConfig {
         interrupt_group: InterruptGroup::Rxf0n,

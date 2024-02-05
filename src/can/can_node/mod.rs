@@ -87,10 +87,10 @@ impl NodeId for Node3 {
     const INDEX: usize = 3;
 }
 
-pub struct Node<N, M> {
+pub struct Node<N, M, I> {
     effects: NodeEffects<N>,
     frame_mode: FrameMode,
-    _phantom: PhantomData<M>,
+    _phantom: PhantomData<(M, I)>,
     ram_base_address: u32,
 }
 
@@ -106,16 +106,13 @@ pub enum TransmitError {
 
 macro_rules! impl_can_node {
     ($ModuleReg:ty, $NodeReg:path, $ModuleId: ty) => {
-        impl Node<$NodeReg, $ModuleReg> {
-            /// Only a module can create a node. This function is only accessible from within this crate.
-            pub(super) fn new<I>(
+        impl<I: NodeId> Node<$NodeReg, $ModuleReg, I> {
+            /// Only a module can create a self. This function is only accessible from within this crate.
+            pub(super) fn new(
                 module: &mut Module<$ModuleId, $ModuleReg, can_module::Enabled>,
                 node_id: I,
-                config: NodeConfig<$ModuleReg, I>,
-            ) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError>
-            where
-                I: NodeId,
-            {
+                config: NodeConfig,
+            ) -> Result<Node<$NodeReg, $ModuleReg, I>, ConfigError> {
                 let node_index = node_id.as_index();
                 let node_reg = module.registers().n()[node_index];
                 let effects = NodeEffects::<$NodeReg>::new(node_reg);
@@ -147,138 +144,141 @@ macro_rules! impl_can_node {
                         .set_transceiver_delay_compensation_offset(config.transceiver_delay_offset);
                 }
 
-                // transmit frame configuration
-                if let Some(tx_config) = &config.tx {
-                    node.set_tx_buffer_data_field_size(tx_config.buffer_data_field_size);
-                    node.effects
-                        .set_tx_buffer_start_address(config.message_ram.tx_buffers_start_address);
+                node.effects.disable_configuration_change();
 
-                    let mode = tx_config.mode;
+                Ok(node)
+            }
 
-                    match mode {
-                        TxMode::DedicatedBuffers | TxMode::SharedFifo | TxMode::SharedQueue => {
-                            node.effects.set_dedicated_tx_buffers_number(
-                                tx_config.dedicated_tx_buffers_number,
-                            );
-                            if let TxMode::SharedFifo | TxMode::SharedQueue = mode {
-                                if let TxMode::SharedFifo = mode {
-                                    node.set_transmit_fifo_queue_mode(TxMode::Fifo);
-                                }
-                                if let TxMode::SharedQueue = mode {
-                                    node.set_transmit_fifo_queue_mode(TxMode::Queue);
-                                }
-                                node.effects
-                                    .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
+            pub fn setup_tx(&self, tx_config: &TxConfig) {
+                self.effects.enable_configuration_change();
+
+                self.set_tx_buffer_data_field_size(tx_config.buffer_data_field_size);
+                self.effects
+                    .set_tx_buffer_start_address(tx_config.tx_buffers_start_address);
+
+                let mode = tx_config.mode;
+
+                match mode {
+                    TxMode::DedicatedBuffers | TxMode::SharedFifo | TxMode::SharedQueue => {
+                        self.effects
+                            .set_dedicated_tx_buffers_number(tx_config.dedicated_tx_buffers_number);
+                        if let TxMode::SharedFifo | TxMode::SharedQueue = mode {
+                            if let TxMode::SharedFifo = mode {
+                                self.set_transmit_fifo_queue_mode(TxMode::Fifo);
                             }
-                            for id in
-                                0..tx_config.dedicated_tx_buffers_number + tx_config.fifo_queue_size
-                            {
-                                if let Ok(tx_buffer_id) = TxBufferId::try_from(id) {
-                                    node.effects
-                                        .enable_tx_buffer_transmission_interrupt(tx_buffer_id);
-                                }
+                            if let TxMode::SharedQueue = mode {
+                                self.set_transmit_fifo_queue_mode(TxMode::Queue);
                             }
-                        }
-                        TxMode::Fifo | TxMode::Queue => {
-                            node.set_transmit_fifo_queue_mode(mode);
-                            node.effects
+                            self.effects
                                 .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
-                            for id in 0..tx_config.fifo_queue_size {
-                                if let Ok(tx_buffer_id) = TxBufferId::try_from(id) {
-                                    node.effects
-                                        .enable_tx_buffer_transmission_interrupt(tx_buffer_id);
-                                }
+                        }
+                        for id in
+                            0..tx_config.dedicated_tx_buffers_number + tx_config.fifo_queue_size
+                        {
+                            if let Ok(tx_buffer_id) = TxBufferId::try_from(id) {
+                                self.effects
+                                    .enable_tx_buffer_transmission_interrupt(tx_buffer_id);
                             }
                         }
                     }
-
-                    if (1..=32).contains(&tx_config.event_fifo_size) {
-                        node.effects.set_tx_event_fifo_start_address(
-                            config.message_ram.tx_event_fifo_start_address,
-                        );
-                        node.effects
-                            .set_tx_event_fifo_size(tx_config.event_fifo_size);
-                    } else {
-                        crate::log::error!(
-                            "Invalid event fifo size: {}",
-                            tx_config.event_fifo_size
-                        );
+                    TxMode::Fifo | TxMode::Queue => {
+                        self.set_transmit_fifo_queue_mode(mode);
+                        self.effects
+                            .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
+                        for id in 0..tx_config.fifo_queue_size {
+                            if let Ok(tx_buffer_id) = TxBufferId::try_from(id) {
+                                self.effects
+                                    .enable_tx_buffer_transmission_interrupt(tx_buffer_id);
+                            }
+                        }
                     }
-
-                    node.set_frame_mode(config.frame_mode);
                 }
 
-                if let Some(rx_config) = &config.rx {
-                    let mode = rx_config.mode;
+                if (1..=32).contains(&tx_config.event_fifo_size) {
+                    self.effects
+                        .set_tx_event_fifo_start_address(tx_config.tx_event_fifo_start_address);
+                    self.effects
+                        .set_tx_event_fifo_size(tx_config.event_fifo_size);
+                } else {
+                    crate::log::error!("Invalid event fifo size: {}", tx_config.event_fifo_size);
+                }
 
-                    match mode {
-                        RxMode::DedicatedBuffers
-                        | RxMode::SharedFifo0
-                        | RxMode::SharedFifo1
-                        | RxMode::SharedAll => {
-                            node.set_rx_buffer_data_field_size(rx_config.buffer_data_field_size);
-                            node.effects.set_rx_buffer_start_address(
-                                config.message_ram.rx_buffers_start_address,
-                            );
+                self.set_frame_mode(self.frame_mode);
 
-                            if let RxMode::SharedFifo0 | RxMode::SharedAll = mode {
-                                node.set_rx_fifo0(FifoData {
-                                    field_size: rx_config.fifo0_data_field_size,
-                                    operation_mode: rx_config.fifo0_operating_mode,
-                                    watermark_level: rx_config.fifo0_watermark_level,
-                                    size: rx_config.fifo0_size,
-                                    start_address: config.message_ram.rx_fifo0_start_address,
-                                });
-                            }
-                            if let RxMode::SharedFifo1 | RxMode::SharedAll = mode {
-                                node.set_rx_fifo1(FifoData {
-                                    field_size: rx_config.fifo1_data_field_size,
-                                    operation_mode: rx_config.fifo1_operating_mode,
-                                    watermark_level: rx_config.fifo1_watermark_level,
-                                    size: rx_config.fifo1_size,
-                                    start_address: config.message_ram.rx_fifo1_start_address,
-                                });
-                            }
-                        }
-                        RxMode::Fifo0 => {
-                            node.set_rx_fifo0(FifoData {
+                self.effects.disable_configuration_change();
+            }
+
+            pub fn setup_rx(&self, rx_config: &RxConfig) {
+                self.effects.enable_configuration_change();
+
+                let mode = rx_config.mode;
+
+                match mode {
+                    RxMode::DedicatedBuffers
+                    | RxMode::SharedFifo0
+                    | RxMode::SharedFifo1
+                    | RxMode::SharedAll => {
+                        self.set_rx_buffer_data_field_size(rx_config.buffer_data_field_size);
+                        self.effects
+                            .set_rx_buffer_start_address(rx_config.rx_buffers_start_address);
+
+                        if let RxMode::SharedFifo0 | RxMode::SharedAll = mode {
+                            self.set_rx_fifo0(FifoData {
                                 field_size: rx_config.fifo0_data_field_size,
                                 operation_mode: rx_config.fifo0_operating_mode,
                                 watermark_level: rx_config.fifo0_watermark_level,
                                 size: rx_config.fifo0_size,
-                                start_address: config.message_ram.rx_fifo0_start_address,
+                                start_address: rx_config.rx_fifo0_start_address,
                             });
                         }
-                        RxMode::Fifo1 => {
-                            node.set_rx_fifo1(FifoData {
+                        if let RxMode::SharedFifo1 | RxMode::SharedAll = mode {
+                            self.set_rx_fifo1(FifoData {
                                 field_size: rx_config.fifo1_data_field_size,
                                 operation_mode: rx_config.fifo1_operating_mode,
                                 watermark_level: rx_config.fifo1_watermark_level,
                                 size: rx_config.fifo1_size,
-                                start_address: config.message_ram.rx_fifo1_start_address,
+                                start_address: rx_config.rx_fifo1_start_address,
                             });
                         }
                     }
-
-                    node.set_frame_mode(config.frame_mode);
+                    RxMode::Fifo0 => {
+                        self.set_rx_fifo0(FifoData {
+                            field_size: rx_config.fifo0_data_field_size,
+                            operation_mode: rx_config.fifo0_operating_mode,
+                            watermark_level: rx_config.fifo0_watermark_level,
+                            size: rx_config.fifo0_size,
+                            start_address: rx_config.rx_fifo0_start_address,
+                        });
+                    }
+                    RxMode::Fifo1 => {
+                        self.set_rx_fifo1(FifoData {
+                            field_size: rx_config.fifo1_data_field_size,
+                            operation_mode: rx_config.fifo1_operating_mode,
+                            watermark_level: rx_config.fifo1_watermark_level,
+                            size: rx_config.fifo1_size,
+                            start_address: rx_config.rx_fifo1_start_address,
+                        });
+                    }
                 }
 
-                if let Some(pins) = &config.pins {
-                    node.connect_pin_rx(
-                        &pins.rx,
-                        InputMode::PULL_UP,
-                        PadDriver::CmosAutomotiveSpeed3,
-                    );
-                    node.connect_pin_tx(
-                        &pins.tx,
-                        OutputMode::PUSH_PULL,
-                        PadDriver::CmosAutomotiveSpeed3,
-                    );
-                }
+                self.set_frame_mode(self.frame_mode);
 
-                node.effects.disable_configuration_change();
+                self.effects.disable_configuration_change();
+            }
 
-                Ok(node)
+            pub fn setup_pins(&self, pins: &Pins<$ModuleReg, I>) {
+                self.effects.enable_configuration_change();
+                self.connect_pin_rx(
+                    &pins.rx,
+                    InputMode::PULL_UP,
+                    PadDriver::CmosAutomotiveSpeed3,
+                );
+                self.connect_pin_tx(
+                    &pins.tx,
+                    OutputMode::PUSH_PULL,
+                    PadDriver::CmosAutomotiveSpeed3,
+                );
+                self.effects.disable_configuration_change();
             }
 
             pub fn setup_interrupt(&self, interrupt: &NodeInterruptConfig) {
@@ -516,8 +516,7 @@ macro_rules! impl_can_node {
             }
         }
 
-        // IfxLld_Can_Std_Tx_Element_Functions
-        impl Node<$NodeReg, $ModuleReg> {
+        impl<I> Node<$NodeReg, $ModuleReg, I> {
             #[inline]
             pub fn is_tx_buffer_cancellation_finished(&self, tx_buffer_id: TxBufferId) -> bool {
                 self.is_tx_buffer_transmission_occured(tx_buffer_id)
@@ -1013,7 +1012,12 @@ pub struct TxConfig {
     pub fifo_queue_size: u8,
     pub buffer_data_field_size: DataFieldSize,
     pub event_fifo_size: u8,
+    pub tx_event_fifo_start_address: u16,
+    pub tx_buffers_start_address: u16,
 }
+
+//     pub standard_filter_list_start_address: u16,
+//     pub extended_filter_list_start_address: u16,
 
 #[derive(Clone, Copy)]
 pub struct RxConfig {
@@ -1027,35 +1031,14 @@ pub struct RxConfig {
     pub fifo1_watermark_level: u8,
     pub fifo0_size: u8,
     pub fifo1_size: u8,
-}
-
-#[derive(Clone, Copy)]
-pub struct Pins<M, N> {
-    pub tx: TxdOut<M, N>,
-    pub rx: RxdIn<M, N>,
-}
-
-#[derive(Clone, Copy)]
-pub struct MessageRAM {
-    pub standard_filter_list_start_address: u16,
-    pub extended_filter_list_start_address: u16,
     pub rx_fifo0_start_address: u16,
     pub rx_fifo1_start_address: u16,
     pub rx_buffers_start_address: u16,
-    pub tx_event_fifo_start_address: u16,
-    pub tx_buffers_start_address: u16,
 }
 
-impl Default for MessageRAM {
-    fn default() -> Self {
-        Self {
-            standard_filter_list_start_address: 0x0,
-            extended_filter_list_start_address: 0x80,
-            rx_fifo0_start_address: 0x100,
-            rx_fifo1_start_address: 0x200,
-            rx_buffers_start_address: 0x300,
-            tx_event_fifo_start_address: 0x400,
-            tx_buffers_start_address: 0x440,
-        }
-    }
+// TODO M gen param should be ModuleId
+#[derive(Clone, Copy)]
+pub struct Pins<M, N: NodeId> {
+    pub tx: TxdOut<M, N>,
+    pub rx: RxdIn<M, N>,
 }

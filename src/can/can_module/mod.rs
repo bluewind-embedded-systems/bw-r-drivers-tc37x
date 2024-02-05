@@ -1,7 +1,6 @@
 mod service_request;
 
 use super::can_node::{Node, NodeConfig};
-use crate::can::config::NodeInterruptConfig;
 use crate::can::NodeId;
 use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
@@ -61,7 +60,7 @@ macro_rules! impl_can_module {
         impl Module<$ModuleId, $ModuleReg, Enabled> {
             // TODO interrupts should be nested into cfg
             /// Take ownership of a CAN node and configure it
-            pub fn take_node<I>(&mut self, node_id: I, config: NodeConfig<$ModuleReg, I>) -> Option<Node<$($m)::+::N, $ModuleReg>> where I: NodeId {
+            pub fn take_node<I>(&mut self, node_id: I, config: NodeConfig) -> Option<Node<$($m)::+::N, $ModuleReg, I>> where I: NodeId {
                 let node_index = node_id.as_index();
 
                 // Check if node is already taken, return None if it is
@@ -73,7 +72,7 @@ macro_rules! impl_can_module {
                 self.nodes_taken[node_index] = true;
 
                 // Create node
-                Node::<$($m)::+::N, $ModuleReg>::new(self, node_id, config).ok()
+                Node::<$($m)::+::N, $ModuleReg, I>::new(self, node_id, config).ok()
             }
 
             pub(crate) fn set_clock_source(
