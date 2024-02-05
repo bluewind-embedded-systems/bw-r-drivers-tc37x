@@ -137,8 +137,8 @@ macro_rules! impl_can_module {
                 &$module_reg
             }
 
-            pub(crate) fn ram_base_address(&self) -> usize {
-                $module_reg.0 as usize
+            pub(crate) fn ram_base_address(&self) -> u32 {
+                $module_reg.0 as u32
             }
         }
     };

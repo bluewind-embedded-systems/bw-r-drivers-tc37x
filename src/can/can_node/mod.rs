@@ -170,7 +170,7 @@ macro_rules! impl_can_node {
                     effects,
                     _phantom: PhantomData,
                     frame_mode: config.frame_mode,
-                    ram_base_address: module.ram_base_address() as u32,
+                    ram_base_address: module.ram_base_address(),
                 };
 
                 node.effects.enable_configuration_change();
