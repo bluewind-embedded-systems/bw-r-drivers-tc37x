@@ -87,7 +87,7 @@ impl NodeId for Node3 {
     const INDEX: usize = 3;
 }
 
-pub struct Node<N, M, I> {
+pub struct Node<N, M, I: NodeId> {
     effects: NodeEffects<N>,
     frame_mode: FrameMode,
     _phantom: PhantomData<(M, I)>,
@@ -514,9 +514,7 @@ macro_rules! impl_can_node {
 
                 Ok(())
             }
-        }
 
-        impl<I> Node<$NodeReg, $ModuleReg, I> {
             #[inline]
             pub fn is_tx_buffer_cancellation_finished(&self, tx_buffer_id: TxBufferId) -> bool {
                 self.is_tx_buffer_transmission_occured(tx_buffer_id)
