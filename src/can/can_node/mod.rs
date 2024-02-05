@@ -242,10 +242,15 @@ macro_rules! impl_can_node {
                     let mode = rx_config.mode;
 
                     match mode {
-                        RxMode::DedicatedBuffers | RxMode::SharedFifo0 | RxMode::SharedFifo1 | RxMode::SharedAll => {
+                        RxMode::DedicatedBuffers
+                        | RxMode::SharedFifo0
+                        | RxMode::SharedFifo1
+                        | RxMode::SharedAll => {
                             node.set_rx_buffer_data_field_size(rx_config.buffer_data_field_size);
-                            node.effects.set_rx_buffer_start_address(config.message_ram.rx_buffers_start_address);
-    
+                            node.effects.set_rx_buffer_start_address(
+                                config.message_ram.rx_buffers_start_address,
+                            );
+
                             if let RxMode::SharedFifo0 | RxMode::SharedAll = mode {
                                 node.set_rx_fifo0(FifoData {
                                     field_size: rx_config.fifo0_data_field_size,
@@ -275,13 +280,13 @@ macro_rules! impl_can_node {
                             });
                         }
                         RxMode::Fifo1 => {
-                                node.set_rx_fifo1(FifoData {
-                                    field_size: rx_config.fifo1_data_field_size,
-                                    operation_mode: rx_config.fifo1_operating_mode,
-                                    watermark_level: rx_config.fifo1_watermark_level,
-                                    size: rx_config.fifo1_size,
-                                    start_address: config.message_ram.rx_fifo1_start_address,
-                                });
+                            node.set_rx_fifo1(FifoData {
+                                field_size: rx_config.fifo1_data_field_size,
+                                operation_mode: rx_config.fifo1_operating_mode,
+                                watermark_level: rx_config.fifo1_watermark_level,
+                                size: rx_config.fifo1_size,
+                                start_address: config.message_ram.rx_fifo1_start_address,
+                            });
                         }
                     }
 
@@ -1022,8 +1027,7 @@ pub struct RxConfig {
     pub fifo0_watermark_level: u8,
     pub fifo1_watermark_level: u8,
     pub fifo0_size: u8,
-    pub fifo1_size: u8 
-
+    pub fifo1_size: u8,
 }
 
 #[derive(Clone, Copy)]
