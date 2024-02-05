@@ -18,9 +18,6 @@ impl ModuleId for Module0 {}
 pub struct Module1;
 impl ModuleId for Module1 {}
 
-#[derive(Default)]
-pub struct ModuleConfig {}
-
 // Type states for Module
 pub struct Disabled;
 pub struct Enabled;
