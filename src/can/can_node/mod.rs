@@ -299,7 +299,7 @@ macro_rules! impl_can_node {
                     InterruptGroup::Rxf0n,
                     Interrupt::RxFifo0newMessage,
                     InterruptLine(1),
-                    2,
+                    Priority(2),
                     Tos::Cpu0,
                 );
 
@@ -706,6 +706,17 @@ pub enum Tos {
     Cpu2,
 }
 
+impl From<Tos> for u8 {
+    fn from(value: Tos) -> Self {
+        match value {
+            Tos::Cpu0 => 0,
+            Tos::Dma => 1,
+            Tos::Cpu1 => 2,
+            Tos::Cpu2 => 3,
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct InputMode(u32);
 impl InputMode {
@@ -994,7 +1005,13 @@ impl<M, N> TxdOut<M, N> {
     }
 }
 
-pub type Priority = u8;
+pub struct Priority(u8);
+
+impl From<Priority> for u8 {
+    fn from(value: Priority) -> Self {
+        value.0
+    }
+}
 
 #[derive(Clone, Copy)]
 pub struct TxConfig {

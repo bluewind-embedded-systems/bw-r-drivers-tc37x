@@ -144,8 +144,8 @@ macro_rules! impl_can_module {
                 tos: Tos,
             ) {
                 let can_int = <$ModuleId>::service_request(line).0;
-                let priority = priority;
-                let tos = tos as u8;
+                let priority = u8::from(priority);
+                let tos = u8::from(tos);
 
                 // Set priority and type of service
                 unsafe { can_int.modify(|r| r.srpn().set(priority).tos().set(tos)) };
