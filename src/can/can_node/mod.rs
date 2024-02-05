@@ -154,6 +154,7 @@ macro_rules! impl_can_node {
 
             pub fn lock_configuration(self) -> Node<$NodeReg, $ModuleReg, I, Configured> {
                 self.effects.disable_configuration_change();
+
                 Node {
                     effects: self.effects,
                     _phantom: PhantomData,
@@ -163,8 +164,6 @@ macro_rules! impl_can_node {
             }
 
             pub fn setup_tx(&self, tx_config: &TxConfig) {
-                self.effects.enable_configuration_change();
-
                 self.set_tx_buffer_data_field_size(tx_config.buffer_data_field_size);
                 self.effects
                     .set_tx_buffer_start_address(tx_config.tx_buffers_start_address);
@@ -217,13 +216,9 @@ macro_rules! impl_can_node {
                 }
 
                 self.set_frame_mode(self.frame_mode);
-
-                self.effects.disable_configuration_change();
             }
 
             pub fn setup_rx(&self, rx_config: &RxConfig) {
-                self.effects.enable_configuration_change();
-
                 let mode = rx_config.mode;
 
                 match mode {
@@ -275,12 +270,9 @@ macro_rules! impl_can_node {
                 }
 
                 self.set_frame_mode(self.frame_mode);
-
-                self.effects.disable_configuration_change();
             }
 
             pub fn setup_pins(&self, pins: &Pins<$ModuleId, I>) {
-                self.effects.enable_configuration_change();
                 self.connect_pin_rx(
                     &pins.rx,
                     InputMode::PULL_UP,
@@ -291,12 +283,9 @@ macro_rules! impl_can_node {
                     OutputMode::PUSH_PULL,
                     PadDriver::CmosAutomotiveSpeed3,
                 );
-                self.effects.disable_configuration_change();
             }
 
             pub fn setup_interrupt(&self, interrupt: &NodeInterruptConfig) {
-                self.effects.enable_configuration_change();
-
                 self.set_interrupt(
                     interrupt.interrupt_group,
                     interrupt.interrupt,
@@ -304,8 +293,6 @@ macro_rules! impl_can_node {
                     interrupt.priority,
                     interrupt.tos,
                 );
-
-                self.effects.disable_configuration_change();
             }
 
             fn set_rx_fifo0(&self, data: FifoData) {
