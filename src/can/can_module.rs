@@ -26,7 +26,7 @@ pub struct ModuleConfig {}
 pub struct Disabled;
 pub struct Enabled;
 
-pub struct Module<ModuleId, Reg, State = Disabled> {
+pub struct Module<ModuleId, Reg, State> {
     nodes_taken: [bool; 4],
     _phantom: PhantomData<(ModuleId, Reg, State)>,
 }
@@ -42,14 +42,14 @@ impl<ModuleId, Reg> Module<ModuleId, Reg, Disabled> {
 }
 
 macro_rules! impl_can_module {
-    ($reg:path, $($m:ident)::+, $Reg:ty, $id: ty) => {
-        impl Module<$id, $Reg, Disabled> {
+    ($reg:path, $($m:ident)::+, $Reg:ty, $ModuleId: ty) => {
+        impl Module<$ModuleId, $Reg, Disabled> {
             fn is_enabled(&self) -> bool {
                 !unsafe { $reg.clc().read() }.diss().get()
             }
 
             /// Enable the CAN module
-            pub fn enable(self) -> Module<$Reg, Enabled> {
+            pub fn enable(self) -> Module<$ModuleId, $Reg, Enabled> {
                 scu::wdt::clear_cpu_endinit_inline();
 
                 unsafe { $reg.clc().modify_atomic(|r| r.disr().set(false)) };
@@ -57,14 +57,14 @@ macro_rules! impl_can_module {
 
                 scu::wdt::set_cpu_endinit_inline();
 
-                Module::<$Reg, Enabled> {
+                Module::<$ModuleId, $Reg, Enabled> {
                     nodes_taken: [false; 4],
                     _phantom: PhantomData,
                 }
             }
         }
 
-        impl Module<$Reg, Enabled> {
+        impl Module<$ModuleId, $Reg, Enabled> {
             /// Take ownership of a CAN node and configure it
             pub fn take_node<I>(&mut self, node_id: I, cfg: NodeConfig<$Reg, I>) -> Option<Node<$($m)::+::N, $Reg>> where I: NodeId {
                 let node_index = node_id.as_index();

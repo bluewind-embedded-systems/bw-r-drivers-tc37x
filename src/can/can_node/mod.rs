@@ -135,11 +135,11 @@ pub enum TransmitError {
 }
 
 macro_rules! impl_can_node {
-    ($ModuleReg:ty, $NodeReg:path) => {
+    ($ModuleReg:ty, $NodeReg:path, $ModuleId: ty) => {
         impl Node<$NodeReg, $ModuleReg> {
             /// Only a module can create a node. This function is only accessible from within this crate.
             pub(super) fn new<I>(
-                module: &mut Module<$ModuleReg, can_module::Enabled>,
+                module: &mut Module<$ModuleId, $ModuleReg, can_module::Enabled>,
                 node_id: I,
                 config: NodeConfig<$ModuleReg, I>,
             ) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError>
@@ -435,7 +435,7 @@ macro_rules! impl_can_node {
 
             fn set_interrupt(
                 &self,
-                module: &mut Module<$ModuleReg, can_module::Enabled>,
+                module: &mut Module<$ModuleId, $ModuleReg, can_module::Enabled>,
                 interrupt_group: InterruptGroup,
                 interrupt: Interrupt,
                 line: InterruptLine,
@@ -578,8 +578,16 @@ macro_rules! impl_can_node {
     };
 }
 
-impl_can_node!(crate::pac::can0::Can0, crate::pac::can0::N);
-impl_can_node!(crate::pac::can1::Can1, crate::pac::can1::N);
+impl_can_node!(
+    crate::pac::can0::Can0,
+    crate::pac::can0::N,
+    crate::can::Module0
+);
+impl_can_node!(
+    crate::pac::can1::Can1,
+    crate::pac::can1::N,
+    crate::can::Module1
+);
 
 #[derive(Clone, Copy)]
 pub struct FifoData {
