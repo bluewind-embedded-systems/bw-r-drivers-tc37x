@@ -65,19 +65,15 @@ fn setup_can0() -> Option<Node<Can0Node, Can0>> {
         ..Default::default()
     };
 
-    let interrupts: [NodeInterruptConfig; 1] = [NodeInterruptConfig {
+    let node = can_module.take_node(Node0, cfg)?;
+
+    node.setup_interrupt(&NodeInterruptConfig {
         interrupt_group: InterruptGroup::Rxf0n,
         interrupt: Interrupt::RxFifo0newMessage,
         line: InterruptLine::Line1,
         priority: Priority::try_from(2).unwrap(),
         tos: Tos::Cpu0,
-    }];
-
-    let node = can_module.take_node(Node0, cfg)?;
-
-    for interrupt in &interrupts {
-        node.setup_interrupt(interrupt);
-    }
+    });
 
     Some(node)
 }
