@@ -59,6 +59,14 @@ pub enum RxMode {
     SharedAll,
 }
 
+pub struct NodeInterruptConfig {
+    pub interrupt_group: InterruptGroup,
+    pub interrupt: Interrupt,
+    pub line: InterruptLine,
+    pub priority: Priority,
+    pub tos: Tos,
+}
+
 pub struct NodeConfig<M, N> {
     pub clock_source: ClockSource,
     pub baud_rate: BitTimingConfig,
@@ -295,13 +303,17 @@ macro_rules! impl_can_node {
                 }
 
                 // TODO Interrupt from config
-                node.set_interrupt(
-                    InterruptGroup::Rxf0n,
-                    Interrupt::RxFifo0newMessage,
-                    InterruptLine::Line1,
-                    Priority(2),
-                    Tos::Cpu0,
-                );
+                let interrupts: [NodeInterruptConfig; 1] = [NodeInterruptConfig {
+                    interrupt_group: InterruptGroup::Rxf0n,
+                    interrupt: Interrupt::RxFifo0newMessage,
+                    line: InterruptLine::Line1,
+                    priority: Priority::try_from(2).unwrap(),
+                    tos: Tos::Cpu0,
+                }];
+
+                for interrupt in interrupts.iter() {
+                    node.setup_interrupt(interrupt);
+                }
 
                 if let Some(pins) = &config.pins {
                     node.connect_pin_rx(
@@ -319,6 +331,18 @@ macro_rules! impl_can_node {
                 node.effects.disable_configuration_change();
 
                 Ok(node)
+            }
+
+            pub fn setup_interrupt(&self, interrupt: &NodeInterruptConfig) {
+                self.effects.enable_configuration_change();
+                self.set_interrupt(
+                    interrupt.interrupt_group,
+                    interrupt.interrupt,
+                    interrupt.line,
+                    interrupt.priority,
+                    interrupt.tos,
+                );
+                self.effects.disable_configuration_change();
             }
 
             // TODO This does not feel to be the right place for this function
@@ -1029,14 +1053,6 @@ impl<M, N> TxdOut<M, N> {
             select,
             _phantom: PhantomData,
         }
-    }
-}
-
-pub struct Priority(u8);
-
-impl From<Priority> for u8 {
-    fn from(value: Priority) -> Self {
-        value.0
     }
 }
 
