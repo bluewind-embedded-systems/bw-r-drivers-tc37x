@@ -143,8 +143,7 @@ macro_rules! impl_can_module {
                 priority: Priority,
                 tos: Tos,
             ) {
-                // FIXME Module0
-                let can_int = Module0::service_request(line).0;
+                let can_int = <$ModuleId>::service_request(line).0;
                 let priority = priority;
                 let tos = tos as u8;
 
