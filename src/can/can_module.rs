@@ -1,10 +1,15 @@
 use super::can_node::{Node, NodeConfig};
+use core::intrinsics::transmute;
 
-use crate::can::NodeId;
+use crate::can::Priority;
+use crate::can::Tos;
+use crate::can::{InterruptLine, NodeId};
 use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
 use core::marker::PhantomData;
 use pac::hidden::CastFrom;
+use tc37x_pac::src::Can0Int0;
+use tc37x_pac::{Reg, RW};
 
 pub trait ModuleId {}
 
@@ -132,6 +137,27 @@ macro_rules! impl_can_module {
                 Ok(())
             }
 
+            pub(crate) fn set_interrupt(
+                &self,
+                line: InterruptLine,
+                priority: Priority,
+                tos: Tos,
+            ) {
+                // FIXME Module0
+                let can_int = Module0::service_request(line).0;
+                let priority = priority;
+                let tos = tos as u8;
+
+                // Set priority and type of service
+                unsafe { can_int.modify(|r| r.srpn().set(priority).tos().set(tos)) };
+
+                // Clear request
+                unsafe { can_int.modify(|r| r.clrr().set(true)) };
+
+                // Enable service request
+                unsafe { can_int.modify(|r| r.sre().set(true)) };
+            }
+
             pub(crate) fn registers(&self) -> &$Reg {
                 &$reg
             }
@@ -180,5 +206,58 @@ impl From<ClockSource> for u8 {
             ClockSource::Synchronous => 2,
             ClockSource::Both => 3,
         }
+    }
+}
+
+// Note: for simplicity, this wraps a value of Can0Int0 type
+struct ServiceRequest(Reg<Can0Int0, RW>);
+
+impl Module0 {
+    fn service_request(line: InterruptLine) -> ServiceRequest {
+        ServiceRequest(match line {
+            InterruptLine(0) => unsafe { transmute(tc37x_pac::SRC.can0int0()) },
+            InterruptLine(1) => unsafe { transmute(tc37x_pac::SRC.can0int1()) },
+            InterruptLine(2) => unsafe { transmute(tc37x_pac::SRC.can0int2()) },
+            InterruptLine(3) => unsafe { transmute(tc37x_pac::SRC.can0int3()) },
+            InterruptLine(4) => unsafe { transmute(tc37x_pac::SRC.can0int4()) },
+            InterruptLine(5) => unsafe { transmute(tc37x_pac::SRC.can0int5()) },
+            InterruptLine(6) => unsafe { transmute(tc37x_pac::SRC.can0int6()) },
+            InterruptLine(7) => unsafe { transmute(tc37x_pac::SRC.can0int7()) },
+            InterruptLine(8) => unsafe { transmute(tc37x_pac::SRC.can0int8()) },
+            InterruptLine(9) => unsafe { transmute(tc37x_pac::SRC.can0int9()) },
+            InterruptLine(10) => unsafe { transmute(tc37x_pac::SRC.can0int10()) },
+            InterruptLine(11) => unsafe { transmute(tc37x_pac::SRC.can0int11()) },
+            InterruptLine(12) => unsafe { transmute(tc37x_pac::SRC.can0int12()) },
+            InterruptLine(13) => unsafe { transmute(tc37x_pac::SRC.can0int13()) },
+            InterruptLine(14) => unsafe { transmute(tc37x_pac::SRC.can0int14()) },
+            InterruptLine(15) => unsafe { transmute(tc37x_pac::SRC.can0int15()) },
+            // TODO InterruptLine should be an enum and no unreachable should be here
+            _ => unreachable!(),
+        })
+    }
+}
+
+impl Module1 {
+    fn service_request(line: InterruptLine) -> ServiceRequest {
+        ServiceRequest(match line {
+            InterruptLine(0) => unsafe { transmute(tc37x_pac::SRC.can1int0()) },
+            InterruptLine(1) => unsafe { transmute(tc37x_pac::SRC.can1int1()) },
+            InterruptLine(2) => unsafe { transmute(tc37x_pac::SRC.can1int2()) },
+            InterruptLine(3) => unsafe { transmute(tc37x_pac::SRC.can1int3()) },
+            InterruptLine(4) => unsafe { transmute(tc37x_pac::SRC.can1int4()) },
+            InterruptLine(5) => unsafe { transmute(tc37x_pac::SRC.can1int5()) },
+            InterruptLine(6) => unsafe { transmute(tc37x_pac::SRC.can1int6()) },
+            InterruptLine(7) => unsafe { transmute(tc37x_pac::SRC.can1int7()) },
+            InterruptLine(8) => unsafe { transmute(tc37x_pac::SRC.can1int8()) },
+            InterruptLine(9) => unsafe { transmute(tc37x_pac::SRC.can1int9()) },
+            InterruptLine(10) => unsafe { transmute(tc37x_pac::SRC.can1int10()) },
+            InterruptLine(11) => unsafe { transmute(tc37x_pac::SRC.can1int11()) },
+            InterruptLine(12) => unsafe { transmute(tc37x_pac::SRC.can1int12()) },
+            InterruptLine(13) => unsafe { transmute(tc37x_pac::SRC.can1int13()) },
+            InterruptLine(14) => unsafe { transmute(tc37x_pac::SRC.can1int14()) },
+            InterruptLine(15) => unsafe { transmute(tc37x_pac::SRC.can1int15()) },
+            // TODO InterruptLine should be an enum and no unreachable should be here
+            _ => unreachable!(),
+        })
     }
 }
