@@ -16,6 +16,7 @@ use crate::can::can_node::effects::NodeEffects;
 use crate::log::info;
 use crate::scu::wdt_call;
 
+use crate::cpu::Priority;
 use core::marker::PhantomData;
 use core::mem::transmute;
 use tc37x_pac::hidden::RegValue;

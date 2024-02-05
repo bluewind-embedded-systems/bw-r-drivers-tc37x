@@ -236,6 +236,7 @@ fn panic(panic: &core::panic::PanicInfo<'_>) -> ! {
 use core::arch::asm;
 use core::sync::atomic::{AtomicBool, Ordering};
 use critical_section::RawRestoreState;
+use tc37x_driver::cpu::Priority;
 
 struct Section;
 
