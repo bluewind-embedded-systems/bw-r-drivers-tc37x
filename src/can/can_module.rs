@@ -143,18 +143,7 @@ macro_rules! impl_can_module {
                 priority: Priority,
                 tos: Tos,
             ) {
-                let can_int = <$ModuleId>::service_request(line).0;
-                let priority = u8::from(priority);
-                let tos = u8::from(tos);
-
-                // Set priority and type of service
-                unsafe { can_int.modify(|r| r.srpn().set(priority).tos().set(tos)) };
-
-                // Clear request
-                unsafe { can_int.modify(|r| r.clrr().set(true)) };
-
-                // Enable service request
-                unsafe { can_int.modify(|r| r.sre().set(true)) };
+                <$ModuleId>::service_request(line).enable(priority, tos)
             }
 
             pub(crate) fn registers(&self) -> &$ModuleReg {
@@ -208,11 +197,12 @@ impl From<ClockSource> for u8 {
     }
 }
 
-// Note: for simplicity, this wraps a value of Can0Int0 type
-struct ServiceRequest(Reg<Can0Int0, RW>);
+// Note: for simplicity, this wraps a value of Can0Int0 type, even if the
+// underlying registers have different types in the PAC crate.
+pub(super) struct ServiceRequest(Reg<Can0Int0, RW>);
 
 impl Module0 {
-    fn service_request(line: InterruptLine) -> ServiceRequest {
+    pub(super) fn service_request(line: InterruptLine) -> ServiceRequest {
         ServiceRequest(match line {
             InterruptLine(0) => unsafe { transmute(tc37x_pac::SRC.can0int0()) },
             InterruptLine(1) => unsafe { transmute(tc37x_pac::SRC.can0int1()) },
@@ -237,7 +227,7 @@ impl Module0 {
 }
 
 impl Module1 {
-    fn service_request(line: InterruptLine) -> ServiceRequest {
+    pub(super) fn service_request(line: InterruptLine) -> ServiceRequest {
         ServiceRequest(match line {
             InterruptLine(0) => unsafe { transmute(tc37x_pac::SRC.can1int0()) },
             InterruptLine(1) => unsafe { transmute(tc37x_pac::SRC.can1int1()) },
@@ -258,5 +248,21 @@ impl Module1 {
             // TODO InterruptLine should be an enum and no unreachable should be here
             _ => unreachable!(),
         })
+    }
+}
+
+impl ServiceRequest {
+    pub(super) fn enable(&self, priority: Priority, tos: Tos) {
+        let priority = u8::from(priority);
+        let tos = u8::from(tos);
+
+        // Set priority and type of service
+        unsafe { self.0.modify(|r| r.srpn().set(priority).tos().set(tos)) };
+
+        // Clear request
+        unsafe { self.0.modify(|r| r.clrr().set(true)) };
+
+        // Enable service request
+        unsafe { self.0.modify(|r| r.sre().set(true)) };
     }
 }

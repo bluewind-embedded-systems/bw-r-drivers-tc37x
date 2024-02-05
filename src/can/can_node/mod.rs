@@ -295,7 +295,6 @@ macro_rules! impl_can_node {
 
                 // TODO Interrupt from config
                 node.set_interrupt(
-                    module,
                     InterruptGroup::Rxf0n,
                     Interrupt::RxFifo0newMessage,
                     InterruptLine(1),
@@ -435,7 +434,6 @@ macro_rules! impl_can_node {
 
             fn set_interrupt(
                 &self,
-                module: &mut Module<$ModuleId, $ModuleReg, can_module::Enabled>,
                 interrupt_group: InterruptGroup,
                 interrupt: Interrupt,
                 line: InterruptLine,
@@ -444,7 +442,7 @@ macro_rules! impl_can_node {
             ) {
                 self.set_group_interrupt_line(interrupt_group, line);
 
-                module.set_interrupt(line, priority, tos);
+                <$ModuleId>::service_request(line).enable(priority, tos);
 
                 // Enable interrupt
                 self.effects.enable_interrupt(interrupt);
