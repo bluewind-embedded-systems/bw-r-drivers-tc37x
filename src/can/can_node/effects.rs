@@ -1,7 +1,7 @@
 use crate::can::baud_rate::{DataBitTiming, NominalBitTiming};
 use crate::can::can_node::{Interrupt, RxFifoMode, RxSel};
 use crate::can::msg::{ReadFrom, RxBufferId, TxBufferId};
-use crate::can::{DataFieldSize, InterruptLine, TxMode};
+use crate::can::{DataFieldSize, TxMode};
 use crate::pac;
 
 use tc37x_pac::hidden::RegValue;
@@ -231,8 +231,7 @@ macro_rules! impl_can_node_effect {
                 };
             }
 
-            pub(crate) fn set_interrupt_routing_group_1(&self, line: InterruptLine, group: u32) {
-                let line = u32::from(u8::from(line));
+            pub(crate) fn set_interrupt_routing_group_1(&self, line: u32, group: u32) {
                 unsafe {
                     self.reg.grint1i().modify(|mut r| {
                         *r.data_mut_ref() |= line << group;
@@ -241,8 +240,7 @@ macro_rules! impl_can_node_effect {
                 };
             }
 
-            pub(crate) fn set_interrupt_routing_group_2(&self, line: InterruptLine, group: u32) {
-                let line = u32::from(u8::from(line));
+            pub(crate) fn set_interrupt_routing_group_2(&self, line: u32, group: u32) {
                 unsafe {
                     self.reg.grint2i().modify(|mut r| {
                         *r.data_mut_ref() |= line << group;

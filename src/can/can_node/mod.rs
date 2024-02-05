@@ -448,16 +448,15 @@ macro_rules! impl_can_node {
                 self.effects.enable_interrupt(interrupt);
             }
 
-            fn set_group_interrupt_line(
-                &self,
-                interrupt_group: InterruptGroup,
-                line: InterruptLine,
-            ) {
-                if interrupt_group <= InterruptGroup::Loi {
-                    let group = interrupt_group as u32 * 4;
+            fn set_group_interrupt_line(&self, group: InterruptGroup, line: InterruptLine) {
+                let line = u32::from(u8::from(line));
+                let group = u32::from(u8::from(group));
+
+                if group < 8 {
+                    let group = group * 4;
                     self.effects.set_interrupt_routing_group_1(line, group);
                 } else {
-                    let group = (interrupt_group as u32 % 8) * 4;
+                    let group = (group % 8) * 4;
                     self.effects.set_interrupt_routing_group_2(line, group);
                 }
             }
@@ -635,6 +634,7 @@ pub struct DedicatedData {
     pub start_address: u16,
 }
 
+#[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum InterruptGroup {
     Tefifo,
@@ -653,6 +653,12 @@ pub enum InterruptGroup {
     Reti,
     Traq,
     Traco,
+}
+
+impl From<InterruptGroup> for u8 {
+    fn from(value: InterruptGroup) -> Self {
+        value as u8
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
