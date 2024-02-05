@@ -83,7 +83,7 @@ macro_rules! impl_can_module {
             ) -> Result<(), ()> {
                 use $($m)::+::mcr::{Ccce, Ci, Clksel0, Clksel1, Clksel2, Clksel3};
 
-                let mcr = self.read_mcr();
+                let mcr = unsafe { $module_reg.mcr().read() };
 
                 // Enable CCCE and CI
                 let mcr = mcr
@@ -91,7 +91,8 @@ macro_rules! impl_can_module {
                     .set($($m)::+::mcr::Ccce::CONST_11)
                     .ci()
                     .set($($m)::+::mcr::Ci::CONST_11);
-                self.write_mcr(mcr);
+
+                unsafe { $module_reg.mcr().write(mcr) }
 
                 // Select clock
                 let clock_source: u8 = clock_source.into();
@@ -104,18 +105,18 @@ macro_rules! impl_can_module {
                     _ => unreachable!(),
                 };
 
-                self.write_mcr(mcr);
+                unsafe { $module_reg.mcr().write(mcr) }
 
                 // Disable CCCE and CI
                 let mcr = mcr.ccce().set(Ccce::CONST_00).ci().set(Ci::CONST_00);
-                self.write_mcr(mcr);
+                unsafe { $module_reg.mcr().write(mcr) }
 
                 // TODO Is this enough or we need to wait until actual_clock_source == clock_source
                 // Wait for clock switch
                  wait_nop_cycles(10);
 
                 // Check if clock switch was successful
-                let mcr = self.read_mcr();
+                let mcr = unsafe { $module_reg.mcr().read() };
 
                 let actual_clock_source = match clock_select.0 {
                     0 => mcr.clksel0().get().0,
@@ -134,14 +135,6 @@ macro_rules! impl_can_module {
 
             pub(crate) fn registers(&self) -> &$ModuleReg {
                 &$module_reg
-            }
-
-            fn read_mcr(&self) -> $($m)::+::Mcr {
-                unsafe { $module_reg.mcr().read() }
-            }
-
-            fn write_mcr(&self, mcr: $($m)::+::Mcr) {
-                unsafe { $module_reg.mcr().write(mcr) }
             }
 
             pub(crate) fn ram_base_address(&self) -> usize {
