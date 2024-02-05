@@ -33,39 +33,37 @@ fn setup_can0() -> Option<Node<Can0Node, Can0>> {
     let can_module = Module::new(Module0);
     let mut can_module = can_module.enable();
 
-    let mut cfg = NodeConfig::default();
-
-    cfg.baud_rate = BitTimingConfig::Auto(AutoBitTiming {
-        baud_rate: 1_000_000,
-        sample_point: 8_000,
-        sync_jump_width: 3,
-    });
-
-    cfg.tx = Some(TxConfig {
-        mode: TxMode::DedicatedBuffers,
-        dedicated_tx_buffers_number: 2,
-        fifo_queue_size: 0,
-        buffer_data_field_size: DataFieldSize::_8,
-        event_fifo_size: 1,
-    });
-
-    cfg.rx = Some(RxConfig {
-        mode: RxMode::SharedFifo0,
-        buffer_data_field_size: DataFieldSize::_8,
-        fifo0_data_field_size: DataFieldSize::_8,
-        fifo1_data_field_size: DataFieldSize::_8,
-        fifo0_operating_mode: RxFifoMode::Blocking,
-        fifo1_operating_mode: RxFifoMode::Blocking,
-        fifo0_watermark_level: 0,
-        fifo1_watermark_level: 0,
-        fifo0_size: 4,
-        fifo1_size: 0,
-    });
-
-    cfg.pins = Some(Pins {
-        tx: PIN_TX_0_0_P20_8,
-        rx: PIN_RX_0_0_P20_7,
-    });
+    let cfg = NodeConfig {
+        baud_rate: BitTimingConfig::Auto(AutoBitTiming {
+            baud_rate: 1_000_000,
+            sample_point: 8_000,
+            sync_jump_width: 3,
+        }),
+        tx: Some(TxConfig {
+            mode: TxMode::DedicatedBuffers,
+            dedicated_tx_buffers_number: 2,
+            fifo_queue_size: 0,
+            buffer_data_field_size: DataFieldSize::_8,
+            event_fifo_size: 1,
+        }),
+        rx: Some(RxConfig {
+            mode: RxMode::SharedFifo0,
+            buffer_data_field_size: DataFieldSize::_8,
+            fifo0_data_field_size: DataFieldSize::_8,
+            fifo1_data_field_size: DataFieldSize::_8,
+            fifo0_operating_mode: RxFifoMode::Blocking,
+            fifo1_operating_mode: RxFifoMode::Blocking,
+            fifo0_watermark_level: 0,
+            fifo1_watermark_level: 0,
+            fifo0_size: 4,
+            fifo1_size: 0,
+        }),
+        pins: Some(Pins {
+            tx: PIN_TX_0_0_P20_8,
+            rx: PIN_RX_0_0_P20_7,
+        }),
+        ..Default::default()
+    };
 
     let interrupts: [NodeInterruptConfig; 1] = [NodeInterruptConfig {
         interrupt_group: InterruptGroup::Rxf0n,
@@ -75,56 +73,11 @@ fn setup_can0() -> Option<Node<Can0Node, Can0>> {
         tos: Tos::Cpu0,
     }];
 
-    can_module.take_node(Node0, cfg, &interrupts)
-}
+    let node = can_module.take_node(Node0, cfg)?;
 
-fn setup_can1() -> Option<Node<Can1Node, Can1>> {
-    let can_module = Module::new(Module1);
-    let mut can_module = can_module.enable();
-
-    let mut cfg = NodeConfig::default();
-
-    cfg.baud_rate = BitTimingConfig::Auto(AutoBitTiming {
-        baud_rate: 1_000_000,
-        sample_point: 8_000,
-        sync_jump_width: 3,
-    });
-
-    cfg.tx = Some(TxConfig {
-        mode: TxMode::DedicatedBuffers,
-        dedicated_tx_buffers_number: 2,
-        fifo_queue_size: 0,
-        buffer_data_field_size: DataFieldSize::_8,
-        event_fifo_size: 1,
-    });
-
-    cfg.rx = Some(RxConfig {
-        mode: RxMode::SharedFifo0,
-        buffer_data_field_size: DataFieldSize::_8,
-        fifo0_data_field_size: DataFieldSize::_8,
-        fifo1_data_field_size: DataFieldSize::_8,
-        fifo0_operating_mode: RxFifoMode::Blocking,
-        fifo1_operating_mode: RxFifoMode::Blocking,
-        fifo0_watermark_level: 0,
-        fifo1_watermark_level: 0,
-        fifo0_size: 4,
-        fifo1_size: 0,
-    });
-
-    cfg.pins = Some(Pins {
-        tx: PIN_TX_1_0_P00_0,
-        rx: PIN_RX_1_0_P13_1,
-    });
-
-    let interrupts: [NodeInterruptConfig; 1] = [NodeInterruptConfig {
-        interrupt_group: InterruptGroup::Rxf0n,
-        interrupt: Interrupt::RxFifo0newMessage,
-        line: InterruptLine::Line1,
-        priority: Priority::try_from(2).unwrap(),
-        tos: Tos::Cpu0,
-    }];
-
-    let node = can_module.take_node(Node0, cfg, &interrupts)?;
+    for interrupt in &interrupts {
+        node.setup_interrupt(interrupt);
+    }
 
     Some(node)
 }
@@ -157,14 +110,6 @@ fn main() -> ! {
 
     info!("Create CAN module ... ");
     let can0 = match setup_can0() {
-        Some(can) => can,
-        None => {
-            info!("Can initialization error");
-            loop {}
-        }
-    };
-
-    let can1 = match setup_can1() {
         Some(can) => can,
         None => {
             info!("Can initialization error");

@@ -112,8 +112,6 @@ macro_rules! impl_can_node {
                 module: &mut Module<$ModuleId, $ModuleReg, can_module::Enabled>,
                 node_id: I,
                 config: NodeConfig<$ModuleReg, I>,
-                // TODO interrupts should be nested into config
-                interrupts: &[NodeInterruptConfig],
             ) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError>
             where
                 I: NodeId,
@@ -265,10 +263,6 @@ macro_rules! impl_can_node {
                     node.set_frame_mode(config.frame_mode);
                 }
 
-                for interrupt in interrupts.iter() {
-                    node.setup_interrupt(interrupt);
-                }
-
                 if let Some(pins) = &config.pins {
                     node.connect_pin_rx(
                         &pins.rx,
@@ -289,6 +283,7 @@ macro_rules! impl_can_node {
 
             pub fn setup_interrupt(&self, interrupt: &NodeInterruptConfig) {
                 self.effects.enable_configuration_change();
+
                 self.set_interrupt(
                     interrupt.interrupt_group,
                     interrupt.interrupt,
@@ -296,6 +291,7 @@ macro_rules! impl_can_node {
                     interrupt.priority,
                     interrupt.tos,
                 );
+
                 self.effects.disable_configuration_change();
             }
 
