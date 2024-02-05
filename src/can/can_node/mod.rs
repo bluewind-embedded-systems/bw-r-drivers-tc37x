@@ -297,7 +297,7 @@ macro_rules! impl_can_node {
                 node.set_interrupt(
                     InterruptGroup::Rxf0n,
                     Interrupt::RxFifo0newMessage,
-                    InterruptLine(1),
+                    InterruptLine::Line1,
                     Priority(2),
                     Tos::Cpu0,
                 );
@@ -451,10 +451,8 @@ macro_rules! impl_can_node {
             fn set_group_interrupt_line(
                 &self,
                 interrupt_group: InterruptGroup,
-                interrupt_line: InterruptLine,
+                line: InterruptLine,
             ) {
-                let line = interrupt_line.0 as u32;
-
                 if interrupt_group <= InterruptGroup::Loi {
                     let group = interrupt_group as u32 * 4;
                     self.effects.set_interrupt_routing_group_1(line, group);
@@ -691,9 +689,33 @@ pub enum Interrupt {
     AccessToReservedAddress,
 }
 
-#[repr(transparent)]
+#[repr(u8)]
 #[derive(PartialEq, PartialOrd, Clone, Copy, Debug, Default)]
-pub struct InterruptLine(pub u8);
+pub enum InterruptLine {
+    #[default]
+    Line0,
+    Line1,
+    Line2,
+    Line3,
+    Line4,
+    Line5,
+    Line6,
+    Line7,
+    Line8,
+    Line9,
+    Line10,
+    Line11,
+    Line12,
+    Line13,
+    Line14,
+    Line15,
+}
+
+impl From<InterruptLine> for u8 {
+    fn from(value: InterruptLine) -> Self {
+        value as u8
+    }
+}
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub enum Tos {
