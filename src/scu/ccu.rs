@@ -81,12 +81,12 @@ fn set_pll_power(
 }
 
 pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
+    // TODO Should be an enum variant in the pac crate
+    const CLKSEL_BACKUP: u8 = 0;
+
     wdt::clear_safety_endinit_inline();
 
     wait_ccucon0_lock()?;
-
-    // TODO Should be an enum variant in the pac crate
-    const CLKSEL_BACKUP: u8 = 0;
 
     // TODO Explain this
     unsafe {
@@ -704,15 +704,15 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
 };
 
 pub(crate) fn get_mcan_frequency() -> u32 {
+    const CLKSELMCAN_USEMCANI: scu::ccucon1::Clkselmcan = scu::ccucon1::Clkselmcan::CONST_11;
+    const CLKSELMCAN_USEOSCILLATOR: scu::ccucon1::Clkselmcan = scu::ccucon1::Clkselmcan::CONST_22;
+    const MCANDIV_STOPPED: scu::ccucon1::Mcandiv = scu::ccucon1::Mcandiv::CONST_00;
+
     let ccucon1 = unsafe { SCU.ccucon1().read() };
     let clkselmcan = ccucon1.clkselmcan().get();
     let mcandiv = ccucon1.mcandiv().get();
 
     //info!("clkselmcan: {}, mcandiv: {}", clkselmcan, mcandiv);
-
-    const CLKSELMCAN_USEMCANI: scu::ccucon1::Clkselmcan = scu::ccucon1::Clkselmcan::CONST_11;
-    const CLKSELMCAN_USEOSCILLATOR: scu::ccucon1::Clkselmcan = scu::ccucon1::Clkselmcan::CONST_22;
-    const MCANDIV_STOPPED: scu::ccucon1::Mcandiv = scu::ccucon1::Mcandiv::CONST_00;
 
     match clkselmcan {
         CLKSELMCAN_USEMCANI => {
