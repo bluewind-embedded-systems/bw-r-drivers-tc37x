@@ -1,3 +1,6 @@
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
+
 /* From ILLD file:
 *  file IfxCpu.h
 *  brief CPU  basic functionality

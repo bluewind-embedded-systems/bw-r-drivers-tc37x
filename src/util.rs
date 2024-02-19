@@ -3,6 +3,7 @@
 pub fn wait_nop_cycles(n_cycles: u32) {
     #[cfg(target_arch = "tricore")]
     for _ in 0..n_cycles {
+        // SAFETY: nop is always safe
         unsafe { core::arch::asm!("nop") };
     }
 }

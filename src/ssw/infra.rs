@@ -1,6 +1,10 @@
-// FIXME Remove
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
+// TODO Remove this once the code is stable
 #![allow(dead_code)]
+// TODO Remove this once the code is stable
 #![allow(clippy::needless_bool)]
+// TODO Remove this once the code is stable
 #![allow(clippy::if_same_then_else)]
 
 #[cfg(target_arch = "tricore")]
@@ -9,8 +13,6 @@ pub fn is_application_reset() -> bool {
     use tc37x_pac::RegisterValue;
     use tc37x_pac::SCU;
 
-    let v = unsafe { SCU.rststat().read() };
-
     const APP_RESET_MSK: u32 = ((0x1) << (4))
         | ((0x1) << (7))
         | ((0x1) << (6))
@@ -18,6 +20,8 @@ pub fn is_application_reset() -> bool {
         | ((0x1) << (3))
         | ((0x1) << (1))
         | ((0x1) << (0));
+
+    let v = unsafe { SCU.rststat().read() };
 
     if v.stbyr().get().0 == 1
         || v.swd().get().0 == 1
