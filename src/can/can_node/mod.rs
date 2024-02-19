@@ -57,6 +57,7 @@ pub enum RxMode {
     SharedAll,
 }
 
+// TODO Suspicious
 const TX_BUFFER_START_ADDRESS: u32 = 0x0440u32;
 
 pub trait NodeId {
@@ -810,7 +811,7 @@ pub enum PadDriver {
     Ttl3v3speed4 = 15,
 }
 
-pub struct Port {
+struct Port {
     inner: tc37x_pac::port_00::Port00,
 }
 
