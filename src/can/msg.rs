@@ -121,7 +121,7 @@ impl From<TxBufferId> for u8 {
 
 #[repr(transparent)]
 #[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
-pub struct RxBufferId(pub u8);
+pub struct RxBufferId(u8);
 
 impl RxBufferId {
     pub const MAX: u8 = 63;
@@ -133,12 +133,9 @@ impl RxBufferId {
         }
     }
 
-    // TODO This can cause a runtime panic
-    pub const fn new_const(n: u8) -> Self {
-        match n {
-            ..=Self::MAX => Self(n),
-            _ => panic!("over the max range"),
-        }
+    pub unsafe fn new_unchecked(n: u8) -> Self {
+        debug_assert!(n <= Self::MAX);
+        Self(n)
     }
 }
 

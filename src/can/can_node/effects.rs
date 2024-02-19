@@ -149,7 +149,7 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn clear_rx_buffer_new_data_flag(&self, rx_buffer_id: RxBufferId) {
-                if rx_buffer_id < RxBufferId::new_const(32) {
+                if u8::from(rx_buffer_id) < 32u8 {
                     // SAFETY: rx_buffer_id is between 0 and 31
                     unsafe {
                         self.reg
@@ -420,11 +420,15 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn get_rx_fifo0_get_index(&self) -> RxBufferId {
-                RxBufferId(unsafe { self.reg.rx().rxf0si().read() }.f0gi().get())
+                let idx: u8 = unsafe { self.reg.rx().rxf0si().read() }.f0gi().get();
+                // SAFETY: idx is always between 0 and 63
+                unsafe { RxBufferId::new_unchecked(idx) }
             }
 
             pub(crate) fn get_rx_fifo1_get_index(&self) -> RxBufferId {
-                RxBufferId(unsafe { self.reg.rx().rxf1si().read() }.f1gi().get())
+                let idx: u8 = unsafe { self.reg.rx().rxf1si().read() }.f1gi().get();
+                // SAFETY: idx is always between 0 and 63
+                unsafe { RxBufferId::new_unchecked(idx) }
             }
 
             pub(crate) fn is_rx_buffer_new_data_updated(&self, rx_buffer_id: u8) -> bool {
