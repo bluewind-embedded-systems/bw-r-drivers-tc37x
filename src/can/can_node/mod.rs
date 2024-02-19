@@ -473,8 +473,8 @@ macro_rules! impl_can_node {
 
             pub fn receive(&self, from: ReadFrom, data: &mut [u8]) -> Option<RxMessage> {
                 let Some(rx_config) = self.rx_config else {
-                                                                                    return None;
-                                                                                };
+                    return None;
+                };
 
                 let buffer_id = match from {
                     ReadFrom::RxFifo0 => self.effects.get_rx_fifo0_get_index(),
