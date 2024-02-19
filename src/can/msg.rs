@@ -133,6 +133,9 @@ impl RxBufferId {
         }
     }
 
+    /// # Safety
+    ///
+    /// The caller must ensure that the value is less than or equal to `Self::MAX`.
     pub unsafe fn new_unchecked(n: u8) -> Self {
         debug_assert!(n <= Self::MAX);
         Self(n)
