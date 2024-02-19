@@ -499,10 +499,10 @@ pub fn get_per_pll_frequency2() -> u32 {
     let perpllcon0 = unsafe { SCU.perpllcon0().read() };
     let perpllcon1 = unsafe { SCU.perpllcon1().read() };
 
-    let multiplier = if perpllcon0.divby().get().0 != 1 {
-        1.6
-    } else {
+    let multiplier = if perpllcon0.divby().get().0 == 1 {
         2.0
+    } else {
+        1.6
     };
 
     let f = (osc_freq * f32::from(perpllcon0.ndiv().get() + 1))
@@ -719,12 +719,12 @@ pub(crate) fn get_mcan_frequency() -> u32 {
         CLKSELMCAN_USEMCANI => {
             let source = get_source_frequency(1);
             debug!("source: {}", source);
-            if mcandiv != MCANDIV_STOPPED {
+            if mcandiv == MCANDIV_STOPPED {
+                source
+            } else {
                 let div: u64 = mcandiv.into();
                 let div: u32 = div as u32;
                 source / div
-            } else {
-                source
             }
         }
         CLKSELMCAN_USEOSCILLATOR => get_osc0_frequency(),
