@@ -126,7 +126,7 @@ pub struct RxBufferId(u8);
 impl RxBufferId {
     pub const MAX: u8 = 63;
 
-    pub fn new(n: u8) -> Option<Self> {
+    pub(super) fn new(n: u8) -> Option<Self> {
         match n {
             ..=Self::MAX => Some(Self(n)),
             _ => None,
@@ -136,7 +136,7 @@ impl RxBufferId {
     /// # Safety
     ///
     /// The caller must ensure that the value is less than or equal to `Self::MAX`.
-    pub unsafe fn new_unchecked(n: u8) -> Self {
+    pub(super) unsafe fn new_unchecked(n: u8) -> Self {
         debug_assert!(n <= Self::MAX);
         Self(n)
     }
