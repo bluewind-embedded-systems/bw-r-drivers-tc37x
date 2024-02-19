@@ -7,8 +7,6 @@
 #![allow(clippy::arithmetic_side_effects)]
 // TODO For safety reasons, clippy::as_conversions should be enabled
 #![allow(clippy::as_conversions)]
-// TODO Temporary allow clippy::blanket_clippy_restriction_lints
-#![allow(clippy::blanket_clippy_restriction_lints)]
 // TODO For safety reasons, clippy::cast_possible_truncation should be enabled
 #![allow(clippy::cast_possible_truncation)]
 // TODO For safety reasons, clippy::cast_precision_loss should be enabled
