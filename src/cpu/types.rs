@@ -12,11 +12,6 @@ impl TryFrom<u8> for Priority {
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         // TODO check if this is correct (min and max priority)
-        #[allow(unused_comparisons)]
-        if value <= 255 {
-            Ok(Priority(value))
-        } else {
-            Err(())
-        }
+        Ok(Priority(value))
     }
 }
