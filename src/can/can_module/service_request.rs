@@ -1,3 +1,6 @@
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
+
 use crate::can::{InterruptLine, Module0, Module1, Tos};
 use crate::cpu::Priority;
 use core::intrinsics::transmute;

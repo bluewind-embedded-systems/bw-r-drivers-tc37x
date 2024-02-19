@@ -1,6 +1,3 @@
-// TODO Remove this once the code is stable
-#![allow(clippy::undocumented_unsafe_blocks)]
-
 mod service_request;
 
 use super::can_node::{Node, NodeConfig};
@@ -41,6 +38,7 @@ macro_rules! impl_can_module {
     ($module_reg:path, $($m:ident)::+, $ModuleReg:ty, $ModuleId: ty) => {
         impl Module<$ModuleId, $ModuleReg, Disabled> {
             fn is_enabled(&self) -> bool {
+                // SAFETY: TODO Check Aurix manual
                 !unsafe { $module_reg.clc().read() }.diss().get()
             }
 
@@ -48,6 +46,7 @@ macro_rules! impl_can_module {
             pub fn enable(self) -> Module<$ModuleId, $ModuleReg, Enabled> {
                 scu::wdt::clear_cpu_endinit_inline();
 
+                // SAFETY: TODO Check Aurix manual
                 unsafe { $module_reg.clc().modify_atomic(|r| r.disr().set(false)) };
                 while !self.is_enabled() {}
 
@@ -88,6 +87,7 @@ macro_rules! impl_can_module {
             ) -> Result<(), ()> {
                 use $($m)::+::mcr::{Ccce, Ci, Clksel0, Clksel1, Clksel2, Clksel3};
 
+                // SAFETY: TODO Check Aurix manual
                 let mcr = unsafe { $module_reg.mcr().read() };
 
                 // Enable CCCE and CI
@@ -97,6 +97,7 @@ macro_rules! impl_can_module {
                     .ci()
                     .set($($m)::+::mcr::Ci::CONST_11);
 
+                // SAFETY: TODO Check Aurix manual
                 unsafe { $module_reg.mcr().write(mcr) }
 
                 // Select clock
@@ -110,10 +111,12 @@ macro_rules! impl_can_module {
                     _ => unreachable!(),
                 };
 
+                // SAFETY: TODO Check Aurix manual
                 unsafe { $module_reg.mcr().write(mcr) }
 
                 // Disable CCCE and CI
                 let mcr = mcr.ccce().set(Ccce::CONST_00).ci().set(Ci::CONST_00);
+                // SAFETY: TODO Check Aurix manual
                 unsafe { $module_reg.mcr().write(mcr) }
 
                 // TODO Is this enough or we need to wait until actual_clock_source == clock_source
@@ -121,6 +124,7 @@ macro_rules! impl_can_module {
                  wait_nop_cycles(10);
 
                 // Check if clock switch was successful
+                // SAFETY: TODO Check Aurix manual
                 let mcr = unsafe { $module_reg.mcr().read() };
 
                 let actual_clock_source = match clock_select.0 {
