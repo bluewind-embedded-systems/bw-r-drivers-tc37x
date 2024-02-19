@@ -268,8 +268,8 @@ fn calc_rgain_parameters(modamp: ModulationAmplitude) -> RGainValues {
     let mod_amp = MA_PERCENT[modamp as usize];
     let fosc_hz = get_osc_frequency();
     let syspllcon0 = unsafe { SCU.syspllcon0().read() };
-    let fdco_hz =
-        (fosc_hz * (syspllcon0.ndiv().get() as f32 + 1.0)) / (syspllcon0.pdiv().get() as f32 + 1.0);
+    let fdco_hz = (fosc_hz * (f32::from(syspllcon0.ndiv().get()) + 1.0))
+        / (f32::from(syspllcon0.pdiv().get()) + 1.0);
 
     let rgain_nom = 2.0 * (mod_amp / 100.0) * (fdco_hz / 3600000.0);
     let rgain_hex = ((rgain_nom * 32.0) + 0.5) as u16;
@@ -479,8 +479,8 @@ pub fn get_pll_frequency() -> u32 {
     let osc_freq = get_osc_frequency();
     let syspllcon0 = unsafe { SCU.syspllcon0().read() };
     let syspllcon1 = unsafe { SCU.syspllcon1().read() };
-    let f = (osc_freq * (syspllcon0.ndiv().get() + 1) as f32)
-        / ((syspllcon1.k2div().get() + 1) * (syspllcon0.pdiv().get() + 1)) as f32;
+    let f = (osc_freq * f32::from(syspllcon0.ndiv().get() + 1))
+        / f32::from((syspllcon1.k2div().get() + 1) * (syspllcon0.pdiv().get() + 1));
     f as u32
 }
 
@@ -488,8 +488,8 @@ pub fn get_per_pll_frequency1() -> u32 {
     let osc_freq = get_osc_frequency();
     let perpllcon0 = unsafe { SCU.perpllcon0().read() };
     let perpllcon1 = unsafe { SCU.perpllcon1().read() };
-    let f = (osc_freq * (perpllcon0.ndiv().get() + 1) as f32)
-        / ((perpllcon0.pdiv().get() + 1) * (perpllcon1.k2div().get() + 1)) as f32;
+    let f = (osc_freq * f32::from(perpllcon0.ndiv().get() + 1))
+        / f32::from((perpllcon0.pdiv().get() + 1) * (perpllcon1.k2div().get() + 1));
     f as u32
 }
 
@@ -504,9 +504,9 @@ pub fn get_per_pll_frequency2() -> u32 {
         2.0
     };
 
-    let f = (osc_freq * (perpllcon0.ndiv().get() + 1) as f32)
-        / ((perpllcon0.pdiv().get() + 1) as f32
-            * (perpllcon1.k2div().get() + 1) as f32
+    let f = (osc_freq * f32::from(perpllcon0.ndiv().get() + 1))
+        / (f32::from(perpllcon0.pdiv().get() + 1)
+            * f32::from(perpllcon1.k2div().get() + 1)
             * multiplier);
     f as u32
 }

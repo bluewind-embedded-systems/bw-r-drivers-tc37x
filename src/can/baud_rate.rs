@@ -128,7 +128,7 @@ pub(super) fn get_best_sample_point(
     // Search for best sample point
 
     // 25% tolerance in sample point as max error
-    let mut best_error = sample_point as f32 * 0.25;
+    let mut best_error = f32::from(sample_point) * 0.25;
     let max_tseg1 = tseg1_msk + 1;
     let min_tseg1 = 3;
     let max_tseg2 = tseg2_msk + 1;
@@ -143,7 +143,7 @@ pub(super) fn get_best_sample_point(
 
     for temp_tseg1 in (min_tseg1..=max_tseg1).rev() {
         let temp_sample_point = ((temp_tseg1 + 1) * 10000) / best_tbaud;
-        let error = temp_sample_point - sample_point as i32;
+        let error = temp_sample_point - i32::from(sample_point);
         let error = if error < 0 { -error } else { error };
 
         if best_error > error as f32 {
@@ -151,7 +151,7 @@ pub(super) fn get_best_sample_point(
             best_error = error as f32;
         }
 
-        if temp_sample_point < sample_point as i32 {
+        if temp_sample_point < i32::from(sample_point) {
             // Least possible error has already occurred
             break;
         }
@@ -180,7 +180,7 @@ pub(super) fn get_best_sjw(best_tbaud: u32, best_tseg2: u32, sync_jump_width: u1
 
     for temp_sjw in 1..=best_tseg2 {
         let temp_sync_jump_width = (temp_sjw as f32 * 10000.0) / best_tbaud as f32;
-        let error = (temp_sync_jump_width - sync_jump_width as f32).abs();
+        let error = (temp_sync_jump_width - f32::from(sync_jump_width)).abs();
 
         if best_error > error {
             best_sjw = temp_sjw;
