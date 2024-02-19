@@ -92,7 +92,7 @@ impl<const P: PortIndex, const SIZE: usize> PinGroup for [PEPin<P, Output<PushPu
 impl<const P: PortIndex, const SIZE: usize> PinArray<P, SIZE> {
     fn mask(&self) -> u32 {
         let mut msk = 0;
-        for pin in self.0.iter() {
+        for pin in &self.0 {
             msk |= 1 << pin.pin.0;
         }
         msk
