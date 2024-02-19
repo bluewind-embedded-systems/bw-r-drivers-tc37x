@@ -12,6 +12,7 @@ pub(crate) trait F32Abs {
     fn abs(self) -> Self;
 }
 
+#[allow(clippy::float_arithmetic)]
 impl F32Abs for f32 {
     fn abs(self) -> Self {
         if self < 0.0 {

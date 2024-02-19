@@ -1,6 +1,7 @@
 #![allow(clippy::identity_op)]
 #![allow(clippy::eq_op)]
 #![allow(clippy::result_unit_err)]
+#![allow(clippy::float_arithmetic)]
 
 use super::wdt;
 use crate::log::debug;
