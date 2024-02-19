@@ -279,6 +279,7 @@ macro_rules! impl_can_node {
                 self.set_frame_mode(self.frame_mode);
             }
 
+            // TODO I think this should accept pins as provided by gpio module
             pub fn setup_pins(&self, pins: &Pins<$ModuleId, I>) {
                 self.connect_pin_rx(
                     &pins.rx,

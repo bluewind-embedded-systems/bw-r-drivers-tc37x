@@ -43,6 +43,7 @@ unsafe fn get_wdt_con1(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con1, pac::RW> 
     unsafe { transmute(off) }
 }
 
+// TODO Duplicate? Bad function name?
 #[inline]
 pub fn clear_cpu_endinit_inline() {
     let password = get_cpu_watchdog_password();
@@ -79,6 +80,7 @@ pub fn clear_cpu_endinit_inline() {
     while unsafe { con0.read() }.endinit().get() {}
 }
 
+// TODO Duplicate? Bad function name?
 #[inline]
 pub fn set_cpu_endinit_inline() {
     let password = get_cpu_watchdog_password();
@@ -115,6 +117,7 @@ pub fn set_cpu_endinit_inline() {
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
+// TODO Duplicate? Bad function name?
 #[inline]
 pub fn clear_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
@@ -147,6 +150,7 @@ pub fn clear_safety_endinit_inline() {
     while unsafe { con0.read() }.endinit().get() {}
 }
 
+// TODO Duplicate? Bad function name?
 #[inline]
 pub fn set_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
