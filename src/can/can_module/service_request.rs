@@ -11,7 +11,7 @@ pub(crate) struct ServiceRequest(Reg<Can0Int0, RW>);
 impl Module0 {
     pub(crate) fn service_request(line: InterruptLine) -> ServiceRequest {
         ServiceRequest(match line {
-            InterruptLine::Line0 => unsafe { transmute(tc37x_pac::SRC.can0int0()) },
+            InterruptLine::Line0 => tc37x_pac::SRC.can0int0(),
             InterruptLine::Line1 => unsafe { transmute(tc37x_pac::SRC.can0int1()) },
             InterruptLine::Line2 => unsafe { transmute(tc37x_pac::SRC.can0int2()) },
             InterruptLine::Line3 => unsafe { transmute(tc37x_pac::SRC.can0int3()) },

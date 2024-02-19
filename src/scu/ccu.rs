@@ -180,7 +180,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
             r.k2div()
                 .set(plls_params.per_pll.k2_divider)
                 .k3div()
-                .set(plls_params.per_pll.k3_divider.into())
+                .set(plls_params.per_pll.k3_divider)
         })
     };
 
@@ -428,7 +428,7 @@ pub fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
         wdt::clear_safety_endinit_inline();
 
         wait_cond(PLL_KRDY_TIMEOUT_COUNT, || {
-            !(unsafe { SCU.syspllstat().read() }.k2rdy().get().0 == 1)
+            unsafe { SCU.syspllstat().read() }.k2rdy().get().0 != 1
         })?;
 
         unsafe {
@@ -496,11 +496,12 @@ pub fn get_per_pll_frequency2() -> u32 {
     let perpllcon0 = unsafe { SCU.perpllcon0().read() };
     let perpllcon1 = unsafe { SCU.perpllcon1().read() };
 
-    let multiplier = if !(perpllcon0.divby().get().0 == 1) {
+    let multiplier = if perpllcon0.divby().get().0 != 1 {
         1.6
     } else {
         2.0
     };
+
     let f = (osc_freq * (perpllcon0.ndiv().get() + 1) as f32)
         / ((perpllcon0.pdiv().get() + 1) as f32
             * (perpllcon1.k2div().get() + 1) as f32
