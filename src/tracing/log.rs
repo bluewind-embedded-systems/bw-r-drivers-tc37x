@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used)]
+
 use crate::tracing::{LoadModifyStoreEntry, ReadEntry, ReportEntry, WriteEntry};
 use std::any::Any;
 use std::collections::{HashMap, VecDeque};
