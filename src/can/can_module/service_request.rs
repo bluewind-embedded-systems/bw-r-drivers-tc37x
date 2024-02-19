@@ -1,6 +1,6 @@
 use crate::can::{InterruptLine, Module0, Module1, Tos};
 use crate::cpu::Priority;
-use core::intrinsics::transmute;
+use core::mem::transmute;
 use tc37x_pac::src::Can0Int0;
 use tc37x_pac::{Reg, RW};
 

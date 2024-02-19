@@ -3,6 +3,7 @@
 
 // TODO Is this module needed?
 
+use core::mem::transmute;
 use tc37x_pac::common;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -14,19 +15,19 @@ impl RxMsg {
     #[allow(unused)]
     pub fn r0(self) -> common::Reg<R0, common::RW> {
         let ptr = unsafe { self.0.add(0usize) };
-        unsafe { core::mem::transmute(ptr) }
+        unsafe { transmute(ptr) }
     }
     #[inline(always)]
     #[allow(unused)]
     pub fn r1(self) -> common::Reg<R1, common::RW> {
         let ptr = unsafe { self.0.add(4usize) };
-        unsafe { core::mem::transmute(ptr) }
+        unsafe { transmute(ptr) }
     }
     #[inline(always)]
     #[allow(unused)]
     pub fn db(self) -> common::Reg<Db, common::RW> {
         let ptr = unsafe { self.0.add(8usize) };
-        unsafe { core::mem::transmute(ptr) }
+        unsafe { transmute(ptr) }
     }
 }
 
@@ -55,24 +56,24 @@ impl R0 {
     #[inline(always)]
     #[allow(unused)]
     pub fn id(self) -> common::RegisterField<0, 0x1FFFFFFF, 1, 0, u32, R0, common::RW> {
-        unsafe { core::mem::transmute((self, 1)) }
+        unsafe { transmute((self, 1)) }
     }
 
     #[inline(always)]
     #[allow(unused)]
     pub fn rtr(self) -> common::RegisterFieldBool<29, 1, 0, R0, common::RW> {
-        unsafe { core::mem::transmute((self, 1)) }
+        unsafe { transmute((self, 1)) }
     }
 
     #[inline(always)]
     #[allow(unused)]
     pub fn xtd(self) -> common::RegisterFieldBool<30, 1, 0, R0, common::RW> {
-        unsafe { core::mem::transmute((self, 1)) }
+        unsafe { transmute((self, 1)) }
     }
     #[inline(always)]
     #[allow(unused)]
     pub fn esi(self) -> common::RegisterFieldBool<31, 1, 0, R0, common::RW> {
-        unsafe { core::mem::transmute((self, 1)) }
+        unsafe { transmute((self, 1)) }
     }
 }
 
@@ -101,36 +102,36 @@ impl R1 {
     #[inline(always)]
     #[allow(unused)]
     pub fn rxts(self) -> common::RegisterField<0, 0xffff, 1, 0, u16, R1, common::RW> {
-        unsafe { core::mem::transmute((self, 1)) }
+        unsafe { transmute((self, 1)) }
     }
     #[inline(always)]
     #[allow(unused)]
     pub fn dlc(self) -> common::RegisterField<16, 0xf, 1, 0, u8, R1, common::RW> {
-        unsafe { core::mem::transmute((self, 1)) }
+        unsafe { transmute((self, 1)) }
     }
 
     #[inline(always)]
     #[allow(unused)]
     pub fn brs(self) -> common::RegisterFieldBool<20, 1, 0, R1, common::RW> {
-        unsafe { core::mem::transmute((self, 1)) }
+        unsafe { transmute((self, 1)) }
     }
 
     #[inline(always)]
     #[allow(unused)]
     pub fn fdf(self) -> common::RegisterFieldBool<21, 1, 0, R1, common::RW> {
-        unsafe { core::mem::transmute((self, 1)) }
+        unsafe { transmute((self, 1)) }
     }
 
     #[inline(always)]
     #[allow(unused)]
     pub fn fidx(self) -> common::RegisterField<24, 0x7F, 1, 0, u8, R1, common::RW> {
-        unsafe { core::mem::transmute((self, 1)) }
+        unsafe { transmute((self, 1)) }
     }
 
     #[inline(always)]
     #[allow(unused)]
     pub fn anmf(self) -> common::RegisterFieldBool<31, 1, 0, R1, common::RW> {
-        unsafe { core::mem::transmute((self, 1)) }
+        unsafe { transmute((self, 1)) }
     }
 }
 

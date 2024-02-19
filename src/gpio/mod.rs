@@ -65,7 +65,7 @@
 
 use core::fmt;
 use core::marker::PhantomData;
-//use std::ops::Deref;
+use core::mem::transmute;
 
 pub use embedded_hal::digital::PinState;
 use tc37x_pac::RegisterValue;
@@ -654,23 +654,23 @@ impl<const P: PortIndex> Gpio<P> {
         // TODO (annabo) load automatically from pac file `port_##.rs`
         #[allow(clippy::useless_transmute)]
         match P {
-            0 => unsafe { core::mem::transmute(&crate::pac::PORT_00) },
-            1 => unsafe { core::mem::transmute(&crate::pac::PORT_01) },
-            2 => unsafe { core::mem::transmute(&crate::pac::PORT_02) },
-            10 => unsafe { core::mem::transmute(&crate::pac::PORT_10) },
-            11 => unsafe { core::mem::transmute(&crate::pac::PORT_11) },
-            12 => unsafe { core::mem::transmute(&crate::pac::PORT_12) },
-            13 => unsafe { core::mem::transmute(&crate::pac::PORT_13) },
-            14 => unsafe { core::mem::transmute(&crate::pac::PORT_14) },
-            15 => unsafe { core::mem::transmute(&crate::pac::PORT_15) },
-            20 => unsafe { core::mem::transmute(&crate::pac::PORT_20) },
-            21 => unsafe { core::mem::transmute(&crate::pac::PORT_21) },
-            22 => unsafe { core::mem::transmute(&crate::pac::PORT_22) },
-            23 => unsafe { core::mem::transmute(&crate::pac::PORT_23) },
-            32 => unsafe { core::mem::transmute(&crate::pac::PORT_32) },
-            33 => unsafe { core::mem::transmute(&crate::pac::PORT_33) },
-            34 => unsafe { core::mem::transmute(&crate::pac::PORT_34) },
-            40 => unsafe { core::mem::transmute(&crate::pac::PORT_40) },
+            0 => unsafe { transmute(&crate::pac::PORT_00) },
+            1 => unsafe { transmute(&crate::pac::PORT_01) },
+            2 => unsafe { transmute(&crate::pac::PORT_02) },
+            10 => unsafe { transmute(&crate::pac::PORT_10) },
+            11 => unsafe { transmute(&crate::pac::PORT_11) },
+            12 => unsafe { transmute(&crate::pac::PORT_12) },
+            13 => unsafe { transmute(&crate::pac::PORT_13) },
+            14 => unsafe { transmute(&crate::pac::PORT_14) },
+            15 => unsafe { transmute(&crate::pac::PORT_15) },
+            20 => unsafe { transmute(&crate::pac::PORT_20) },
+            21 => unsafe { transmute(&crate::pac::PORT_21) },
+            22 => unsafe { transmute(&crate::pac::PORT_22) },
+            23 => unsafe { transmute(&crate::pac::PORT_23) },
+            32 => unsafe { transmute(&crate::pac::PORT_32) },
+            33 => unsafe { transmute(&crate::pac::PORT_33) },
+            34 => unsafe { transmute(&crate::pac::PORT_34) },
+            40 => unsafe { transmute(&crate::pac::PORT_40) },
             _ => panic!("Unknown GPIO port"),
         }
     }

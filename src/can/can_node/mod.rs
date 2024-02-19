@@ -940,9 +940,9 @@ impl Port {
         let shift = (index & 0x7) * 4;
         let pdr: crate::pac::Reg<crate::pac::port_00::Pdr0, crate::pac::RW> = {
             let pdr0 = self.inner.pdr0();
-            let addr: *mut u32 = unsafe { core::mem::transmute(pdr0) };
+            let addr: *mut u32 = unsafe { transmute(pdr0) };
             let addr = unsafe { addr.add(pdr_index as usize) };
-            unsafe { core::mem::transmute(addr) }
+            unsafe { transmute(addr) }
         };
 
         wdt_call::call_without_cpu_endinit(|| unsafe {

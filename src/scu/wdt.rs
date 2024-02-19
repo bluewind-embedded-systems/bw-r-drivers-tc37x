@@ -2,6 +2,7 @@
 #![allow(clippy::undocumented_unsafe_blocks)]
 
 use crate::cpu::asm::read_cpu_core_id;
+use core::mem::transmute;
 use tc37x_pac as pac;
 
 #[inline]
@@ -29,17 +30,17 @@ pub fn get_safety_watchdog_password() -> u16 {
 #[inline]
 unsafe fn get_wdt_con0(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con0, pac::RW> {
     // unsafe cast to get the valid SCU WDT based on the core id
-    let off: *mut u8 = unsafe { core::mem::transmute(pac::SCU.wdtcpu0con0()) };
+    let off: *mut u8 = unsafe { transmute(pac::SCU.wdtcpu0con0()) };
     let off = unsafe { off.add(core::mem::size_of::<u32>() * 3 * core_id as usize) };
-    unsafe { core::mem::transmute(off) }
+    unsafe { transmute(off) }
 }
 
 #[inline]
 unsafe fn get_wdt_con1(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con1, pac::RW> {
     // unsafe cast to get the valid SCU WDT based on the core id
-    let off: *mut u8 = unsafe { core::mem::transmute(pac::SCU.wdtcpu0con1()) };
+    let off: *mut u8 = unsafe { transmute(pac::SCU.wdtcpu0con1()) };
     let off = unsafe { off.add(core::mem::size_of::<u32>() * 3 * core_id as usize) };
-    unsafe { core::mem::transmute(off) }
+    unsafe { transmute(off) }
 }
 
 #[inline]

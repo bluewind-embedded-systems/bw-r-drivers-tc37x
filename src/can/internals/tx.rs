@@ -3,6 +3,7 @@
 
 use crate::can::msg::{MessageId, MessageIdLenght, TxBufferId};
 use crate::can::{frame::DataLenghtCode, reg, FrameMode};
+use core::mem::transmute;
 
 pub struct Tx {
     inner: reg::TxMsg,
@@ -11,12 +12,12 @@ pub struct Tx {
 impl Tx {
     pub fn new(ptr: *mut u8) -> Self {
         Self {
-            inner: unsafe { core::mem::transmute(ptr) },
+            inner: unsafe { transmute(ptr) },
         }
     }
 
     pub fn get_ptr(&self) -> *const u8 {
-        unsafe { core::mem::transmute(self.inner) }
+        unsafe { transmute(self.inner) }
     }
 }
 

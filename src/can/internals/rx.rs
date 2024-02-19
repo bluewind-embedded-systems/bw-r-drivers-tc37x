@@ -4,6 +4,7 @@
 use crate::can::msg::MessageIdLenght;
 use crate::can::{frame::DataLenghtCode, reg, FrameMode};
 use crate::log::debug;
+use core::mem::transmute;
 
 // create RxMsg using pac structure and unsafe transmute
 
@@ -14,12 +15,12 @@ pub struct Rx {
 impl Rx {
     pub fn new(ptr: *mut u8) -> Self {
         Self {
-            inner: unsafe { core::mem::transmute(ptr) },
+            inner: unsafe { transmute(ptr) },
         }
     }
 
     pub fn get_ptr(&self) -> *mut u8 {
-        unsafe { core::mem::transmute(self.inner) }
+        unsafe { transmute(self.inner) }
     }
 }
 
