@@ -1,3 +1,6 @@
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
+
 // TODO Is this module needed?
 
 use tc37x_pac::common;

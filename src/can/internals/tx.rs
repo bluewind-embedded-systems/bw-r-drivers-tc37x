@@ -1,3 +1,6 @@
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
+
 use crate::can::msg::{MessageId, MessageIdLenght, TxBufferId};
 use crate::can::{frame::DataLenghtCode, reg, FrameMode};
 

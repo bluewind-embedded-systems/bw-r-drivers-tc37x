@@ -1,3 +1,5 @@
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
 // TODO (alepez) Remove this warning suppression
 #![allow(unused)]
 

@@ -1,3 +1,6 @@
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
+
 mod service_request;
 
 use super::can_node::{Node, NodeConfig};

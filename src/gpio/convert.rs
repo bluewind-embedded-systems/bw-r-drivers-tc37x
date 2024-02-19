@@ -1,3 +1,6 @@
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
+
 use super::*;
 
 impl<const P: PortIndex, const N: PinIndex, const A: u8> Pin<P, N, Alternate<A, PushPull>> {

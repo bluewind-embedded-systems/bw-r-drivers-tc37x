@@ -1,3 +1,6 @@
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
+
 //! General Purpose Input / Output
 //!
 //! The GPIO pins are organised into groups of 16 pins which can be accessed through the

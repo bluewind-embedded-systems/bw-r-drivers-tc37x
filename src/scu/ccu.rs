@@ -2,6 +2,8 @@
 #![allow(clippy::eq_op)]
 #![allow(clippy::result_unit_err)]
 #![allow(clippy::float_arithmetic)]
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
 
 use super::wdt;
 use crate::log::debug;
