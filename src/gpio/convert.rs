@@ -112,25 +112,25 @@ fn change_pin_mode_port_pin<MODE: PinMode>(port: &AnyPort, pin: PinId) {
     use crate::pac::*;
     let mode = MODE::MODE >> 3;
 
-    unsafe {
-        match pin.0 {
-            0 => port.iocr0().modify_atomic(|r| r.pc0().set(mode)),
-            1 => port.iocr0().modify_atomic(|r| r.pc1().set(mode)),
-            2 => port.iocr0().modify_atomic(|r| r.pc2().set(mode)),
-            3 => port.iocr0().modify_atomic(|r| r.pc3().set(mode)),
-            4 => port.iocr4().modify_atomic(|r| r.pc4().set(mode)),
-            5 => port.iocr4().modify_atomic(|r| r.pc5().set(mode)),
-            6 => port.iocr4().modify_atomic(|r| r.pc6().set(mode)),
-            7 => port.iocr4().modify_atomic(|r| r.pc7().set(mode)),
-            8 => port.iocr8().modify_atomic(|r| r.pc8().set(mode)),
-            9 => port.iocr8().modify_atomic(|r| r.pc9().set(mode)),
-            10 => port.iocr8().modify_atomic(|r| r.pc10().set(mode)),
-            11 => port.iocr8().modify_atomic(|r| r.pc11().set(mode)),
-            12 => port.iocr12().modify_atomic(|r| r.pc12().set(mode)),
-            13 => port.iocr12().modify_atomic(|r| r.pc13().set(mode)),
-            14 => port.iocr12().modify_atomic(|r| r.pc14().set(mode)),
-            15 => port.iocr12().modify_atomic(|r| r.pc15().set(mode)),
-            _ => unimplemented!(),
+    match pin.0 {
+        0 => unsafe { port.iocr0().modify_atomic(|r| r.pc0().set(mode)) },
+        1 => unsafe { port.iocr0().modify_atomic(|r| r.pc1().set(mode)) },
+        2 => unsafe { port.iocr0().modify_atomic(|r| r.pc2().set(mode)) },
+        3 => unsafe { port.iocr0().modify_atomic(|r| r.pc3().set(mode)) },
+        4 => unsafe { port.iocr4().modify_atomic(|r| r.pc4().set(mode)) },
+        5 => unsafe { port.iocr4().modify_atomic(|r| r.pc5().set(mode)) },
+        6 => unsafe { port.iocr4().modify_atomic(|r| r.pc6().set(mode)) },
+        7 => unsafe { port.iocr4().modify_atomic(|r| r.pc7().set(mode)) },
+        8 => unsafe { port.iocr8().modify_atomic(|r| r.pc8().set(mode)) },
+        9 => unsafe { port.iocr8().modify_atomic(|r| r.pc9().set(mode)) },
+        10 => unsafe { port.iocr8().modify_atomic(|r| r.pc10().set(mode)) },
+        11 => unsafe { port.iocr8().modify_atomic(|r| r.pc11().set(mode)) },
+        12 => unsafe { port.iocr12().modify_atomic(|r| r.pc12().set(mode)) },
+        13 => unsafe { port.iocr12().modify_atomic(|r| r.pc13().set(mode)) },
+        14 => unsafe { port.iocr12().modify_atomic(|r| r.pc14().set(mode)) },
+        15 => unsafe { port.iocr12().modify_atomic(|r| r.pc15().set(mode)) },
+        _ => {
+            // Nothing is done for invalid pin index
         }
     }
 }

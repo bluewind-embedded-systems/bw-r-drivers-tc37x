@@ -389,28 +389,26 @@ where
             Pull::Down => 0b01,
         };
 
-        unsafe {
-            let port = (*Gpio::<P>::ptr());
+        let port = unsafe { (*Gpio::<P>::ptr()) };
 
-            match N {
-                0 => port.iocr0().modify_atomic(|r| r.pc0().set(mode)),
-                1 => port.iocr0().modify_atomic(|r| r.pc1().set(mode)),
-                2 => port.iocr0().modify_atomic(|r| r.pc2().set(mode)),
-                3 => port.iocr0().modify_atomic(|r| r.pc3().set(mode)),
-                4 => port.iocr4().modify_atomic(|r| r.pc4().set(mode)),
-                5 => port.iocr4().modify_atomic(|r| r.pc5().set(mode)),
-                6 => port.iocr4().modify_atomic(|r| r.pc6().set(mode)),
-                7 => port.iocr4().modify_atomic(|r| r.pc7().set(mode)),
-                8 => port.iocr8().modify_atomic(|r| r.pc8().set(mode)),
-                9 => port.iocr8().modify_atomic(|r| r.pc9().set(mode)),
-                10 => port.iocr8().modify_atomic(|r| r.pc10().set(mode)),
-                11 => port.iocr8().modify_atomic(|r| r.pc11().set(mode)),
-                12 => port.iocr12().modify_atomic(|r| r.pc12().set(mode)),
-                13 => port.iocr12().modify_atomic(|r| r.pc13().set(mode)),
-                14 => port.iocr12().modify_atomic(|r| r.pc14().set(mode)),
-                15 => port.iocr12().modify_atomic(|r| r.pc15().set(mode)),
-                _ => unimplemented!(),
-            }
+        match N {
+            0 => unsafe { port.iocr0().modify_atomic(|r| r.pc0().set(mode)) },
+            1 => unsafe { port.iocr0().modify_atomic(|r| r.pc1().set(mode)) },
+            2 => unsafe { port.iocr0().modify_atomic(|r| r.pc2().set(mode)) },
+            3 => unsafe { port.iocr0().modify_atomic(|r| r.pc3().set(mode)) },
+            4 => unsafe { port.iocr4().modify_atomic(|r| r.pc4().set(mode)) },
+            5 => unsafe { port.iocr4().modify_atomic(|r| r.pc5().set(mode)) },
+            6 => unsafe { port.iocr4().modify_atomic(|r| r.pc6().set(mode)) },
+            7 => unsafe { port.iocr4().modify_atomic(|r| r.pc7().set(mode)) },
+            8 => unsafe { port.iocr8().modify_atomic(|r| r.pc8().set(mode)) },
+            9 => unsafe { port.iocr8().modify_atomic(|r| r.pc9().set(mode)) },
+            10 => unsafe { port.iocr8().modify_atomic(|r| r.pc10().set(mode)) },
+            11 => unsafe { port.iocr8().modify_atomic(|r| r.pc11().set(mode)) },
+            12 => unsafe { port.iocr12().modify_atomic(|r| r.pc12().set(mode)) },
+            13 => unsafe { port.iocr12().modify_atomic(|r| r.pc13().set(mode)) },
+            14 => unsafe { port.iocr12().modify_atomic(|r| r.pc14().set(mode)) },
+            15 => unsafe { port.iocr12().modify_atomic(|r| r.pc15().set(mode)) },
+            _ => unimplemented!(),
         }
     }
 
@@ -726,52 +724,57 @@ pub(crate) fn pin_toggle_state(port: &AnyPort, pin: PinId) {
 
 #[inline(always)]
 pub(crate) fn pin_input_is_high(port: &AnyPort, pin: PinId) -> bool {
-    unsafe {
-        match pin.0 {
-            0 => port.r#in().read().p0().get().0 == 1,
-            1 => port.r#in().read().p1().get().0 == 1,
-            2 => port.r#in().read().p2().get().0 == 1,
-            3 => port.r#in().read().p3().get().0 == 1,
-            4 => port.r#in().read().p4().get().0 == 1,
-            5 => port.r#in().read().p5().get().0 == 1,
-            6 => port.r#in().read().p6().get().0 == 1,
-            7 => port.r#in().read().p7().get().0 == 1,
-            8 => port.r#in().read().p8().get().0 == 1,
-            9 => port.r#in().read().p9().get().0 == 1,
-            10 => port.r#in().read().p10().get().0 == 1,
-            11 => port.r#in().read().p11().get().0 == 1,
-            12 => port.r#in().read().p12().get().0 == 1,
-            13 => port.r#in().read().p13().get().0 == 1,
-            14 => port.r#in().read().p14().get().0 == 1,
-            15 => port.r#in().read().p15().get().0 == 1,
-            _ => unreachable!(),
+    match pin.0 {
+        0 => unsafe { port.r#in().read().p0().get().0 == 1 },
+        1 => unsafe { port.r#in().read().p1().get().0 == 1 },
+        2 => unsafe { port.r#in().read().p2().get().0 == 1 },
+        3 => unsafe { port.r#in().read().p3().get().0 == 1 },
+        4 => unsafe { port.r#in().read().p4().get().0 == 1 },
+        5 => unsafe { port.r#in().read().p5().get().0 == 1 },
+        6 => unsafe { port.r#in().read().p6().get().0 == 1 },
+        7 => unsafe { port.r#in().read().p7().get().0 == 1 },
+        8 => unsafe { port.r#in().read().p8().get().0 == 1 },
+        9 => unsafe { port.r#in().read().p9().get().0 == 1 },
+        10 => unsafe { port.r#in().read().p10().get().0 == 1 },
+        11 => unsafe { port.r#in().read().p11().get().0 == 1 },
+        12 => unsafe { port.r#in().read().p12().get().0 == 1 },
+        13 => unsafe { port.r#in().read().p13().get().0 == 1 },
+        14 => unsafe { port.r#in().read().p14().get().0 == 1 },
+        15 => unsafe { port.r#in().read().p15().get().0 == 1 },
+        _ => {
+            // Just return false for invalid pin numbers
+            // TODO (alepez) should we panic here?
+            false
         }
     }
 }
 
 #[inline(always)]
 pub(crate) fn pin_output_is_high(port: &AnyPort, pin: PinId) -> bool {
-    unsafe {
-        match pin.0 {
-            0 => port.out().read().p0().get().0 == 1,
-            1 => port.out().read().p1().get().0 == 1,
-            2 => port.out().read().p2().get().0 == 1,
-            3 => port.out().read().p3().get().0 == 1,
-            4 => port.out().read().p4().get().0 == 1,
-            5 => port.out().read().p5().get().0 == 1,
-            6 => port.out().read().p6().get().0 == 1,
-            7 => port.out().read().p7().get().0 == 1,
-            8 => port.out().read().p8().get().0 == 1,
-            9 => port.out().read().p9().get().0 == 1,
-            10 => port.out().read().p10().get().0 == 1,
-            11 => port.out().read().p11().get().0 == 1,
-            12 => port.out().read().p12().get().0 == 1,
-            13 => port.out().read().p13().get().0 == 1,
-            14 => port.out().read().p14().get().0 == 1,
-            15 => port.out().read().p15().get().0 == 1,
-            _ => unreachable!(),
+    match pin.0 {
+        0 => unsafe { port.out().read().p0().get().0 == 1 },
+        1 => unsafe { port.out().read().p1().get().0 == 1 },
+        2 => unsafe { port.out().read().p2().get().0 == 1 },
+        3 => unsafe { port.out().read().p3().get().0 == 1 },
+        4 => unsafe { port.out().read().p4().get().0 == 1 },
+        5 => unsafe { port.out().read().p5().get().0 == 1 },
+        6 => unsafe { port.out().read().p6().get().0 == 1 },
+        7 => unsafe { port.out().read().p7().get().0 == 1 },
+        8 => unsafe { port.out().read().p8().get().0 == 1 },
+        9 => unsafe { port.out().read().p9().get().0 == 1 },
+        10 => unsafe { port.out().read().p10().get().0 == 1 },
+        11 => unsafe { port.out().read().p11().get().0 == 1 },
+        12 => unsafe { port.out().read().p12().get().0 == 1 },
+        13 => unsafe { port.out().read().p13().get().0 == 1 },
+        14 => unsafe { port.out().read().p14().get().0 == 1 },
+        15 => unsafe { port.out().read().p15().get().0 == 1 },
+        _ => {
+            // Just return false for invalid pin numbers
+            // TODO (alepez) should we panic here?
+            false
         }
     }
 }
 
+// TODO This is not type safe
 type AnyPort = crate::pac::port_00::Port00;

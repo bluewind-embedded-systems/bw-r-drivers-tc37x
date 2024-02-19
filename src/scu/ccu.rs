@@ -175,7 +175,9 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     unsafe {
         SCU.syspllcon1()
             .modify(|r| r.k2div().set(plls_params.sys_pll.k2_divider));
+    }
 
+    unsafe {
         SCU.perpllcon1().modify(|r| {
             r.k2div()
                 .set(plls_params.per_pll.k2_divider)

@@ -468,44 +468,42 @@ macro_rules! impl_can_node_effect {
 
             #[inline]
             pub(crate) fn set_tx_buffer_add_request(&self, id: u8) {
-                unsafe {
-                    let txbari = self.reg.tx().txbari();
-                    match id {
-                        0 => txbari.modify(|r| r.ar0().set(1u8.into())),
-                        1 => txbari.modify(|r| r.ar1().set(1u8.into())),
-                        2 => txbari.modify(|r| r.ar2().set(1u8.into())),
-                        3 => txbari.modify(|r| r.ar3().set(1u8.into())),
-                        4 => txbari.modify(|r| r.ar4().set(1u8.into())),
-                        5 => txbari.modify(|r| r.ar5().set(1u8.into())),
-                        6 => txbari.modify(|r| r.ar6().set(1u8.into())),
-                        7 => txbari.modify(|r| r.ar7().set(1u8.into())),
-                        8 => txbari.modify(|r| r.ar8().set(1u8.into())),
-                        9 => txbari.modify(|r| r.ar9().set(1u8.into())),
-                        10 => txbari.modify(|r| r.ar10().set(1u8.into())),
-                        11 => txbari.modify(|r| r.ar11().set(1u8.into())),
-                        12 => txbari.modify(|r| r.ar12().set(1u8.into())),
-                        14 => txbari.modify(|r| r.ar14().set(1u8.into())),
-                        13 => txbari.modify(|r| r.ar13().set(1u8.into())),
-                        15 => txbari.modify(|r| r.ar15().set(1u8.into())),
-                        16 => txbari.modify(|r| r.ar16().set(1u8.into())),
-                        17 => txbari.modify(|r| r.ar17().set(1u8.into())),
-                        18 => txbari.modify(|r| r.ar18().set(1u8.into())),
-                        19 => txbari.modify(|r| r.ar19().set(1u8.into())),
-                        20 => txbari.modify(|r| r.ar20().set(1u8.into())),
-                        21 => txbari.modify(|r| r.ar21().set(1u8.into())),
-                        22 => txbari.modify(|r| r.ar22().set(1u8.into())),
-                        23 => txbari.modify(|r| r.ar23().set(1u8.into())),
-                        24 => txbari.modify(|r| r.ar24().set(1u8.into())),
-                        25 => txbari.modify(|r| r.ar25().set(1u8.into())),
-                        26 => txbari.modify(|r| r.ar26().set(1u8.into())),
-                        27 => txbari.modify(|r| r.ar27().set(1u8.into())),
-                        28 => txbari.modify(|r| r.ar28().set(1u8.into())),
-                        29 => txbari.modify(|r| r.ar29().set(1u8.into())),
-                        30 => txbari.modify(|r| r.ar30().set(1u8.into())),
-                        31 => txbari.modify(|r| r.ar31().set(1u8.into())),
-                        _ => {
-                            // Invalid id, nothing to do
-                        }
+                let txbari = self.reg.tx().txbari();
+                match id {
+                    0 => unsafe { txbari.modify(|r| r.ar0().set(1u8.into())) },
+                    1 => unsafe { txbari.modify(|r| r.ar1().set(1u8.into())) },
+                    2 => unsafe { txbari.modify(|r| r.ar2().set(1u8.into())) },
+                    3 => unsafe { txbari.modify(|r| r.ar3().set(1u8.into())) },
+                    4 => unsafe { txbari.modify(|r| r.ar4().set(1u8.into())) },
+                    5 => unsafe { txbari.modify(|r| r.ar5().set(1u8.into())) },
+                    6 => unsafe { txbari.modify(|r| r.ar6().set(1u8.into())) },
+                    7 => unsafe { txbari.modify(|r| r.ar7().set(1u8.into())) },
+                    8 => unsafe { txbari.modify(|r| r.ar8().set(1u8.into())) },
+                    9 => unsafe { txbari.modify(|r| r.ar9().set(1u8.into())) },
+                    10 => unsafe { txbari.modify(|r| r.ar10().set(1u8.into())) },
+                    11 => unsafe { txbari.modify(|r| r.ar11().set(1u8.into())) },
+                    12 => unsafe { txbari.modify(|r| r.ar12().set(1u8.into())) },
+                    14 => unsafe { txbari.modify(|r| r.ar14().set(1u8.into())) },
+                    13 => unsafe { txbari.modify(|r| r.ar13().set(1u8.into())) },
+                    15 => unsafe { txbari.modify(|r| r.ar15().set(1u8.into())) },
+                    16 => unsafe { txbari.modify(|r| r.ar16().set(1u8.into())) },
+                    17 => unsafe { txbari.modify(|r| r.ar17().set(1u8.into())) },
+                    18 => unsafe { txbari.modify(|r| r.ar18().set(1u8.into())) },
+                    19 => unsafe { txbari.modify(|r| r.ar19().set(1u8.into())) },
+                    20 => unsafe { txbari.modify(|r| r.ar20().set(1u8.into())) },
+                    21 => unsafe { txbari.modify(|r| r.ar21().set(1u8.into())) },
+                    22 => unsafe { txbari.modify(|r| r.ar22().set(1u8.into())) },
+                    23 => unsafe { txbari.modify(|r| r.ar23().set(1u8.into())) },
+                    24 => unsafe { txbari.modify(|r| r.ar24().set(1u8.into())) },
+                    25 => unsafe { txbari.modify(|r| r.ar25().set(1u8.into())) },
+                    26 => unsafe { txbari.modify(|r| r.ar26().set(1u8.into())) },
+                    27 => unsafe { txbari.modify(|r| r.ar27().set(1u8.into())) },
+                    28 => unsafe { txbari.modify(|r| r.ar28().set(1u8.into())) },
+                    29 => unsafe { txbari.modify(|r| r.ar29().set(1u8.into())) },
+                    30 => unsafe { txbari.modify(|r| r.ar30().set(1u8.into())) },
+                    31 => unsafe { txbari.modify(|r| r.ar31().set(1u8.into())) },
+                    _ => {
+                        // Invalid id, nothing to do
                     }
                 }
             }
