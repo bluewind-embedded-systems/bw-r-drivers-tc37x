@@ -10,17 +10,20 @@ impl RxMsg {
     #[inline(always)]
     #[allow(unused)]
     pub fn r0(self) -> common::Reg<R0, common::RW> {
-        unsafe { core::mem::transmute(self.0.add(0usize)) }
+        let ptr = unsafe { self.0.add(0usize) };
+        unsafe { core::mem::transmute(ptr) }
     }
     #[inline(always)]
     #[allow(unused)]
     pub fn r1(self) -> common::Reg<R1, common::RW> {
-        unsafe { core::mem::transmute(self.0.add(4usize)) }
+        let ptr = unsafe { self.0.add(4usize) };
+        unsafe { core::mem::transmute(ptr) }
     }
     #[inline(always)]
     #[allow(unused)]
     pub fn db(self) -> common::Reg<Db, common::RW> {
-        unsafe { core::mem::transmute(self.0.add(8usize)) }
+        let ptr = unsafe { self.0.add(8usize) };
+        unsafe { core::mem::transmute(ptr) }
     }
 }
 

@@ -10,15 +10,18 @@ unsafe impl Sync for TxMsg {}
 impl TxMsg {
     #[inline(always)]
     pub fn t0(self) -> common::Reg<T0, common::RW> {
-        unsafe { core::mem::transmute(self.0.add(0usize)) }
+        let ptr = unsafe { self.0.add(0usize) };
+        unsafe { core::mem::transmute(ptr) }
     }
     #[inline(always)]
     pub fn t1(self) -> common::Reg<T1, common::RW> {
-        unsafe { core::mem::transmute(self.0.add(4usize)) }
+        let ptr = unsafe { self.0.add(4usize) };
+        unsafe { core::mem::transmute(ptr) }
     }
     #[inline(always)]
     pub fn db(self) -> common::Reg<Db, common::RW> {
-        unsafe { core::mem::transmute(self.0.add(8usize)) }
+        let ptr = unsafe { self.0.add(8usize) };
+        unsafe { core::mem::transmute(ptr) }
     }
 }
 
