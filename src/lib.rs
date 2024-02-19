@@ -11,6 +11,11 @@
 #![allow(clippy::uninlined_format_args)]
 // no_std is required for the target
 #![cfg_attr(target_arch = "tricore", no_std)]
+// This lint ensures that each unsafe operation must be independently justified.
+#![warn(clippy::multiple_unsafe_ops_per_block)] // Since Rust 1.69
+#![warn(clippy::undocumented_unsafe_blocks)] // Since Rust 1.58
+#![warn(unused_unsafe)]
+#![warn(clippy::unnecessary_safety_comment)] // Since Rust 1.67
 
 #[cfg(not(target_arch = "tricore"))]
 pub mod tracing;
