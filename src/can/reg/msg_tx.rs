@@ -1,3 +1,5 @@
+// TODO Is this module needed?
+
 use tc37x_pac::common;
 use tc37x_pac::common::hidden::RegValue;
 
