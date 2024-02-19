@@ -266,7 +266,9 @@ pub struct RGainValues {
 fn calc_rgain_parameters(modamp: ModulationAmplitude) -> RGainValues {
     const MA_PERCENT: [f32; 6] = [0.5, 1.0, 1.25, 1.5, 2.0, 2.5];
 
+    #[allow(clippy::indexing_slicing)]
     let mod_amp = MA_PERCENT[modamp as usize];
+
     let fosc_hz = get_osc_frequency();
     let syspllcon0 = unsafe { SCU.syspllcon0().read() };
     let fdco_hz = (fosc_hz * (f32::from(syspllcon0.ndiv().get()) + 1.0))
@@ -434,12 +436,10 @@ pub fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
             unsafe { SCU.syspllstat().read() }.k2rdy().get().0 != 1
         })?;
 
-        unsafe {
-            SCU.syspllcon1().modify(|r| {
-                r.k2div()
-                    .set(config.sys_pll_throttle[pll_step_count].k2_step)
-            })
-        };
+        #[allow(clippy::indexing_slicing)]
+        let k2div = config.sys_pll_throttle[pll_step_count].k2_step;
+
+        unsafe { SCU.syspllcon1().modify(|r| r.k2div().set(k2div)) };
 
         wdt::set_safety_endinit_inline();
     }
@@ -586,7 +586,6 @@ pub enum ModulationAmplitude {
     _1p5,
     _2p0,
     _2p5,
-    Count,
 }
 
 pub struct ModulationConfig {

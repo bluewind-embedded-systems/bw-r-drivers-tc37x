@@ -118,6 +118,7 @@ macro_rules! impl_can_node {
                 config: NodeConfig,
             ) -> Result<Node<$NodeReg, $ModuleReg, I, Configurable>, ConfigError> {
                 let node_index = node_id.as_index();
+                #[allow(clippy::indexing_slicing)]
                 let node_reg = module.registers().n()[node_index];
                 let effects = NodeEffects::<$NodeReg>::new(node_reg);
                 let clock_select = ClockSelect::from(node_id);

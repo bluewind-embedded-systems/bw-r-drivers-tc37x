@@ -63,13 +63,16 @@ macro_rules! impl_can_module {
             pub fn take_node<I>(&mut self, node_id: I, config: NodeConfig) -> Option<Node<$($m)::+::N, $ModuleReg, I, crate::can::can_node::Configurable>> where I: NodeId {
                 let node_index = node_id.as_index();
 
+                #[allow(clippy::indexing_slicing)]
+                let flag : &mut bool = &mut self.nodes_taken[node_index];
+
                 // Check if node is already taken, return None if it is
-                if self.nodes_taken[node_index] {
+                if *flag {
                     return None;
                 }
 
                 // Mark node as taken
-                self.nodes_taken[node_index] = true;
+                *flag = true;
 
                 // Create node
                 Node::<$($m)::+::N, $ModuleReg, I, crate::can::can_node::Configurable>::new(self, node_id, config).ok()
