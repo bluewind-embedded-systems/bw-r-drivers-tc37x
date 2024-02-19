@@ -648,30 +648,27 @@ impl<const P: PortIndex> Gpio<P> {
         // The logic relies on the following assumptions:
         // - PORT_00 register are available on all chips
         // - all PORT register blocks have the same layout
-        unsafe {
-            // TODO (annabo) load automatically from pac file `port_##.rs`
-            // TODO (alepez) Check why clippy says this transmute is useless.
-            #[allow(clippy::useless_transmute)]
-            match P {
-                0 => core::mem::transmute(&crate::pac::PORT_00),
-                1 => core::mem::transmute(&crate::pac::PORT_01),
-                2 => core::mem::transmute(&crate::pac::PORT_02),
-                10 => core::mem::transmute(&crate::pac::PORT_10),
-                11 => core::mem::transmute(&crate::pac::PORT_11),
-                12 => core::mem::transmute(&crate::pac::PORT_12),
-                13 => core::mem::transmute(&crate::pac::PORT_13),
-                14 => core::mem::transmute(&crate::pac::PORT_14),
-                15 => core::mem::transmute(&crate::pac::PORT_15),
-                20 => core::mem::transmute(&crate::pac::PORT_20),
-                21 => core::mem::transmute(&crate::pac::PORT_21),
-                22 => core::mem::transmute(&crate::pac::PORT_22),
-                23 => core::mem::transmute(&crate::pac::PORT_23),
-                32 => core::mem::transmute(&crate::pac::PORT_32),
-                33 => core::mem::transmute(&crate::pac::PORT_33),
-                34 => core::mem::transmute(&crate::pac::PORT_34),
-                40 => core::mem::transmute(&crate::pac::PORT_40),
-                _ => panic!("Unknown GPIO port"),
-            }
+        // TODO (annabo) load automatically from pac file `port_##.rs`
+        #[allow(clippy::useless_transmute)]
+        match P {
+            0 => unsafe { core::mem::transmute(&crate::pac::PORT_00) },
+            1 => unsafe { core::mem::transmute(&crate::pac::PORT_01) },
+            2 => unsafe { core::mem::transmute(&crate::pac::PORT_02) },
+            10 => unsafe { core::mem::transmute(&crate::pac::PORT_10) },
+            11 => unsafe { core::mem::transmute(&crate::pac::PORT_11) },
+            12 => unsafe { core::mem::transmute(&crate::pac::PORT_12) },
+            13 => unsafe { core::mem::transmute(&crate::pac::PORT_13) },
+            14 => unsafe { core::mem::transmute(&crate::pac::PORT_14) },
+            15 => unsafe { core::mem::transmute(&crate::pac::PORT_15) },
+            20 => unsafe { core::mem::transmute(&crate::pac::PORT_20) },
+            21 => unsafe { core::mem::transmute(&crate::pac::PORT_21) },
+            22 => unsafe { core::mem::transmute(&crate::pac::PORT_22) },
+            23 => unsafe { core::mem::transmute(&crate::pac::PORT_23) },
+            32 => unsafe { core::mem::transmute(&crate::pac::PORT_32) },
+            33 => unsafe { core::mem::transmute(&crate::pac::PORT_33) },
+            34 => unsafe { core::mem::transmute(&crate::pac::PORT_34) },
+            40 => unsafe { core::mem::transmute(&crate::pac::PORT_40) },
+            _ => panic!("Unknown GPIO port"),
         }
     }
 }
