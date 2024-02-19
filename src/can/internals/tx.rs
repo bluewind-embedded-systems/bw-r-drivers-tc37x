@@ -75,9 +75,9 @@ impl Tx {
     }
 
     pub fn write_tx_buf_data(&self, data_length_code: DataLenghtCode, data: *const u8) {
-        let destination_address = self.inner.db().ptr() as _;
+        let destination_address = self.inner.db().ptr() as *mut u8;
         let length = data_length_code.to_length();
 
-        unsafe { core::ptr::copy_nonoverlapping(data, destination_address, length as _) };
+        unsafe { core::ptr::copy_nonoverlapping(data, destination_address, length) };
     }
 }

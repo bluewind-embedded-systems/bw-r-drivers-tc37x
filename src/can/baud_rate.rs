@@ -72,7 +72,7 @@ pub(super) fn get_best_baud_rate(
 
     while tmp_brp <= max_brp {
         let f_quanta = module_freq / tmp_brp as f32;
-        tmp_tbaud = (f_quanta / baudrate as f32) as _;
+        tmp_tbaud = (f_quanta / baudrate as f32) as i32;
 
         if tmp_tbaud == 0 {
             // Avoid division by 0
@@ -146,12 +146,12 @@ pub(super) fn get_best_sample_point(
         let error = temp_sample_point - sample_point as i32;
         let error = if error < 0 { -error } else { error };
 
-        if best_error > error as _ {
+        if best_error > error as f32 {
             best_tseg1 = temp_tseg1;
-            best_error = error as _;
+            best_error = error as f32;
         }
 
-        if temp_sample_point < sample_point as _ {
+        if temp_sample_point < sample_point as i32 {
             // Least possible error has already occurred
             break;
         }
@@ -228,7 +228,7 @@ pub(super) fn calculate_bit_timing(
 
     let (best_tseg1, best_tseg2) =
         get_best_sample_point(NBTP_NTSEG1_MSK, NBTP_NTSEG2_MSK, best.tbaud, sample_point);
-    let best_sjw = get_best_sjw(best.tbaud as _, best_tseg2 as _, sjw);
+    let best_sjw = get_best_sjw(best.tbaud as u32, best_tseg2 as u32, sjw);
 
     NominalBitTiming {
         brp: best.brp as u16 - 1,
@@ -255,7 +255,7 @@ pub(super) fn calculate_fast_bit_timing(
 
     let (best_tseg1, best_tseg2) =
         get_best_sample_point(DBTP_DTSEG1_MSK, DBTP_DTSEG2_MSK, best.tbaud, sample_point);
-    let best_sjw = get_best_sjw(best.tbaud as _, best_tseg2 as _, sjw);
+    let best_sjw = get_best_sjw(best.tbaud as u32, best_tseg2 as u32, sjw);
 
     DataBitTiming {
         brp: best.brp as u8 - 1,

@@ -43,7 +43,7 @@ unsafe fn get_wdt_con1(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con1, pac::RW> 
 pub fn clear_cpu_endinit_inline() {
     let password = get_cpu_watchdog_password();
     let core_id = read_cpu_core_id();
-    let con0 = unsafe { get_wdt_con0(core_id as _) };
+    let con0 = unsafe { get_wdt_con0(core_id as u8) };
 
     if unsafe { con0.read() }.lck().get() {
         let rel = unsafe { con0.read() }.rel().get();
@@ -79,7 +79,7 @@ pub fn clear_cpu_endinit_inline() {
 pub fn set_cpu_endinit_inline() {
     let password = get_cpu_watchdog_password();
     let core_id = read_cpu_core_id();
-    let con0 = unsafe { get_wdt_con0(core_id as _) };
+    let con0 = unsafe { get_wdt_con0(core_id as u8) };
 
     if unsafe { con0.read() }.lck().get() {
         let rel = unsafe { con0.read() }.rel().get();
@@ -190,7 +190,7 @@ pub fn disable_cpu_watchdog() {
     clear_cpu_endinit_inline();
 
     let core_id = read_cpu_core_id();
-    let con1 = unsafe { get_wdt_con1(core_id as _) };
+    let con1 = unsafe { get_wdt_con1(core_id as u8) };
     unsafe { con1.modify(|p| p.dr().set(true)) };
 
     set_cpu_endinit_inline();

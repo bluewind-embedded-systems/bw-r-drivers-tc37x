@@ -919,7 +919,7 @@ impl Port {
         let iocr: crate::pac::Reg<crate::pac::port_00::Iocr0, crate::pac::RW> = {
             let iocr0 = self.inner.iocr0();
             let addr: *mut u32 = unsafe { transmute(iocr0) };
-            let addr = unsafe { addr.add(ioc_index as _) };
+            let addr = unsafe { addr.add(ioc_index as usize) };
             unsafe { transmute(addr) }
         };
 
@@ -938,7 +938,7 @@ impl Port {
         let pdr: crate::pac::Reg<crate::pac::port_00::Pdr0, crate::pac::RW> = {
             let pdr0 = self.inner.pdr0();
             let addr: *mut u32 = unsafe { core::mem::transmute(pdr0) };
-            let addr = unsafe { addr.add(pdr_index as _) };
+            let addr = unsafe { addr.add(pdr_index as usize) };
             unsafe { core::mem::transmute(addr) }
         };
 

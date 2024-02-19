@@ -70,11 +70,11 @@ impl Rx {
     }
 
     pub fn read_data(&self, data_length_code: DataLenghtCode, data: *mut u8) {
-        let source_address = self.inner.db().ptr() as _;
+        let source_address = self.inner.db().ptr() as *const u8;
         let length = data_length_code.to_length();
 
         debug!("reading {} bytes from {:x}", length, source_address);
 
-        unsafe { core::ptr::copy_nonoverlapping(source_address, data, length as _) };
+        unsafe { core::ptr::copy_nonoverlapping(source_address, data, length) };
     }
 }

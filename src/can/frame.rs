@@ -144,7 +144,7 @@ mod test {
                 }
             );
         };
-        for i in 0u8..=DataLenghtCode::_64 as _ {
+        for i in 0u8..=DataLenghtCode::_64 as u8 {
             test(DataLenghtCode::try_from(i).unwrap());
         }
     }
