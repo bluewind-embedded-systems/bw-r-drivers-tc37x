@@ -13,18 +13,21 @@ pub struct Rx {
 }
 
 impl Rx {
+    // TODO Are we sure we want to publish this function?
     pub fn new(ptr: *mut u8) -> Self {
         Self {
             inner: unsafe { transmute(ptr) },
         }
     }
 
+    // TODO Are we sure we want to publish this function?
     pub fn get_ptr(&self) -> *mut u8 {
         unsafe { transmute(self.inner) }
     }
 }
 
 impl Rx {
+    // TODO Are we sure we want to publish this function?
     #[inline]
     pub fn get_message_id(&self) -> u32 {
         let r0 = unsafe { self.inner.r0().read() };
@@ -43,6 +46,7 @@ impl Rx {
         id >> shift
     }
 
+    // TODO Are we sure we want to publish this function?
     #[inline]
     pub fn get_message_id_length(&self) -> MessageIdLenght {
         if unsafe { self.inner.r0().read() }.xtd().get() {
@@ -52,6 +56,7 @@ impl Rx {
         }
     }
 
+    // TODO Are we sure we want to publish this function?
     #[inline]
     pub fn get_data_length(&self) -> DataLenghtCode {
         let d = unsafe { self.inner.r1().read() }.dlc().get();
@@ -59,6 +64,7 @@ impl Rx {
         unsafe { DataLenghtCode::try_from(d).unwrap_unchecked() }
     }
 
+    // TODO Are we sure we want to publish this function?
     pub fn get_frame_mode(&self) -> FrameMode {
         let r1 = unsafe { self.inner.r1().read() };
 
@@ -73,6 +79,7 @@ impl Rx {
         }
     }
 
+    // TODO Are we sure we want to publish this function?
     pub fn read_data(&self, data_length_code: DataLenghtCode, data: *mut u8) {
         let source_address = self.inner.db().ptr() as *const u8;
         let length = data_length_code.to_length();

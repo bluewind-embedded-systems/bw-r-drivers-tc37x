@@ -5,6 +5,7 @@ use crate::cpu::asm::read_cpu_core_id;
 use core::mem::transmute;
 use tc37x_pac as pac;
 
+// TODO Are we sure we want to publish this function?
 #[inline]
 pub fn get_cpu_watchdog_password() -> u16 {
     let core_id = read_cpu_core_id();
@@ -19,6 +20,7 @@ pub fn get_cpu_watchdog_password() -> u16 {
     password ^ 0x003F
 }
 
+// TODO Are we sure we want to publish this function?
 #[inline]
 pub fn get_safety_watchdog_password() -> u16 {
     let password = unsafe { pac::SCU.wdts().wdtscon0().read() }.pw().get();
@@ -183,6 +185,7 @@ pub fn set_safety_endinit_inline() {
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
+// TODO Are we sure we want to publish this function?
 pub fn disable_safety_watchdog() {
     clear_safety_endinit_inline();
     unsafe {
@@ -194,6 +197,7 @@ pub fn disable_safety_watchdog() {
     set_safety_endinit_inline();
 }
 
+// TODO Are we sure we want to publish this function?
 pub fn disable_cpu_watchdog() {
     clear_cpu_endinit_inline();
 
