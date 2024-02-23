@@ -2,6 +2,7 @@
 #![allow(clippy::undocumented_unsafe_blocks)]
 
 // TODO Is this module needed?
+// TODO Sus, this seems to be part of pac
 
 use core::mem::transmute;
 use tc37x_pac::common;

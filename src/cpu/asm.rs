@@ -1,3 +1,6 @@
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
+
 /* From ILLD file:
 *  file IfxCpu.h
 *  brief CPU  basic functionality
@@ -7,6 +10,7 @@
 */
 
 // global interrupts enable
+// TODO Are we sure we want to publish this function?
 #[inline]
 pub fn enable_interrupts() {
     #[cfg(target_arch = "tricore")]
@@ -27,6 +31,7 @@ pub fn enable_interrupts() {
  * */
 
 // global interrupts disable
+// TODO Are we sure we want to publish this function?
 #[inline]
 pub fn disable_interrupts() {
     #[cfg(target_arch = "tricore")]
@@ -49,6 +54,7 @@ const CPU_CORE_ID: u32 = 0xFE1C;
  * }
 */
 
+// TODO Are we sure we want to publish this function?
 #[inline]
 pub fn read_cpu_core_id() -> u32 {
     #[allow(unused_assignments)]

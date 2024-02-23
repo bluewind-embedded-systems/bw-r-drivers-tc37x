@@ -156,7 +156,7 @@ macro_rules! impl_can_node {
                 Ok(node)
             }
 
-            pub fn lock_configuration(self) -> Node<$NodeReg, $ModuleReg, I, Configured> {
+            fn lock_configuration(self) -> Node<$NodeReg, $ModuleReg, I, Configured> {
                 self.effects.disable_configuration_change();
 
                 Node {
@@ -279,6 +279,7 @@ macro_rules! impl_can_node {
                 self.set_frame_mode(self.frame_mode);
             }
 
+            // TODO I think this should accept pins as provided by gpio module
             pub fn setup_pins(&self, pins: &Pins<$ModuleId, I>) {
                 self.connect_pin_rx(
                     &pins.rx,

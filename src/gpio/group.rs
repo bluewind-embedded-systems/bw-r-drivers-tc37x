@@ -99,6 +99,8 @@ impl<const P: PortIndex, const SIZE: usize> PinArray<P, SIZE> {
         }
         msk
     }
+
+    #[allow(clippy::if_not_else)]
     fn value_for_write_bsrr(&self, val: u32) -> u32 {
         let mut msk = 0;
         for (idx, pin) in self.0.iter().enumerate() {
