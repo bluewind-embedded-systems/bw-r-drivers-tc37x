@@ -21,16 +21,37 @@ macro_rules! impl_can_node_effect {
                 NodeEffects { reg }
             }
 
-            pub(crate) fn set_rx_buffer_data_field_size(&self, size: u8) {
-                unsafe { self.reg.rx().rxesci().modify(|r| r.rbds().set(size.into())) };
+            pub(crate) fn set_rx_buffer_data_field_size(&self, size: DataFieldSize) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 3, 7, 31:11 are written with 0, size is in range [0, 7]
+                unsafe {
+                    self.reg
+                        .rx()
+                        .rxesci()
+                        .modify(|r| r.rbds().set(size.to_esci_register_value().into()))
+                };
             }
 
-            pub(crate) fn set_rx_fifo0_data_field_size(&self, size: u8) {
-                unsafe { self.reg.rx().rxesci().modify(|r| r.f0ds().set(size.into())) };
+            pub(crate) fn set_rx_fifo0_data_field_size(&self, size: DataFieldSize) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 3, 7, 31:11 are written with 0, size is in range [0, 7]
+                unsafe {
+                    self.reg
+                        .rx()
+                        .rxesci()
+                        .modify(|r| r.f0ds().set(size.to_esci_register_value().into()))
+                };
             }
 
-            pub(crate) fn set_rx_fifo1_data_field_size(&self, size: u8) {
-                unsafe { self.reg.rx().rxesci().modify(|r| r.f1ds().set(size.into())) };
+            pub(crate) fn set_rx_fifo1_data_field_size(&self, size: DataFieldSize) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 3, 7, 31:11 are written with 0, size is in range [0, 7]
+                unsafe {
+                    self.reg
+                        .rx()
+                        .rxesci()
+                        .modify(|r| r.f1ds().set(size.to_esci_register_value().into()))
+                };
             }
 
             pub(crate) fn set_rx_fifo0_start_address(&self, address: u16) {

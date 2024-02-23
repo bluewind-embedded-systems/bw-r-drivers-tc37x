@@ -304,7 +304,7 @@ macro_rules! impl_can_node {
 
             fn set_rx_fifo0(&self, data: FifoData) {
                 self.effects
-                    .set_rx_fifo0_data_field_size(data.field_size.to_esci_register_value());
+                    .set_rx_fifo0_data_field_size(data.field_size);
                 self.effects.set_rx_fifo0_start_address(data.start_address);
                 self.effects.set_rx_fifo0_size(data.size);
                 self.effects
@@ -315,7 +315,7 @@ macro_rules! impl_can_node {
 
             fn set_rx_fifo1(&self, data: FifoData) {
                 self.effects
-                    .set_rx_fifo1_data_field_size(data.field_size.to_esci_register_value());
+                    .set_rx_fifo1_data_field_size(data.field_size);
                 self.effects.set_rx_fifo1_start_address(data.start_address);
                 self.effects.set_rx_fifo1_size(data.size);
                 self.effects
@@ -395,8 +395,7 @@ macro_rules! impl_can_node {
 
             #[inline]
             fn set_rx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
-                self.effects
-                    .set_rx_buffer_data_field_size(data_field_size.to_esci_register_value());
+                self.effects.set_rx_buffer_data_field_size(data_field_size);
             }
 
             fn set_frame_mode(&self, frame_mode: FrameMode) {
