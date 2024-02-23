@@ -7,7 +7,7 @@ use tc37x_pac as pac;
 
 // TODO Are we sure we want to publish this function?
 #[inline]
-pub fn get_cpu_watchdog_password() -> u16 {
+pub(crate) fn get_cpu_watchdog_password() -> u16 {
     let core_id = read_cpu_core_id();
     let password = match core_id {
         0 => unsafe { pac::SCU.wdtcpu0con0().read() }.pw().get(),
@@ -22,7 +22,7 @@ pub fn get_cpu_watchdog_password() -> u16 {
 
 // TODO Are we sure we want to publish this function?
 #[inline]
-pub fn get_safety_watchdog_password() -> u16 {
+pub(crate) fn get_safety_watchdog_password() -> u16 {
     let password = unsafe { pac::SCU.wdts().wdtscon0().read() }.pw().get();
 
     // If PAS=0: WDTxCON0.PW[7:2] must be written with inverted current value read from WDTxCON0.PW[7:2]
@@ -47,7 +47,7 @@ unsafe fn get_wdt_con1(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con1, pac::RW> 
 
 // TODO Duplicate? Bad function name?
 #[inline]
-pub fn clear_cpu_endinit_inline() {
+pub(crate) fn clear_cpu_endinit_inline() {
     let password = get_cpu_watchdog_password();
     let core_id = read_cpu_core_id();
     let con0 = unsafe { get_wdt_con0(core_id as u8) };
@@ -84,7 +84,7 @@ pub fn clear_cpu_endinit_inline() {
 
 // TODO Duplicate? Bad function name?
 #[inline]
-pub fn set_cpu_endinit_inline() {
+pub(crate) fn set_cpu_endinit_inline() {
     let password = get_cpu_watchdog_password();
     let core_id = read_cpu_core_id();
     let con0 = unsafe { get_wdt_con0(core_id as u8) };
@@ -121,7 +121,7 @@ pub fn set_cpu_endinit_inline() {
 
 // TODO Duplicate? Bad function name?
 #[inline]
-pub fn clear_safety_endinit_inline() {
+pub(crate) fn clear_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
@@ -154,7 +154,7 @@ pub fn clear_safety_endinit_inline() {
 
 // TODO Duplicate? Bad function name?
 #[inline]
-pub fn set_safety_endinit_inline() {
+pub(crate) fn set_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
@@ -185,7 +185,6 @@ pub fn set_safety_endinit_inline() {
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
-// TODO Are we sure we want to publish this function?
 pub fn disable_safety_watchdog() {
     clear_safety_endinit_inline();
     unsafe {
@@ -197,7 +196,6 @@ pub fn disable_safety_watchdog() {
     set_safety_endinit_inline();
 }
 
-// TODO Are we sure we want to publish this function?
 pub fn disable_cpu_watchdog() {
     clear_cpu_endinit_inline();
 
@@ -213,7 +211,7 @@ mod tests {
     use super::*;
 
     #[test]
-    pub fn test_get_wdt_con0() {
+    fn test_get_wdt_con0() {
         let pwd = get_cpu_watchdog_password();
         assert_eq!(pwd, 0x3F);
     }
