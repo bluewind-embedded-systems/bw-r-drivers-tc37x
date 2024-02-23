@@ -92,15 +92,15 @@ impl ServiceRequest {
         let tos = u8::from(tos);
 
         // Set priority and type of service
-        // SAFETY: FIXME Check Aurix manual
+        // SAFETY: FIXME Check Aurix manual, tos is in range [0, 3], bits 9:8, 15:14, 23:21, 31 are written with 0
         unsafe { self.0.modify(|r| r.srpn().set(priority).tos().set(tos)) };
 
         // Clear request
-        // SAFETY: FIXME Check Aurix manual
+        // SAFETY: CLRR is a W bit, bits 9:8, 15:14, 23:21, 31 are written with 0
         unsafe { self.0.modify(|r| r.clrr().set(true)) };
 
         // Enable service request
-        // SAFETY: FIXME Check Aurix manual
+        // SAFETY: SRE is a RW bit, bits 9:8, 15:14, 23:21, 31 are written with 0
         unsafe { self.0.modify(|r| r.sre().set(true)) };
     }
 }
