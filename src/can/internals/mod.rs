@@ -1,4 +1,4 @@
 mod rx;
 mod tx;
 
-pub use {rx::*, tx::*};
+pub(crate) use {rx::*, tx::*};
