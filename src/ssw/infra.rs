@@ -10,7 +10,7 @@
 // TODO Are we sure we want to publish this function?
 #[cfg(target_arch = "tricore")]
 #[inline]
-pub fn is_application_reset() -> bool {
+pub(crate) fn is_application_reset() -> bool {
     use tc37x_pac::RegisterValue;
     use tc37x_pac::SCU;
 
@@ -49,6 +49,6 @@ pub fn is_application_reset() -> bool {
 // TODO Are we sure we want to publish this function?
 #[cfg(not(target_arch = "tricore"))]
 #[inline]
-pub fn is_application_reset() -> bool {
+pub(crate) fn is_application_reset() -> bool {
     false
 }

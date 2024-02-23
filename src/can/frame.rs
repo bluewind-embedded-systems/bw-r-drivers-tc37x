@@ -120,7 +120,7 @@ mod test {
     use super::DataLenghtCode;
 
     #[test]
-    pub fn test_data_length_code() {
+    fn test_data_length_code() {
         let test = |dlc: DataLenghtCode| {
             assert_eq!(
                 dlc.to_length(),

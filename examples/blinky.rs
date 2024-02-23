@@ -81,7 +81,7 @@ fn main() -> ! {
 /// Wait for a number of cycles roughly calculated from a duration.
 // TODO Are we sure we want to publish this function?
 #[inline(always)]
-pub fn wait_nop(period: Duration) {
+fn wait_nop(period: Duration) {
     #[cfg(target_arch = "tricore")]
     {
         use tc37x_driver::util::wait_nop_cycles;
