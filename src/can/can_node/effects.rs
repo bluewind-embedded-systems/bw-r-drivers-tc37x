@@ -98,10 +98,10 @@ macro_rules! impl_can_node_effect {
 
             // TODO Move logic to the caller
             pub(crate) fn set_rx_fifo1_operating_mode(&self, mode: RxFifoMode) {
-                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
-                // bits 1:0, 23 are written with 0, overwrite is in range [0, 1]
                 let overwrite = mode == RxFifoMode::Overwrite;
                 let overwrite = u8::from(overwrite);
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 1:0, 23 are written with 0, overwrite is in range [0, 1]
                 unsafe {
                     self.reg
                         .rx()
