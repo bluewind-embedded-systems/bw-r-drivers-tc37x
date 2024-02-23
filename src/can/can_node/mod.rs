@@ -719,7 +719,9 @@ pub enum Interrupt {
     MessageRamaccessFailure,
     TimeoutOccurred,
     MessageStoredToDedicatedRxBuffer,
+    // TODO: reserved
     BitErrorCorrected,
+    // TODO: reserved
     BitErrorUncorrected,
     ErrorLoggingOverflow,
     ErrorPassive,

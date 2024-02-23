@@ -67,7 +67,7 @@ macro_rules! impl_can_node_effect {
 
             pub(crate) fn set_rx_fifo0_size(&self, size: u8) {
                 // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
-                // bits 1:0, 23 are written with 0, TODO address should be in range [0, 2^7) 
+                // bits 1:0, 23 are written with 0, TODO size should be in range [0, 2^7)
                 unsafe { self.reg.rx().rxf0ci().modify(|r| r.f0s().set(size.into())) };
             }
 
@@ -123,6 +123,8 @@ macro_rules! impl_can_node_effect {
 
             #[inline]
             pub(crate) fn set_dedicated_tx_buffers_number(&self, number: u8) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_tx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 1:0, 23:22 and 31 are written with 0, TODO number should be in range [0, 63]
                 unsafe {
                     self.reg
                         .tx()
@@ -133,6 +135,8 @@ macro_rules! impl_can_node_effect {
 
             #[inline]
             pub(crate) fn set_tx_event_fifo_start_address(&self, address: u16) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_tx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 1:0, 23:22 and 31:30 are written with 0, TODO address should be in range [0, 2^14)
                 unsafe {
                     self.reg
                         .tx()
@@ -143,6 +147,8 @@ macro_rules! impl_can_node_effect {
 
             #[inline]
             pub(crate) fn set_tx_event_fifo_size(&self, size: u8) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_tx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 1:0, 23:22 and 31:30 are written with 0, TODO size should be in range [0, 2^7)
                 unsafe { self.reg.tx().txefci().modify(|r| r.efs().set(size.into())) };
             }
 
@@ -150,10 +156,14 @@ macro_rules! impl_can_node_effect {
             pub(crate) fn set_transmit_fifo_queue_mode(&self, mode: TxMode) {
                 let val = mode != TxMode::DedicatedBuffers;
                 let val = u8::from(val);
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_tx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 1:0, 23:22 and 31:30 are written with 0, val is in range [0, 1]
                 unsafe { self.reg.tx().txbci().modify(|r| r.tfqm().set(val.into())) };
             }
 
             pub(crate) fn set_transmit_fifo_queue_size(&self, number: u8) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_tx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 1:0, 23:22 and 31:30 are written with 0, TODO number should be in range [0, 2^7)
                 unsafe {
                     self.reg
                         .tx()
@@ -239,16 +249,30 @@ macro_rules! impl_can_node_effect {
             pub(crate) fn enable_configuration_change(&self) {
                 let cccr = self.reg.cccri();
 
+                // SAFETY: INIT bit is RWH
                 if unsafe { cccr.read() }.init().get().0 == 1u8 {
+                    // SAFETY: CCE bit is RW
                     unsafe { cccr.modify(|r| r.cce().set(0u8.into())) };
-                    while !{ unsafe { cccr.read() }.cce().get().0 == 0u8 } {}
+                    while {
+                        // SAFETY: CCE bit is RW
+                        unsafe { cccr.read() }.cce().get().0 != 0u8
+                    } {}
+                    // SAFETY: INIT bit is RWH
                     unsafe { cccr.modify(|r| r.init().set(0u8.into())) };
-                    while !{ unsafe { cccr.read() }.init().get().0 == 0u8 } {}
+                    while {
+                        // SAFETY: INIT bit is RWH
+                        unsafe { cccr.read() }.init().get().0 != 0u8
+                    } {}
                 }
 
+                // SAFETY: INIT bit is RWH
                 unsafe { cccr.modify(|r| r.init().set(1u8.into())) };
-                while !{ unsafe { cccr.read() }.init().get().0 == 1u8 } {}
+                while {
+                    // SAFETY: INIT bit is RWH
+                    unsafe { cccr.read() }.init().get().0 != 1u8
+                } {}
 
+                // SAFETY: INIT bit is RWH, CCE bit is RW
                 unsafe { cccr.modify(|r| r.cce().set(1u8.into()).init().set(1u8.into())) };
             }
 
@@ -256,14 +280,27 @@ macro_rules! impl_can_node_effect {
             pub(crate) fn disable_configuration_change(&self) {
                 let cccr = self.reg.cccri();
 
+                // SAFETY: CCE bit is RW
                 unsafe { cccr.modify(|r| r.cce().set(0u8.into())) };
-                while !{ unsafe { cccr.read() }.cce().get().0 == 0u8 } {}
+                while {
+                    // SAFETY: CCE bit is RW
+                    unsafe { cccr.read() }.cce().get().0 != 0u8
+                } {}
 
+                // SAFETY: INIT bit is RWH
                 unsafe { cccr.modify(|r| r.init().set(0u8.into())) };
-                while !{ unsafe { cccr.read() }.init().get().0 == 0u8 } {}
+                while {
+                    // SAFETY: INIT bit is RWH
+                    unsafe { cccr.read() }.init().get().0 != 0u8
+                } {}
             }
 
             pub(crate) fn set_nominal_bit_timing(&self, timing: &NominalBitTiming) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.configure_baud_rate after node.effects.enable_configuration_change has been called in Node::new.
+                // bit 7 is written with 0, TODO timing.brp should be in range [0, 2^9)
+                // timing.sjw should be in range [0, 2^7)
+                // timing.tseg1 should be in range [0, 2^8)
+                // timing.tseg2 should be in range [0, 2^7)
                 unsafe {
                     self.reg.nbtpi().modify(|r| {
                         r.nbrp()
@@ -279,6 +316,11 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn set_data_bit_timing(&self, timing: &DataBitTiming) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.configure_fast_baud_rate after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 15:13, 22:21 and 31:24 are written with 0, TODO timing.brp should be in range [0, 2^5)
+                // timing.sjw should be in range [0, 2^4)
+                // timing.tseg1 should be in range [0, 2^5)
+                // timing.tseg2 should be in range [0, 2^4)
                 unsafe {
                     self.reg.dbtpi().modify(|r| {
                         r.dbrp()
@@ -294,20 +336,28 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn set_tx_buffer_data_field_size(&self, tdbs: u8) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_tx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 31:3 are written with 0, TODO tdbs should be in range [0, 2^3)
                 unsafe { self.reg.tx().txesci().modify(|r| r.tbds().set(tdbs.into())) };
             }
 
             pub(crate) fn set_tx_buffer_start_address(&self, address: u16) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_tx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 1:0, 23:22 and 31 are written with 0, TODO address should be in range [0, 2^14)
                 unsafe { self.reg.tx().txbci().modify(|r| r.tbsa().set(address >> 2)) };
             }
 
             pub(crate) fn set_rx_buffer_start_address(&self, address: u16) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 1:0 and 31:16 are written with 0, TODO address should be in range [0, 2^14)
                 unsafe { self.reg.rx().rxbci().modify(|r| r.rbsa().set(address >> 2)) };
             }
 
             pub(crate) fn set_frame_mode(&self, fdoe: bool, brse: bool) {
                 let fdoe = u8::from(fdoe);
                 let brse = u8::from(brse);
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>. after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 11:10 and 31:16 are written with 0, fdoe and brse are in range [0, 1]
                 unsafe {
                     self.reg
                         .cccri()
@@ -316,11 +366,16 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn set_transceiver_delay_compensation_offset(&self, delay: u8) {
+                // SAFETY: write is CCE and INIT protected: called after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 15:13, 22:21 and 31:24 are written with 0, TDC bit is RW
                 unsafe { self.reg.dbtpi().modify(|r| r.tdc().set(1u8.into())) };
+                // SAFETY: write is CCE and INIT protected: called after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 7 and 31:15 are written with 0, TODO delay should be in range [0, 2^7)
                 unsafe { self.reg.tdcri().modify(|r| r.tdco().set(delay)) };
             }
 
             pub(crate) fn enable_interrupt(&self, interrupt: Interrupt) {
+                // SAFETY: bits 20, 21, 29 and 31:30 are written with 0, interrupt is guaranteed to take only allowed values
                 unsafe {
                     self.reg.iei().modify(|mut r| {
                         *r.data_mut_ref() |= 1 << interrupt as u32;
@@ -331,6 +386,7 @@ macro_rules! impl_can_node_effect {
 
             #[inline]
             pub(crate) fn clear_interrupt_flag(&self, interrupt: Interrupt) {
+                // SAFETY: bits 20, 21, 29 and 31:30 are written with 0, interrupt is guaranteed to take only allowed values
                 unsafe {
                     self.reg.iri().init(|mut r| {
                         *r.data_mut_ref() = 1 << interrupt as u32;
@@ -358,14 +414,17 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn connect_pin_rx(&self, rx_sel: RxSel) {
+                // SAFETY: bits 7:3 and 31:11 are written with 0, rx_sel is guaranteed to take only allowed values
                 unsafe { self.reg.npcri().modify(|r| r.rxsel().set(rx_sel.into())) };
             }
 
             pub(crate) fn get_rx_fifo0_fill_level(&self) -> u8 {
+                // SAFETY: F0FL is RH
                 unsafe { self.reg.rx().rxf0si().read() }.f0fl().get()
             }
 
             pub(crate) fn get_rx_fifo1_fill_level(&self) -> u8 {
+                // SAFETY: F1FL is RH
                 unsafe { self.reg.rx().rxf1si().read() }.f1fl().get()
             }
 
@@ -374,10 +433,14 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn set_rx_fifo1_size(&self, size: u8) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 1:0, 23 are written with 0, TODO size should be in range [0, 2^7)
                 unsafe { self.reg.rx().rxf1ci().modify(|r| r.f1s().set(size.into())) };
             }
 
             pub(crate) fn set_rx_fifo1_start_address(&self, address: u16) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 1:0, 23 are written with 0, TODO address should be in range [0, 2^14)
                 unsafe {
                     self.reg
                         .rx()
@@ -387,6 +450,8 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn set_rx_fifo1_watermark_level(&self, level: u8) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 1:0, 23 are written with 0, TODO level should be in range [0, 2^7)
                 unsafe {
                     self.reg
                         .rx()
@@ -396,18 +461,23 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn is_tx_event_fifo_element_lost(&self) -> bool {
+                // SAFETY: TEFL is RH
                 unsafe { self.reg.tx().txefsi().read() }.tefl().get().0 == 1
             }
 
             pub(crate) fn is_tx_event_fifo_full(&self) -> bool {
+                // SAFETY: EFF is RH
                 unsafe { self.reg.tx().txefsi().read() }.eff().get().0 == 1
             }
 
             pub(crate) fn is_tx_fifo_queue_full(&self) -> bool {
+                // SAFETY: TFQF is RH
                 unsafe { self.reg.tx().txfqsi().read() }.tfqf().get().0 == 1
             }
 
             pub(crate) fn pause_trasmission(&self, enable: bool) {
+                // SAFETY: write is CCE and INIT protected: TODO: never used
+                // bits 11:10 and 31:16 are written with 0, enable is in range [0, 1]
                 unsafe {
                     self.reg
                         .cccri()
@@ -416,6 +486,8 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn set_standard_filter_list_start_address(&self, address: u16) {
+                // SAFETY: write is CCE and INIT protected: TODO: never used
+                // bits 1:0 and 31:24 are written with 0, TODO: address should be in range [0, 2^14)
                 unsafe { self.reg.sidfci().modify(|r| r.flssa().set(address >> 2)) };
             }
 
