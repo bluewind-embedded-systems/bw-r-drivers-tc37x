@@ -902,7 +902,7 @@ impl Port {
         let ioc_index = index / 4;
         let shift = (index & 0x3) * 8;
 
-        // TODO Probably this unsafe code can be made safe by comparing the address (usize) of the port
+        // TODO This unsafe code could be made safe by comparing the address (usize) of the port if only self.inner.0 was public
         let is_supervisor = unsafe { transmute::<_, usize>(self.inner) }
             == unsafe { transmute(crate::pac::PORT_40) };
 
@@ -916,6 +916,7 @@ impl Port {
         }
 
         // TODO Can we do this without transmute?
+        // TODO Use change_pin_mode_port_pin from gpio module instead?
         let iocr: crate::pac::Reg<crate::pac::port_00::Iocr0, crate::pac::RW> = {
             let iocr0 = self.inner.iocr0();
             let addr: *mut u32 = unsafe { transmute(iocr0) };
