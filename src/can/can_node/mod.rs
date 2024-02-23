@@ -886,10 +886,6 @@ impl Port {
         self.set_pin_state(index, State::Toggled)
     }
 
-    fn set_pin_high(&self, index: u8) {
-        self.set_pin_state(index, State::High)
-    }
-
     fn set_pin_low(&self, index: u8) {
         self.set_pin_state(index, State::Low)
     }
