@@ -428,10 +428,6 @@ macro_rules! impl_can_node_effect {
                 unsafe { self.reg.rx().rxf1si().read() }.f1fl().get()
             }
 
-            pub(crate) fn set_rx_buffers_start_address(&self, address: u16) {
-                unsafe { self.reg.rx().rxbci().modify(|r| r.rbsa().set(address >> 2)) };
-            }
-
             pub(crate) fn set_rx_fifo1_size(&self, size: u8) {
                 // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
                 // bits 1:0, 23 are written with 0, TODO size should be in range [0, 2^7)
