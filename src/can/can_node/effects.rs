@@ -520,6 +520,7 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn get_tx_fifo_queue_put_index(&self) -> u8 {
+                // SAFETY: TFQPI is RH
                 unsafe { self.reg.tx().txfqsi().read() }.tfqpi().get()
             }
 
