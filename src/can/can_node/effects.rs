@@ -55,6 +55,8 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn set_rx_fifo0_start_address(&self, address: u16) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 1:0, 23 are written with 0, TODO address should be in range [0, 2^14)
                 unsafe {
                     self.reg
                         .rx()
@@ -64,10 +66,14 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn set_rx_fifo0_size(&self, size: u8) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 1:0, 23 are written with 0, TODO address should be in range [0, 2^7) 
                 unsafe { self.reg.rx().rxf0ci().modify(|r| r.f0s().set(size.into())) };
             }
 
             pub(crate) fn set_rx_fifo0_watermark_level(&self, level: u8) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 1:0, 23 are written with 0, TODO level should be in range [0, 2^7) 
                 unsafe {
                     self.reg
                         .rx()
@@ -80,6 +86,8 @@ macro_rules! impl_can_node_effect {
             pub(crate) fn set_rx_fifo0_operating_mode(&self, mode: RxFifoMode) {
                 let overwrite = mode == RxFifoMode::Overwrite;
                 let overwrite = u8::from(overwrite);
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 1:0, 23 are written with 0, overwrite is in range [0, 1]
                 unsafe {
                     self.reg
                         .rx()
@@ -90,6 +98,8 @@ macro_rules! impl_can_node_effect {
 
             // TODO Move logic to the caller
             pub(crate) fn set_rx_fifo1_operating_mode(&self, mode: RxFifoMode) {
+                // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
+                // bits 1:0, 23 are written with 0, overwrite is in range [0, 1]
                 let overwrite = mode == RxFifoMode::Overwrite;
                 let overwrite = u8::from(overwrite);
                 unsafe {
@@ -102,6 +112,7 @@ macro_rules! impl_can_node_effect {
 
             pub(crate) fn enable_tx_buffer_transmission_interrupt(&self, tx_buffer_id: TxBufferId) {
                 let id: u8 = tx_buffer_id.into();
+                // SAFETY: each bit is RW, TODO tx_buffer_id should be in range [0, 31], use try_from?
                 unsafe {
                     self.reg.tx().txbtiei().modify(|mut r| {
                         *r.data_mut_ref() |= 1 << id;
