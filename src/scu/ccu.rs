@@ -25,8 +25,7 @@ pub enum InitError {
     ThrottleSysPllClockInline,
 }
 
-// TODO Are we sure we want to publish this function?
-pub fn init(config: &Config) -> Result<(), InitError> {
+pub(crate) fn init(config: &Config) -> Result<(), InitError> {
     configure_ccu_initial_step(config).map_err(|()| InitError::ConfigureCCUInitialStep)?;
     modulation_init(config).map_err(|()| InitError::ModulationInit)?;
     distribute_clock_inline(config).map_err(|()| InitError::DistributeClockInline)?;
@@ -83,8 +82,7 @@ fn set_pll_power(
     })
 }
 
-// TODO Are we sure we want to publish this function?
-pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
+pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     // TODO Should be an enum variant in the pac crate
     const CLKSEL_BACKUP: u8 = 0;
 
@@ -241,8 +239,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     Ok(())
 }
 
-// TODO Are we sure we want to publish this function?
-pub fn modulation_init(config: &Config) -> Result<(), ()> {
+pub(crate) fn modulation_init(config: &Config) -> Result<(), ()> {
     if let ModulationEn::Enabled = config.modulation.enable {
         let rgain_p = calc_rgain_parameters(config.modulation.amp);
 
@@ -288,8 +285,7 @@ fn calc_rgain_parameters(modamp: ModulationAmplitude) -> RGainValues {
     }
 }
 
-// TODO Are we sure we want to publish this function?
-pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
+pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     wdt::clear_safety_endinit_inline();
 
     // CCUCON0 config
@@ -434,8 +430,7 @@ pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     Ok(())
 }
 
-// TODO Are we sure we want to publish this function?
-pub fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
+pub(crate) fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
     for pll_step_count in 0..config.sys_pll_throttle.len() {
         wdt::clear_safety_endinit_inline();
 
@@ -453,10 +448,9 @@ pub fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
     Ok(())
 }
 
-// TODO Are we sure we want to publish this function?
 /// Wait until cond return true or timeout
 #[inline]
-pub fn wait_cond(timeout_cycle_count: usize, cond: impl Fn() -> bool) -> Result<(), ()> {
+pub(crate) fn wait_cond(timeout_cycle_count: usize, cond: impl Fn() -> bool) -> Result<(), ()> {
     let mut timeout_cycle_count = timeout_cycle_count;
     while cond() {
         timeout_cycle_count -= 1;
@@ -473,9 +467,8 @@ const EVR_OSC_FREQUENCY: u32 = 100_000_000;
 const XTAL_FREQUENCY: u32 = 20_000_000;
 const SYSCLK_FREQUENCY: u32 = 20_000_000;
 
-// TODO Are we sure we want to publish this function?
 #[inline]
-pub fn get_osc_frequency() -> f32 {
+pub(crate) fn get_osc_frequency() -> f32 {
     let f = match unsafe { SCU.syspllcon0().read() }.insel().get() {
         scu::syspllcon0::Insel::CONST_00 => EVR_OSC_FREQUENCY,
         scu::syspllcon0::Insel::CONST_11 => XTAL_FREQUENCY,
@@ -485,8 +478,7 @@ pub fn get_osc_frequency() -> f32 {
     f as f32
 }
 
-// TODO Are we sure we want to publish this function?
-pub fn get_pll_frequency() -> u32 {
+pub(crate) fn get_pll_frequency() -> u32 {
     let osc_freq = get_osc_frequency();
     let syspllcon0 = unsafe { SCU.syspllcon0().read() };
     let syspllcon1 = unsafe { SCU.syspllcon1().read() };
@@ -495,8 +487,7 @@ pub fn get_pll_frequency() -> u32 {
     f as u32
 }
 
-// TODO Are we sure we want to publish this function?
-pub fn get_per_pll_frequency1() -> u32 {
+pub(crate) fn get_per_pll_frequency1() -> u32 {
     let osc_freq = get_osc_frequency();
     let perpllcon0 = unsafe { SCU.perpllcon0().read() };
     let perpllcon1 = unsafe { SCU.perpllcon1().read() };
@@ -505,8 +496,7 @@ pub fn get_per_pll_frequency1() -> u32 {
     f as u32
 }
 
-// TODO Are we sure we want to publish this function?
-pub fn get_per_pll_frequency2() -> u32 {
+pub(crate) fn get_per_pll_frequency2() -> u32 {
     let osc_freq = get_osc_frequency();
     let perpllcon0 = unsafe { SCU.perpllcon0().read() };
     let perpllcon1 = unsafe { SCU.perpllcon1().read() };
@@ -774,7 +764,6 @@ fn get_evr_frequency() -> u32 {
     EVR_OSC_FREQUENCY
 }
 
-// TODO Are we sure we want to publish this function?
-pub fn get_osc0_frequency() -> u32 {
+pub(crate) fn get_osc0_frequency() -> u32 {
     XTAL_FREQUENCY
 }
