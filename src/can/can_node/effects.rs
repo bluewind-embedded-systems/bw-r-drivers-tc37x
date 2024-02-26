@@ -488,10 +488,14 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn set_standard_filter_list_size(&self, size: u8) {
+                // SAFETY: write is CCE and INIT protected: TODO: never used
+                // bits 1:0 and 31:24 are written with 0, size is in range [0, 2^8)
                 unsafe { self.reg.sidfci().modify(|r| r.lss().set(size.into())) };
             }
 
             pub(crate) fn reject_remote_frames_with_standard_id(&self) {
+                 // SAFETY: write is CCE and INIT protected: TODO: never used
+                // bits 31:6 are written with 0, RRFS is a RW bit
                 unsafe {
                     self.reg
                         .gfci()
@@ -500,10 +504,14 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn set_extended_filter_list_start_address(&self, address: u16) {
+                // SAFETY: write is CCE and INIT protected: TODO: never used
+                // bits 1:0 and 31:24 are written with 0, TODO: address should be in range [0, 2^14)
                 unsafe { self.reg.xidfci().modify(|r| r.flesa().set(address >> 2)) };
             }
 
             pub(crate) fn set_extended_filter_list_size(&self, size: u8) {
+                // SAFETY: write is CCE and INIT protected: TODO: never used
+                // bits 1:0 and 31:24 are written with 0, size is in range [0, 2^8)
                 unsafe {
                     self.reg
                         .xidfci()
@@ -512,6 +520,8 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn reject_remote_frames_with_extended_id(&self) {
+                 // SAFETY: write is CCE and INIT protected: TODO: never used
+                // bits 31:6 are written with 0, RRFE is a RW bit
                 unsafe { self.reg.gfci().modify(|r| r.rrfe().set(1u8.into())) };
             }
 
@@ -521,12 +531,14 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn get_rx_fifo0_get_index(&self) -> RxBufferId {
+                // SAFETY: F0GI is RH
                 let idx: u8 = unsafe { self.reg.rx().rxf0si().read() }.f0gi().get();
                 // SAFETY: idx is always between 0 and 63
                 unsafe { RxBufferId::new_unchecked(idx) }
             }
 
             pub(crate) fn get_rx_fifo1_get_index(&self) -> RxBufferId {
+                // SAFETY: F1GI is RH
                 let idx: u8 = unsafe { self.reg.rx().rxf1si().read() }.f1gi().get();
                 // SAFETY: idx is always between 0 and 63
                 unsafe { RxBufferId::new_unchecked(idx) }
@@ -535,11 +547,13 @@ macro_rules! impl_can_node_effect {
             pub(crate) fn is_rx_buffer_new_data_updated(&self, rx_buffer_id: u8) -> bool {
                 let (data, mask) = if rx_buffer_id < 32 {
                     // last number value in the reg name is the node id
+                    // SAFETY: each bit of NDAT1i is RWH
                     let data = unsafe { self.reg.ndat1i().read() }.data();
                     let mask = 1 << u8::from(rx_buffer_id);
                     (data, mask)
                 } else {
                     // last number value in the reg name is the node id
+                    // SAFETY: each bit of NDAT2i is RWH
                     let data = unsafe { self.reg.ndat2i().read() }.data();
                     let mask = 1 << (u8::from(rx_buffer_id) - 32);
                     (data, mask)
@@ -549,6 +563,7 @@ macro_rules! impl_can_node_effect {
 
             #[inline]
             pub(crate) fn set_rx_fifo0_acknowledge_index(&self, rx_buffer_id: RxBufferId) {
+                // SAFETY: bits 31:6 are written with 0, TODO: rx_buffer_id should be in range [0, 2^6)
                 unsafe {
                     self.reg
                         .rx()
@@ -559,6 +574,7 @@ macro_rules! impl_can_node_effect {
 
             #[inline]
             pub(crate) fn set_rx_fifo1_acknowledge_index(&self, rx_buffer_id: RxBufferId) {
+                // SAFETY: bits 31:6 are written with 0, TODO: rx_buffer_id should be in range [0, 2^6)
                 unsafe {
                     self.reg
                         .rx()
@@ -569,6 +585,7 @@ macro_rules! impl_can_node_effect {
 
             #[inline]
             pub(crate) fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: u8) -> bool {
+                // SAFETY: each bit of TXBTOI is RH
                 let data = unsafe { self.reg.tx().txbtoi().read() }.data();
                 let mask = 1u32 << u32::from(tx_buffer_id);
                 (data & mask) != 0
@@ -578,37 +595,69 @@ macro_rules! impl_can_node_effect {
             pub(crate) fn set_tx_buffer_add_request(&self, id: u8) {
                 let txbari = self.reg.tx().txbari();
                 match id {
+                    // SAFETY: AR0 is a RWH bit
                     0 => unsafe { txbari.modify(|r| r.ar0().set(1u8.into())) },
+                    // SAFETY: AR1 is a RWH bit
                     1 => unsafe { txbari.modify(|r| r.ar1().set(1u8.into())) },
+                    // SAFETY: AR2 is a RWH bit
                     2 => unsafe { txbari.modify(|r| r.ar2().set(1u8.into())) },
+                    // SAFETY: AR3 is a RWH bit
                     3 => unsafe { txbari.modify(|r| r.ar3().set(1u8.into())) },
+                    // SAFETY: AR4 is a RWH bit
                     4 => unsafe { txbari.modify(|r| r.ar4().set(1u8.into())) },
+                    // SAFETY: AR5 is a RWH bit
                     5 => unsafe { txbari.modify(|r| r.ar5().set(1u8.into())) },
+                    // SAFETY: AR6 is a RWH bit
                     6 => unsafe { txbari.modify(|r| r.ar6().set(1u8.into())) },
+                    // SAFETY: AR7 is a RWH bit
                     7 => unsafe { txbari.modify(|r| r.ar7().set(1u8.into())) },
+                    // SAFETY: AR8 is a RWH bit
                     8 => unsafe { txbari.modify(|r| r.ar8().set(1u8.into())) },
+                    // SAFETY: AR9 is a RWH bit
                     9 => unsafe { txbari.modify(|r| r.ar9().set(1u8.into())) },
+                    // SAFETY: AR10 is a RWH bit
                     10 => unsafe { txbari.modify(|r| r.ar10().set(1u8.into())) },
+                    // SAFETY: AR11 is a RWH bit
                     11 => unsafe { txbari.modify(|r| r.ar11().set(1u8.into())) },
+                    // SAFETY: AR12 is a RWH bit
                     12 => unsafe { txbari.modify(|r| r.ar12().set(1u8.into())) },
-                    14 => unsafe { txbari.modify(|r| r.ar14().set(1u8.into())) },
+                    // SAFETY: AR13 is a RWH bit
                     13 => unsafe { txbari.modify(|r| r.ar13().set(1u8.into())) },
+                    // SAFETY: AR14 is a RWH bit
+                    14 => unsafe { txbari.modify(|r| r.ar14().set(1u8.into())) },
+                    // SAFETY: AR15 is a RWH bit
                     15 => unsafe { txbari.modify(|r| r.ar15().set(1u8.into())) },
+                    // SAFETY: AR16 is a RWH bit
                     16 => unsafe { txbari.modify(|r| r.ar16().set(1u8.into())) },
+                    // SAFETY: AR17 is a RWH bit
                     17 => unsafe { txbari.modify(|r| r.ar17().set(1u8.into())) },
+                    // SAFETY: AR18 is a RWH bit
                     18 => unsafe { txbari.modify(|r| r.ar18().set(1u8.into())) },
+                    // SAFETY: AR19 is a RWH bit
                     19 => unsafe { txbari.modify(|r| r.ar19().set(1u8.into())) },
+                    // SAFETY: AR20 is a RWH bit
                     20 => unsafe { txbari.modify(|r| r.ar20().set(1u8.into())) },
+                    // SAFETY: AR21 is a RWH bit
                     21 => unsafe { txbari.modify(|r| r.ar21().set(1u8.into())) },
+                    // SAFETY: AR22 is a RWH bit
                     22 => unsafe { txbari.modify(|r| r.ar22().set(1u8.into())) },
+                    // SAFETY: AR23 is a RWH bit
                     23 => unsafe { txbari.modify(|r| r.ar23().set(1u8.into())) },
+                    // SAFETY: AR24 is a RWH bit
                     24 => unsafe { txbari.modify(|r| r.ar24().set(1u8.into())) },
+                    // SAFETY: AR25 is a RWH bit
                     25 => unsafe { txbari.modify(|r| r.ar25().set(1u8.into())) },
+                    // SAFETY: AR26 is a RWH bit
                     26 => unsafe { txbari.modify(|r| r.ar26().set(1u8.into())) },
+                    // SAFETY: AR27 is a RWH bit
                     27 => unsafe { txbari.modify(|r| r.ar27().set(1u8.into())) },
+                    // SAFETY: AR28 is a RWH bit
                     28 => unsafe { txbari.modify(|r| r.ar28().set(1u8.into())) },
+                    // SAFETY: AR29 is a RWH bit
                     29 => unsafe { txbari.modify(|r| r.ar29().set(1u8.into())) },
+                    // SAFETY: AR30 is a RWH bit
                     30 => unsafe { txbari.modify(|r| r.ar30().set(1u8.into())) },
+                    // SAFETY: AR31 is a RWH bit
                     31 => unsafe { txbari.modify(|r| r.ar31().set(1u8.into())) },
                     _ => {
                         // Invalid id, nothing to do
@@ -618,6 +667,7 @@ macro_rules! impl_can_node_effect {
 
             // TODO The original code does not work with current PAC
             pub(crate) fn get_data_field_size(&self, from: ReadFrom) -> u8 {
+                // SAFETY: each bit of RXESCI is at least R
                 let rx_esc = unsafe { self.reg.rx().rxesci().read() };
                 let size_code: u8 = match from {
                     ReadFrom::Buffer(_) => rx_esc.rbds().get().0,
@@ -634,6 +684,7 @@ macro_rules! impl_can_node_effect {
 
             pub(crate) fn get_tx_buffer_data_field_size(&self) -> u8 {
                 let size_code: u8 =
+                // SAFETY: each bit of TXESCI is at least R
                     (unsafe { self.reg.tx().txesci().read() }.get_raw() & 0x2) as u8;
                 if size_code < (DataFieldSize::_32 as u8) {
                     (size_code + 2) * 4
@@ -643,6 +694,7 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn is_tx_buffer_request_pending(&self, tx_buffer_id: TxBufferId) -> bool {
+                // SAFETY: each bit of TXBRPI is RH
                 let txbrpi = unsafe { self.reg.tx().txbrpi().read() };
                 let id: u8 = tx_buffer_id.into();
                 match id {
