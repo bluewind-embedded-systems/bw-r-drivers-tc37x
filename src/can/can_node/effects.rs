@@ -70,7 +70,7 @@ macro_rules! impl_can_node_effect {
 
             pub(crate) fn set_rx_fifo0_watermark_level(&self, level: u8) {
                 // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
-                // bits 1:0, 23 are written with 0, TODO level should be in range [0, 2^7) 
+                // bits 1:0, 23 are written with 0, TODO level should be in range [0, 2^7)
                 unsafe {
                     self.reg
                         .rx()
