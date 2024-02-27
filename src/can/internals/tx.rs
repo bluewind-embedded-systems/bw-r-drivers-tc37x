@@ -25,6 +25,7 @@ impl Tx {
             FrameMode::FdLong => (true, false),
             FrameMode::FdLongAndFast => (true, true),
         };
+        // SAFETY: bits 15:0 and 22 are written with 0, fdf and brs are in range [0, 1]
         unsafe { self.inner.t1().modify(|r| r.fdf().set(fdf).brs().set(brs)) };
     }
 
@@ -48,25 +49,30 @@ impl Tx {
 
     #[inline]
     pub(crate) fn set_tx_event_fifo_ctrl(&self, enable: bool) {
+        // SAFETY: bits 15:0 and 22 are written with 0, enable is in range [0, 1]
         unsafe { self.inner.t1().modify(|r| r.efc().set(enable)) };
     }
 
     pub(crate) fn set_message_marker(&self, buffer_id: TxBufferId) {
+        // SAFETY: bits 15:0 and 22 are written with 0, buffer_id is in range [0, 2^8)
         unsafe { self.inner.t1().modify(|r| r.mm().set(buffer_id.into())) };
     }
 
     #[inline]
     pub(crate) fn set_remote_transmit_req(&self, enable: bool) {
+        // SAFETY: enable is in range [0, 1]
         unsafe { self.inner.t0().modify(|r| r.rtr().set(enable)) };
     }
 
     #[inline]
     pub(crate) fn set_err_state_indicator(&self, enable: bool) {
+        // SAFETY: enable is in range [0, 1]
         unsafe { self.inner.t0().modify(|r| r.esi().set(enable)) };
     }
 
     #[inline]
     pub(crate) fn set_data_length(&self, data_length_code: DataLenghtCode) {
+        // SAFETY: bits 15:0 and 22 are written with 0, data_length_code takes only allowed values
         unsafe {
             self.inner
                 .t1()

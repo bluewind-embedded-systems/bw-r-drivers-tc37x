@@ -23,6 +23,7 @@ impl Rx {
 impl Rx {
     #[inline]
     pub(crate) fn get_message_id(&self) -> u32 {
+        // SAFETY: each bit of R0 is RWH
         let r0 = unsafe { self.inner.r0().read() };
         let message_length = if r0.xtd().get() {
             MessageIdLenght::Extended
@@ -41,6 +42,7 @@ impl Rx {
 
     #[inline]
     pub(crate) fn get_message_id_length(&self) -> MessageIdLenght {
+        // SAFETY: each bit of R0 is RWH
         if unsafe { self.inner.r0().read() }.xtd().get() {
             MessageIdLenght::Extended
         } else {
@@ -50,12 +52,14 @@ impl Rx {
 
     #[inline]
     pub(crate) fn get_data_length(&self) -> DataLenghtCode {
+        // SAFETY: each bit of R1 is RWH
         let d = unsafe { self.inner.r1().read() }.dlc().get();
         // SAFETY: d is a valid DataLenghtCode, because it is a 4 bit field
         unsafe { DataLenghtCode::try_from(d).unwrap_unchecked() }
     }
 
     pub(crate) fn get_frame_mode(&self) -> FrameMode {
+        // SAFETY: each bit of R1 is RWH
         let r1 = unsafe { self.inner.r1().read() };
 
         if r1.fdf().get() {
