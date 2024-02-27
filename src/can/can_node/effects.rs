@@ -396,6 +396,7 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn set_interrupt_routing_group_1(&self, line: u32, group: u32) {
+                // SAFETY: TODO: line should be in range [0, 16) and group should be in range [0, 8)
                 unsafe {
                     self.reg.grint1i().modify(|mut r| {
                         *r.data_mut_ref() |= line << group;
@@ -405,6 +406,7 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn set_interrupt_routing_group_2(&self, line: u32, group: u32) {
+                // SAFETY: TODO: line should be in range [0, 16) and group should be in range [0, 8)
                 unsafe {
                     self.reg.grint2i().modify(|mut r| {
                         *r.data_mut_ref() |= line << group;
