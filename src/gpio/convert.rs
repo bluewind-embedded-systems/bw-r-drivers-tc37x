@@ -113,24 +113,43 @@ impl<const P: PortIndex, const N: PinIndex, MODE: PinMode> Pin<P, N, MODE> {
 #[inline(always)]
 fn change_pin_mode_port_pin<MODE: PinMode>(port: &AnyPort, pin: PinId) {
     use crate::pac::*;
+    // Output<OpenDrain> = 0x80
+    // Output<PushPull> = 0xC0
+    // mode = (Output<OpenDrain> (0x80) or Output<PushPull> (0xC0)) | (AF where AF is in range [0, 2^3))
     let mode = MODE::MODE >> 3;
 
     match pin.0 {
+        // SAFETY: mode is in range [0, 2^5)
         0 => unsafe { port.iocr0().modify_atomic(|r| r.pc0().set(mode)) },
+        // SAFETY: mode is in range [0, 2^5)
         1 => unsafe { port.iocr0().modify_atomic(|r| r.pc1().set(mode)) },
+        // SAFETY: mode is in range [0, 2^5)
         2 => unsafe { port.iocr0().modify_atomic(|r| r.pc2().set(mode)) },
+        // SAFETY: mode is in range [0, 2^5)
         3 => unsafe { port.iocr0().modify_atomic(|r| r.pc3().set(mode)) },
+        // SAFETY: mode is in range [0, 2^5)
         4 => unsafe { port.iocr4().modify_atomic(|r| r.pc4().set(mode)) },
+        // SAFETY: mode is in range [0, 2^5)
         5 => unsafe { port.iocr4().modify_atomic(|r| r.pc5().set(mode)) },
+        // SAFETY: mode is in range [0, 2^5)
         6 => unsafe { port.iocr4().modify_atomic(|r| r.pc6().set(mode)) },
+        // SAFETY: mode is in range [0, 2^5)
         7 => unsafe { port.iocr4().modify_atomic(|r| r.pc7().set(mode)) },
+        // SAFETY: mode is in range [0, 2^5)
         8 => unsafe { port.iocr8().modify_atomic(|r| r.pc8().set(mode)) },
+        // SAFETY: mode is in range [0, 2^5)
         9 => unsafe { port.iocr8().modify_atomic(|r| r.pc9().set(mode)) },
+        // SAFETY: mode is in range [0, 2^5)
         10 => unsafe { port.iocr8().modify_atomic(|r| r.pc10().set(mode)) },
+        // SAFETY: mode is in range [0, 2^5)
         11 => unsafe { port.iocr8().modify_atomic(|r| r.pc11().set(mode)) },
+        // SAFETY: mode is in range [0, 2^5)
         12 => unsafe { port.iocr12().modify_atomic(|r| r.pc12().set(mode)) },
+        // SAFETY: mode is in range [0, 2^5)
         13 => unsafe { port.iocr12().modify_atomic(|r| r.pc13().set(mode)) },
+        // SAFETY: mode is in range [0, 2^5)
         14 => unsafe { port.iocr12().modify_atomic(|r| r.pc14().set(mode)) },
+        // SAFETY: mode is in range [0, 2^5)
         15 => unsafe { port.iocr12().modify_atomic(|r| r.pc15().set(mode)) },
         _ => {
             // Nothing is done for invalid pin index

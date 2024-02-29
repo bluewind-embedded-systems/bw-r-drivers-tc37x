@@ -395,21 +395,37 @@ where
         let port = unsafe { (*Gpio::<P>::ptr()) };
 
         match N {
+            // SAFETY: mode is in range [0, 3)
             0 => unsafe { port.iocr0().modify_atomic(|r| r.pc0().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
             1 => unsafe { port.iocr0().modify_atomic(|r| r.pc1().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
             2 => unsafe { port.iocr0().modify_atomic(|r| r.pc2().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
             3 => unsafe { port.iocr0().modify_atomic(|r| r.pc3().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
             4 => unsafe { port.iocr4().modify_atomic(|r| r.pc4().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
             5 => unsafe { port.iocr4().modify_atomic(|r| r.pc5().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
             6 => unsafe { port.iocr4().modify_atomic(|r| r.pc6().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
             7 => unsafe { port.iocr4().modify_atomic(|r| r.pc7().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
             8 => unsafe { port.iocr8().modify_atomic(|r| r.pc8().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
             9 => unsafe { port.iocr8().modify_atomic(|r| r.pc9().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
             10 => unsafe { port.iocr8().modify_atomic(|r| r.pc10().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
             11 => unsafe { port.iocr8().modify_atomic(|r| r.pc11().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
             12 => unsafe { port.iocr12().modify_atomic(|r| r.pc12().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
             13 => unsafe { port.iocr12().modify_atomic(|r| r.pc13().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
             14 => unsafe { port.iocr12().modify_atomic(|r| r.pc14().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
             15 => unsafe { port.iocr12().modify_atomic(|r| r.pc15().set(mode)) },
             _ => unimplemented!(),
         }
@@ -706,6 +722,7 @@ pub(crate) fn pin_set_state(port: &AnyPort, pin: PinId, state: PinState) {
     // we directly set the bits in OMR register.
     let (pclx, psx) = pcl_ps_from_state(state);
     let raw = pcl_ps_bits(pclx, psx, pin.0.into());
+    // SAFETY: each bit in OMR is W0, init will set every bit to 0 (no operation) and then apply the closure
     unsafe {
         port.omr().init(|mut r| r.set_raw(raw));
     }
@@ -717,6 +734,7 @@ pub(crate) fn pin_toggle_state(port: &AnyPort, pin: PinId) {
     // Instead of setting PCLx and PSx (where x is the pin number)
     // we directly set the bits in OMR register.
     let raw = pcl_ps_bits(1, 1, pin.0.into());
+    // SAFETY: each bit in OMR is W0, init will set every bit to 0 (no operation) and then apply the closure
     unsafe {
         port.omr().init(|mut r| r.set_raw(raw));
     }
@@ -725,21 +743,37 @@ pub(crate) fn pin_toggle_state(port: &AnyPort, pin: PinId) {
 #[inline(always)]
 pub(crate) fn pin_input_is_high(port: &AnyPort, pin: PinId) -> bool {
     match pin.0 {
+        // SAFETY: each bit of IN is at least R
         0 => unsafe { port.r#in().read().p0().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
         1 => unsafe { port.r#in().read().p1().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
         2 => unsafe { port.r#in().read().p2().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
         3 => unsafe { port.r#in().read().p3().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
         4 => unsafe { port.r#in().read().p4().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
         5 => unsafe { port.r#in().read().p5().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
         6 => unsafe { port.r#in().read().p6().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
         7 => unsafe { port.r#in().read().p7().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
         8 => unsafe { port.r#in().read().p8().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
         9 => unsafe { port.r#in().read().p9().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
         10 => unsafe { port.r#in().read().p10().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
         11 => unsafe { port.r#in().read().p11().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
         12 => unsafe { port.r#in().read().p12().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
         13 => unsafe { port.r#in().read().p13().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
         14 => unsafe { port.r#in().read().p14().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
         15 => unsafe { port.r#in().read().p15().get().0 == 1 },
         _ => {
             // Just return false for invalid pin numbers
@@ -752,21 +786,37 @@ pub(crate) fn pin_input_is_high(port: &AnyPort, pin: PinId) -> bool {
 #[inline(always)]
 pub(crate) fn pin_output_is_high(port: &AnyPort, pin: PinId) -> bool {
     match pin.0 {
+        // SAFETY: each bit of OUT is at least R
         0 => unsafe { port.out().read().p0().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
         1 => unsafe { port.out().read().p1().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
         2 => unsafe { port.out().read().p2().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
         3 => unsafe { port.out().read().p3().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
         4 => unsafe { port.out().read().p4().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
         5 => unsafe { port.out().read().p5().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
         6 => unsafe { port.out().read().p6().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
         7 => unsafe { port.out().read().p7().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
         8 => unsafe { port.out().read().p8().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
         9 => unsafe { port.out().read().p9().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
         10 => unsafe { port.out().read().p10().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
         11 => unsafe { port.out().read().p11().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
         12 => unsafe { port.out().read().p12().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
         13 => unsafe { port.out().read().p13().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
         14 => unsafe { port.out().read().p14().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
         15 => unsafe { port.out().read().p15().get().0 == 1 },
         _ => {
             // Just return false for invalid pin numbers

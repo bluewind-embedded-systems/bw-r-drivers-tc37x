@@ -710,6 +710,7 @@ pub(crate) fn get_mcan_frequency() -> u32 {
     const CLKSELMCAN_USEOSCILLATOR: scu::ccucon1::Clkselmcan = scu::ccucon1::Clkselmcan::CONST_22;
     const MCANDIV_STOPPED: scu::ccucon1::Mcandiv = scu::ccucon1::Mcandiv::CONST_00;
 
+    // SAFETY: each bit of CCUCON1 is at least R
     let ccucon1 = unsafe { SCU.ccucon1().read() };
     let clkselmcan = ccucon1.clkselmcan().get();
     let mcandiv = ccucon1.mcandiv().get();
@@ -737,6 +738,7 @@ fn get_source_frequency(source: u32) -> u32 {
     const CLKSEL_BACKUP: scu::ccucon0::Clksel = scu::ccucon0::Clksel::CONST_00;
     const CLKSEL_PLL: scu::ccucon0::Clksel = scu::ccucon0::Clksel::CONST_11;
 
+    // SAFETY: each bit of CCUCON0 is at least R
     let clksel = unsafe { SCU.ccucon0().read() }.clksel().get();
     //info!("clksel: {}", clksel);
 
@@ -746,6 +748,7 @@ fn get_source_frequency(source: u32) -> u32 {
             0 => get_pll_frequency(),
             1 => {
                 let source_freq = get_per_pll_frequency1();
+                // SAFETY: each bit of CCUCON1 is at least R
                 let ccucon1 = unsafe { SCU.ccucon1().read() };
                 if ccucon1.pll1divdis().get() == scu::ccucon1::Pll1Divdis::CONST_11 {
                     source_freq
