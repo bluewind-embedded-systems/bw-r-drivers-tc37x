@@ -5,7 +5,7 @@ use crate::can::NodeId;
 use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
 use core::marker::PhantomData;
-use pac::hidden::CastFrom;
+
 
 pub trait ModuleId {}
 

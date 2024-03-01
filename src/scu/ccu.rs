@@ -7,7 +7,6 @@
 
 use super::wdt;
 use crate::log::debug;
-use tc37x::common::RegValue;
 use tc37x::scu;
 use tc37x::{RegisterValue, SCU, SMU};
 
@@ -118,8 +117,8 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     // Both the PLLs are powered down to be sure for asynchronous PLL registers
     // update cause no glitches.
     set_pll_power(
-        scu::syspllcon0::Pllpwd::CONST_00,
-        scu::perpllcon0::Pllpwd::CONST_00,
+        scu::Syspllcon0::Pllpwd::CONST_00,
+        scu::Perpllcon0::Pllpwd::CONST_00,
     )?;
 
     let plls_params = &config.pll_initial_step.plls_parameters;
@@ -138,7 +137,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
 
         unsafe {
             SCU.osccon()
-                .modify(|r| r.mode().set(scu::osccon::Mode(mode)).oscval().set(oscval))
+                .modify(|r| r.mode().set(scu::Osccon::Mode(mode)).oscval().set(oscval))
         };
     }
 
@@ -150,7 +149,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
                 .ndiv()
                 .set(plls_params.sys_pll.n_divider)
                 .insel()
-                .set(scu::syspllcon0::Insel(
+                .set(scu::Syspllcon0::Insel(
                     plls_params.pll_input_clock_selection as u8,
                 ))
         })
@@ -169,8 +168,8 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     }
 
     set_pll_power(
-        scu::syspllcon0::Pllpwd::CONST_11,
-        scu::perpllcon0::Pllpwd::CONST_11,
+        scu::Syspllcon0::Pllpwd::CONST_11,
+        scu::Perpllcon0::Pllpwd::CONST_11,
     )?;
 
     wait_divider()?;
@@ -212,12 +211,12 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     // enable SMU alarms
     {
         // TODO Explain these magic numbers
-        unsafe { SMU.keys().write(RegValue::new(0xBC, 0)) };
-        unsafe { SMU.cmd().write(RegValue::new(0x00000005, 0)) };
+        unsafe { SMU.keys().write(RegisterValue::new(0xBC)) };
+        unsafe { SMU.cmd().write(RegisterValue::new(0x00000005)) };
         unsafe {
-            SMU.agi()[8].write(RegValue::new(0x1D, 0));
+            SMU.agi()[8].write(RegisterValue::new(0x1D));
         }
-        unsafe { SMU.keys().write(RegValue::new(0, 0)) };
+        unsafe { SMU.keys().write(RegisterValue::new(0)) };
     }
 
     {
@@ -252,7 +251,7 @@ pub(crate) fn modulation_init(config: &Config) -> Result<(), ()> {
 
         unsafe {
             SCU.syspllcon0()
-                .modify(|r| r.moden().set(scu::syspllcon0::Moden::CONST_11))
+                .modify(|r| r.moden().set(scu::Syspllcon0::Moden::CONST_11))
         };
 
         wdt::set_safety_endinit_inline();
@@ -470,9 +469,9 @@ const SYSCLK_FREQUENCY: u32 = 20_000_000;
 #[inline]
 pub(crate) fn get_osc_frequency() -> f32 {
     let f = match unsafe { SCU.syspllcon0().read() }.insel().get() {
-        scu::syspllcon0::Insel::CONST_00 => EVR_OSC_FREQUENCY,
-        scu::syspllcon0::Insel::CONST_11 => XTAL_FREQUENCY,
-        scu::syspllcon0::Insel::CONST_22 => SYSCLK_FREQUENCY,
+        scu::Syspllcon0::Insel::CONST_00 => EVR_OSC_FREQUENCY,
+        scu::Syspllcon0::Insel::CONST_11 => XTAL_FREQUENCY,
+        scu::Syspllcon0::Insel::CONST_22 => SYSCLK_FREQUENCY,
         _ => 0,
     };
     f as f32
@@ -706,9 +705,10 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
 };
 
 pub(crate) fn get_mcan_frequency() -> u32 {
-    const CLKSELMCAN_USEMCANI: scu::Ccucon1::Clkselmcan = scu::Ccucon1::Clkselmcan::CONST_11;
-    const CLKSELMCAN_USEOSCILLATOR: scu::Ccucon1::Clkselmcan = scu::Ccucon1::Clkselmcan::CONST_22;
-    const MCANDIV_STOPPED: scu::Ccucon1::Mcandiv = scu::Ccucon1::Mcandiv::CONST_00;
+    //TODO create enum!
+    const CLKSELMCAN_USEMCANI:u32 = 1; // scu::Ccucon1::Clkselmcan = scu::Ccucon1::Clkselmcan::CONST_11;
+    const CLKSELMCAN_USEOSCILLATOR: u32 = 2; //scu::Ccucon1::Clkselmcan = scu::Ccucon1::Clkselmcan::CONST_22;
+    const MCANDIV_STOPPED: u32 = 0; //scu::Ccucon1::Mcandiv = scu::Ccucon1::Mcandiv::CONST_00;
 
     // SAFETY: each bit of CCUCON1 is at least R
     let ccucon1 = unsafe { SCU.ccucon1().read() };
@@ -735,8 +735,8 @@ pub(crate) fn get_mcan_frequency() -> u32 {
 }
 
 fn get_source_frequency(source: u32) -> u32 {
-    const CLKSEL_BACKUP: scu::Ccucon0::Clksel = scu::Ccucon0::Clksel::CONST_00;
-    const CLKSEL_PLL: scu::Ccucon0::Clksel = scu::Ccucon0::Clksel::CONST_11;
+    const CLKSEL_BACKUP:u32 = 0; // TODO create enum 
+    const CLKSEL_PLL:u32 = 1;
 
     // SAFETY: each bit of CCUCON0 is at least R
     let clksel = unsafe { SCU.ccucon0().read() }.clksel().get();
@@ -750,7 +750,7 @@ fn get_source_frequency(source: u32) -> u32 {
                 let source_freq = get_per_pll_frequency1();
                 // SAFETY: each bit of CCUCON1 is at least R
                 let ccucon1 = unsafe { SCU.ccucon1().read() };
-                if ccucon1.pll1divdis().get() == scu::Ccucon1::Pll1Divdis::CONST_11 {
+                if ccucon1.pll1divdis().get() {
                     source_freq
                 } else {
                     source_freq / 2

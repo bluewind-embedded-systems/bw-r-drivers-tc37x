@@ -24,7 +24,6 @@ use crate::scu::wdt_call;
 pub use config::NodeConfig;
 use core::marker::PhantomData;
 use core::mem::transmute;
-use tc37x::hidden::RegValue;
 
 #[derive(PartialEq, Debug, Default)]
 pub enum FrameType {

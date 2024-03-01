@@ -4,7 +4,9 @@
 // Note: this module try to mimic the behavior of the pac module, for message SRAM access
 // Note: transmute is used to create a Reg from a pointer, because the pac module does not support creating Reg from pointers
 
-use crate::pac::common::{hidden::RegValue, Reg, RegisterField, RegisterFieldBool, RW};
+use tc37x::RegisterValue;
+
+use crate::pac::common::{Reg, RegisterField, RegisterFieldBool, RW};
 use core::mem::transmute;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -38,24 +40,24 @@ impl RxMsg {
 
 #[derive(Copy, Clone, Eq, PartialEq, Default)]
 pub struct R0(u32, u32);
-impl RegValue for R0 {
-    type DataType = u32;
-    #[inline(always)]
-    fn data_mut_ref(&mut self) -> &mut Self::DataType {
-        &mut self.0
-    }
-    #[inline(always)]
-    fn data(&self) -> Self::DataType {
-        self.0
-    }
-    #[inline(always)]
-    fn get_mask_mut_ref(&mut self) -> &mut Self::DataType {
-        &mut self.1
-    }
-    #[inline(always)]
-    fn new(data: Self::DataType, write_mask: Self::DataType) -> Self {
-        Self(data, write_mask)
-    }
+impl RegisterValue for R0 {
+    // type DataType = u32;
+    // #[inline(always)]
+    // fn data_mut_ref(&mut self) -> &mut Self::DataType {
+    //     &mut self.0
+    // }
+    // #[inline(always)]
+    // fn data(&self) -> Self::DataType {
+    //     self.0
+    // }
+    // #[inline(always)]
+    // fn get_mask_mut_ref(&mut self) -> &mut Self::DataType {
+    //     &mut self.1
+    // }
+    // #[inline(always)]
+    // fn new(data: Self::DataType, write_mask: Self::DataType) -> Self {
+    //     Self(data, write_mask)
+    // }
 }
 impl R0 {
     #[inline(always)]
@@ -85,24 +87,24 @@ impl R0 {
 #[derive(Copy, Clone, Eq, PartialEq, Default)]
 pub struct R1(u32, u32);
 
-impl RegValue for R1 {
-    type DataType = u32;
-    #[inline(always)]
-    fn data_mut_ref(&mut self) -> &mut Self::DataType {
-        &mut self.0
-    }
-    #[inline(always)]
-    fn data(&self) -> Self::DataType {
-        self.0
-    }
-    #[inline(always)]
-    fn get_mask_mut_ref(&mut self) -> &mut Self::DataType {
-        &mut self.1
-    }
-    #[inline(always)]
-    fn new(data: Self::DataType, write_mask: Self::DataType) -> Self {
-        Self(data, write_mask)
-    }
+impl RegisterValue for R1 {
+    // type DataType = u32;
+    // #[inline(always)]
+    // fn data_mut_ref(&mut self) -> &mut Self::DataType {
+    //     &mut self.0
+    // }
+    // #[inline(always)]
+    // fn data(&self) -> Self::DataType {
+    //     self.0
+    // }
+    // #[inline(always)]
+    // fn get_mask_mut_ref(&mut self) -> &mut Self::DataType {
+    //     &mut self.1
+    // }
+    // #[inline(always)]
+    // fn new(data: Self::DataType, write_mask: Self::DataType) -> Self {
+    //     Self(data, write_mask)
+    // }
 }
 
 impl R1 {
@@ -145,22 +147,22 @@ impl R1 {
 #[derive(Copy, Clone, Eq, PartialEq, Default)]
 pub struct Db(u32, u32);
 
-impl RegValue for Db {
-    type DataType = u32;
-    #[inline(always)]
-    fn data_mut_ref(&mut self) -> &mut Self::DataType {
-        &mut self.0
-    }
-    #[inline(always)]
-    fn data(&self) -> Self::DataType {
-        self.0
-    }
-    #[inline(always)]
-    fn get_mask_mut_ref(&mut self) -> &mut Self::DataType {
-        &mut self.1
-    }
-    #[inline(always)]
-    fn new(data: Self::DataType, write_mask: Self::DataType) -> Self {
-        Self(data, write_mask)
-    }
+impl RegisterValue for Db {
+    // type DataType = u32;
+    // #[inline(always)]
+    // fn data_mut_ref(&mut self) -> &mut Self::DataType {
+    //     &mut self.0
+    // }
+    // #[inline(always)]
+    // fn data(&self) -> Self::DataType {
+    //     self.0
+    // }
+    // #[inline(always)]
+    // fn get_mask_mut_ref(&mut self) -> &mut Self::DataType {
+    //     &mut self.1
+    // }
+    // #[inline(always)]
+    // fn new(data: Self::DataType, write_mask: Self::DataType) -> Self {
+    //     Self(data, write_mask)
+    // }
 }

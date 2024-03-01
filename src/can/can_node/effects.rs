@@ -3,8 +3,6 @@ use crate::can::can_node::{Interrupt, RxFifoMode, RxSel};
 use crate::can::msg::{ReadFrom, RxBufferId, TxBufferId};
 use crate::can::{DataFieldSize, TxMode};
 use crate::pac;
-
-use tc37x::hidden::RegValue;
 use tc37x::RegisterValue;
 
 pub(super) struct NodeEffects<T> {
@@ -375,6 +373,7 @@ macro_rules! impl_can_node_effect {
                 // SAFETY: bits 20, 21, 29 and 31:30 are written with 0, interrupt is guaranteed to take only allowed values
                 unsafe {
                     self.reg.iei().modify(|mut r| {
+                        //TODO!!!
                         *r.data_mut_ref() |= 1 << interrupt as u32;
                         r
                     })
@@ -386,6 +385,7 @@ macro_rules! impl_can_node_effect {
                 // SAFETY: bits 20, 21, 29 and 31:30 are written with 0, interrupt is guaranteed to take only allowed values
                 unsafe {
                     self.reg.iri().init(|mut r| {
+                        //TODO!!!
                         *r.data_mut_ref() = 1 << interrupt as u32;
                         r
                     })
@@ -396,6 +396,7 @@ macro_rules! impl_can_node_effect {
                 // SAFETY: TODO: line should be in range [0, 16) and group should be in range [0, 8)
                 unsafe {
                     self.reg.grint1i().modify(|mut r| {
+                        //TODO!!!
                         *r.data_mut_ref() |= line << group;
                         r
                     })
@@ -406,6 +407,8 @@ macro_rules! impl_can_node_effect {
                 // SAFETY: TODO: line should be in range [0, 16) and group should be in range [0, 8)
                 unsafe {
                     self.reg.grint2i().modify(|mut r| {
+
+                        //TODO!!!
                         *r.data_mut_ref() |= line << group;
                         r
                     })
