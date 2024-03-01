@@ -656,8 +656,8 @@ macro_rules! gpio {
 }
 use gpio;
 
-mod tc37x;
-pub use self::tc37x::*;
+mod tc37x_io;
+pub use self::tc37x_io::*;
 
 struct Gpio<const P: PortIndex>;
 
