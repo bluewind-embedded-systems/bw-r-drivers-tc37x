@@ -1,7 +1,7 @@
 #![allow(clippy::print_stdout)]
 
 use std::any::Any;
-use tc37x_pac::tracing::TraceGuard;
+use tc37x::tracing::TraceGuard;
 
 struct Reporter;
 
@@ -21,7 +21,7 @@ impl Report {
     }
 }
 
-impl tc37x_pac::tracing::Reporter for Reporter {
+impl tc37x::tracing::Reporter for Reporter {
     fn read_volatile(&self, addr: usize, len: usize) -> u64 {
         println!("r    0x{:08X} {:02}", addr, len);
         0

@@ -1,8 +1,8 @@
 use crate::can::{InterruptLine, Module0, Module1, Tos};
 use crate::cpu::Priority;
 use core::mem::transmute;
-use tc37x_pac::src::Can0Int0;
-use tc37x_pac::{Reg, RW};
+use tc37x::src::Can0Int0;
+use tc37x::{Reg, RW};
 
 // Note: for simplicity, this wraps a value of Can0Int0 type, even if the
 // underlying registers have different types in the PAC crate.
@@ -12,37 +12,37 @@ pub(crate) struct ServiceRequest(Reg<Can0Int0, RW>);
 impl Module0 {
     pub(crate) fn service_request(line: InterruptLine) -> ServiceRequest {
         ServiceRequest(match line {
-            InterruptLine::Line0 => tc37x_pac::SRC.can0int0(),
+            InterruptLine::Line0 => tc37x::SRC.can0int0(),
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line1 => unsafe { transmute(tc37x_pac::SRC.can0int1()) },
+            InterruptLine::Line1 => unsafe { transmute(tc37x::SRC.can0int1()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line2 => unsafe { transmute(tc37x_pac::SRC.can0int2()) },
+            InterruptLine::Line2 => unsafe { transmute(tc37x::SRC.can0int2()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line3 => unsafe { transmute(tc37x_pac::SRC.can0int3()) },
+            InterruptLine::Line3 => unsafe { transmute(tc37x::SRC.can0int3()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line4 => unsafe { transmute(tc37x_pac::SRC.can0int4()) },
+            InterruptLine::Line4 => unsafe { transmute(tc37x::SRC.can0int4()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line5 => unsafe { transmute(tc37x_pac::SRC.can0int5()) },
+            InterruptLine::Line5 => unsafe { transmute(tc37x::SRC.can0int5()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line6 => unsafe { transmute(tc37x_pac::SRC.can0int6()) },
+            InterruptLine::Line6 => unsafe { transmute(tc37x::SRC.can0int6()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line7 => unsafe { transmute(tc37x_pac::SRC.can0int7()) },
+            InterruptLine::Line7 => unsafe { transmute(tc37x::SRC.can0int7()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line8 => unsafe { transmute(tc37x_pac::SRC.can0int8()) },
+            InterruptLine::Line8 => unsafe { transmute(tc37x::SRC.can0int8()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line9 => unsafe { transmute(tc37x_pac::SRC.can0int9()) },
+            InterruptLine::Line9 => unsafe { transmute(tc37x::SRC.can0int9()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line10 => unsafe { transmute(tc37x_pac::SRC.can0int10()) },
+            InterruptLine::Line10 => unsafe { transmute(tc37x::SRC.can0int10()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line11 => unsafe { transmute(tc37x_pac::SRC.can0int11()) },
+            InterruptLine::Line11 => unsafe { transmute(tc37x::SRC.can0int11()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line12 => unsafe { transmute(tc37x_pac::SRC.can0int12()) },
+            InterruptLine::Line12 => unsafe { transmute(tc37x::SRC.can0int12()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line13 => unsafe { transmute(tc37x_pac::SRC.can0int13()) },
+            InterruptLine::Line13 => unsafe { transmute(tc37x::SRC.can0int13()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line14 => unsafe { transmute(tc37x_pac::SRC.can0int14()) },
+            InterruptLine::Line14 => unsafe { transmute(tc37x::SRC.can0int14()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line15 => unsafe { transmute(tc37x_pac::SRC.can0int15()) },
+            InterruptLine::Line15 => unsafe { transmute(tc37x::SRC.can0int15()) },
         })
     }
 }
@@ -51,37 +51,37 @@ impl Module1 {
     pub(crate) fn service_request(line: InterruptLine) -> ServiceRequest {
         ServiceRequest(match line {
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line0 => unsafe { transmute(tc37x_pac::SRC.can1int0()) },
+            InterruptLine::Line0 => unsafe { transmute(tc37x::SRC.can1int0()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line1 => unsafe { transmute(tc37x_pac::SRC.can1int1()) },
+            InterruptLine::Line1 => unsafe { transmute(tc37x::SRC.can1int1()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line2 => unsafe { transmute(tc37x_pac::SRC.can1int2()) },
+            InterruptLine::Line2 => unsafe { transmute(tc37x::SRC.can1int2()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line3 => unsafe { transmute(tc37x_pac::SRC.can1int3()) },
+            InterruptLine::Line3 => unsafe { transmute(tc37x::SRC.can1int3()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line4 => unsafe { transmute(tc37x_pac::SRC.can1int4()) },
+            InterruptLine::Line4 => unsafe { transmute(tc37x::SRC.can1int4()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line5 => unsafe { transmute(tc37x_pac::SRC.can1int5()) },
+            InterruptLine::Line5 => unsafe { transmute(tc37x::SRC.can1int5()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line6 => unsafe { transmute(tc37x_pac::SRC.can1int6()) },
+            InterruptLine::Line6 => unsafe { transmute(tc37x::SRC.can1int6()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line7 => unsafe { transmute(tc37x_pac::SRC.can1int7()) },
+            InterruptLine::Line7 => unsafe { transmute(tc37x::SRC.can1int7()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line8 => unsafe { transmute(tc37x_pac::SRC.can1int8()) },
+            InterruptLine::Line8 => unsafe { transmute(tc37x::SRC.can1int8()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line9 => unsafe { transmute(tc37x_pac::SRC.can1int9()) },
+            InterruptLine::Line9 => unsafe { transmute(tc37x::SRC.can1int9()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line10 => unsafe { transmute(tc37x_pac::SRC.can1int10()) },
+            InterruptLine::Line10 => unsafe { transmute(tc37x::SRC.can1int10()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line11 => unsafe { transmute(tc37x_pac::SRC.can1int11()) },
+            InterruptLine::Line11 => unsafe { transmute(tc37x::SRC.can1int11()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line12 => unsafe { transmute(tc37x_pac::SRC.can1int12()) },
+            InterruptLine::Line12 => unsafe { transmute(tc37x::SRC.can1int12()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line13 => unsafe { transmute(tc37x_pac::SRC.can1int13()) },
+            InterruptLine::Line13 => unsafe { transmute(tc37x::SRC.can1int13()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line14 => unsafe { transmute(tc37x_pac::SRC.can1int14()) },
+            InterruptLine::Line14 => unsafe { transmute(tc37x::SRC.can1int14()) },
             // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-            InterruptLine::Line15 => unsafe { transmute(tc37x_pac::SRC.can1int15()) },
+            InterruptLine::Line15 => unsafe { transmute(tc37x::SRC.can1int15()) },
         })
     }
 }

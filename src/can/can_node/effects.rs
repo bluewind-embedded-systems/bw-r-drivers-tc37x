@@ -4,8 +4,8 @@ use crate::can::msg::{ReadFrom, RxBufferId, TxBufferId};
 use crate::can::{DataFieldSize, TxMode};
 use crate::pac;
 
-use tc37x_pac::hidden::RegValue;
-use tc37x_pac::RegisterValue;
+use tc37x::hidden::RegValue;
+use tc37x::RegisterValue;
 
 pub(super) struct NodeEffects<T> {
     reg: T,

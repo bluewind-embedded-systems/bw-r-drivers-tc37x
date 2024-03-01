@@ -147,7 +147,7 @@ pub mod scu;
 pub mod ssw;
 pub mod util;
 
-pub use tc37x_pac as pac;
+pub use tc37x as pac;
 
 mod sealed {
     pub trait Sealed {}

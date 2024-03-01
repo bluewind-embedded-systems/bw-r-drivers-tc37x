@@ -24,7 +24,7 @@ use crate::scu::wdt_call;
 pub use config::NodeConfig;
 use core::marker::PhantomData;
 use core::mem::transmute;
-use tc37x_pac::hidden::RegValue;
+use tc37x::hidden::RegValue;
 
 #[derive(PartialEq, Debug, Default)]
 pub enum FrameType {
@@ -812,7 +812,7 @@ pub enum PadDriver {
 }
 
 struct Port {
-    inner: tc37x_pac::port_00::Port00,
+    inner: tc37x::port_00::Port00,
 }
 
 #[derive(Clone, Copy)]
@@ -847,8 +847,8 @@ enum State {
 // TODO Is this needed? Can we get rid of it? Seems to be a duplicate of gpio
 impl Port {
     fn new(port: PortNumber) -> Self {
-        use tc37x_pac::port_00::Port00;
-        use tc37x_pac::*;
+        use tc37x::port_00::Port00;
+        use tc37x::*;
 
         let inner: Port00 = match port {
             PortNumber::_00 => PORT_00,

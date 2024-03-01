@@ -3,7 +3,7 @@
 
 use crate::cpu::asm::read_cpu_core_id;
 use core::mem::transmute;
-use tc37x_pac as pac;
+use tc37x as pac;
 
 // TODO Are we sure we want to publish this function?
 #[inline]
@@ -125,13 +125,13 @@ pub(crate) fn clear_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
-    if unsafe { con0.read() }.lck().get() == pac::scu::wdts::wdtscon0::Lck::CONST_11 {
+    if unsafe { con0.read() }.lck().get() {
         unsafe {
             con0.modify(|r| {
                 r.endinit()
-                    .set(pac::scu::wdts::wdtscon0::Endinit::CONST_11)
+                    .set(true)
                     .lck()
-                    .set(pac::scu::wdts::wdtscon0::Lck::CONST_00)
+                    .set(false)
                     .pw()
                     .set(password)
             })
@@ -140,9 +140,9 @@ pub(crate) fn clear_safety_endinit_inline() {
     unsafe {
         con0.modify(|r| {
             r.endinit()
-                .set(pac::scu::wdts::wdtscon0::Endinit::CONST_00)
+                .set(false)
                 .lck()
-                .set(pac::scu::wdts::wdtscon0::Lck::CONST_11)
+                .set(true)
                 .pw()
                 .set(password)
         })
@@ -158,13 +158,13 @@ pub(crate) fn set_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
-    if unsafe { con0.read() }.lck().get() == pac::scu::wdts::wdtscon0::Lck::CONST_11 {
+    if unsafe { con0.read() }.lck().get() {
         unsafe {
             con0.modify(|r| {
                 r.endinit()
-                    .set(pac::scu::wdts::wdtscon0::Endinit::CONST_11)
+                    .set(true)
                     .lck()
-                    .set(pac::scu::wdts::wdtscon0::Lck::CONST_00)
+                    .set(false)
                     .pw()
                     .set(password)
             })
@@ -174,9 +174,9 @@ pub(crate) fn set_safety_endinit_inline() {
     unsafe {
         con0.modify(|r| {
             r.endinit()
-                .set(pac::scu::wdts::wdtscon0::Endinit::CONST_00)
+                .set(false)
                 .lck()
-                .set(pac::scu::wdts::wdtscon0::Lck::CONST_11)
+                .set(true)
                 .pw()
                 .set(password)
         })
@@ -191,7 +191,7 @@ pub fn disable_safety_watchdog() {
         pac::SCU
             .wdts()
             .wdtscon1()
-            .modify(|p| p.dr().set(pac::scu::wdts::wdtscon1::Dr::CONST_11))
+            .modify(|p| p.dr().set(true))
     };
     set_safety_endinit_inline();
 }

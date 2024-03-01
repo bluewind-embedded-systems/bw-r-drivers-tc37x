@@ -27,8 +27,8 @@ package = "embedded-hal"
 git = "https://github.com/rust-embedded/embedded-hal.git"
 rev = "v1.0.0-rc.1"
 
-[dependencies.tc37x-pac]
-path = "../tc37x-pac"
+[dependencies.tc37x]
+path = "../tc37x"
 features = [
     "scu",
     "smu",

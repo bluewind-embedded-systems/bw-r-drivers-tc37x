@@ -1,6 +1,6 @@
 use embedded_hal::digital::PinState;
-use tc37x_pac::PORT_01;
-use tc37x_pac::{PORT_00, PORT_20};
+use tc37x::PORT_01;
+use tc37x::{PORT_00, PORT_20};
 
 use tc37x_driver::gpio::{ErasedPin, GpioExt};
 use tc37x_driver::tracing;
@@ -258,7 +258,7 @@ fn pin_can_type_match_with_peripheral() {
     let rx = port.p20_7;
     let tx = port.p20_8;
 
-    let _can = Can::<tc37x_pac::can0::Can0>::new(tx, rx);
+    let _can = Can::<tc37x::can0::Can0>::new(tx, rx);
 }
 
 mod mock_can {

@@ -18,8 +18,8 @@ use tc37x_driver::gpio::GpioExt;
 use tc37x_driver::log::info;
 use tc37x_driver::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
 use tc37x_driver::{pac, ssw};
-use tc37x_pac::can0::{Can0, N as Can0Node};
-// use tc37x_pac::can1::{Can1, N as Can1Node};
+use tc37x::can0::{Can0, N as Can0Node};
+// use tc37x::can1::{Can1, N as Can1Node};
 use tc37x_rt::{isr::load_interrupt_table, post_init, pre_init};
 
 pub static CAN0_NODE0_NEW_MSG: AtomicBool = AtomicBool::new(false);

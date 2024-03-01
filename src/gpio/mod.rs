@@ -7,7 +7,7 @@
 //! `gpioa`, `gpiob`... modules. To get access to the pins, you first need to convert them into a
 //! HAL designed struct from the `pac` struct using the [split](trait.GpioExt.html#tymethod.split) function.
 //! ```rust
-//! use tc37x_pac::PORT_00;
+//! use tc37x::PORT_00;
 //! use tc37x_driver::gpio::GpioExt;
 //! let mut gpio00 = PORT_00.split();
 //! ```
@@ -17,7 +17,7 @@
 //! For example, to set `pa5` high, you would call
 //!
 //! ```rust
-//! use tc37x_pac::PORT_00;
+//! use tc37x::PORT_00;
 //! use tc37x_driver::gpio::GpioExt;
 //! let mut gpio00 = PORT_00.split();
 //! let mut output = gpio00.p00_5.into_push_pull_output();
@@ -68,7 +68,7 @@ use core::marker::PhantomData;
 use core::mem::transmute;
 
 pub use embedded_hal::digital::PinState;
-use tc37x_pac::RegisterValue;
+use tc37x::RegisterValue;
 
 pub use convert::PinMode;
 pub use dynamic::{Dynamic, DynamicPin};
