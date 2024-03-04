@@ -30,7 +30,7 @@ pub(crate) fn get_safety_watchdog_password() -> u16 {
 }
 
 #[inline]
-unsafe fn get_wdt_con0(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con0, pac::RW> {
+unsafe fn get_wdt_con0(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con0_SPEC, pac::RW> {
     // unsafe cast to get the valid SCU WDT based on the core id
     let off: *mut u8 = unsafe { transmute(pac::SCU.wdtcpu0con0()) };
     let off = unsafe { off.add(core::mem::size_of::<u32>() * 3 * core_id as usize) };
@@ -38,7 +38,7 @@ unsafe fn get_wdt_con0(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con0, pac::RW> 
 }
 
 #[inline]
-unsafe fn get_wdt_con1(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con1, pac::RW> {
+unsafe fn get_wdt_con1(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con1_SPEC, pac::RW> {
     // unsafe cast to get the valid SCU WDT based on the core id
     let off: *mut u8 = unsafe { transmute(pac::SCU.wdtcpu0con1()) };
     let off = unsafe { off.add(core::mem::size_of::<u32>() * 3 * core_id as usize) };
@@ -125,13 +125,13 @@ pub(crate) fn clear_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
-    if unsafe { con0.read() }.lck().get() {
+    if unsafe { con0.read() }.lck().get().0 == 1 {
         unsafe {
             con0.modify(|r| {
                 r.endinit()
-                    .set(true)
+                    .set(1u8.into())
                     .lck()
-                    .set(false)
+                    .set(0u8.into())
                     .pw()
                     .set(password)
             })
@@ -140,9 +140,9 @@ pub(crate) fn clear_safety_endinit_inline() {
     unsafe {
         con0.modify(|r| {
             r.endinit()
-                .set(false)
+                .set(0u8.into())
                 .lck()
-                .set(true)
+                .set(1u8.into())
                 .pw()
                 .set(password)
         })
@@ -158,13 +158,13 @@ pub(crate) fn set_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
-    if unsafe { con0.read() }.lck().get() {
+    if unsafe { con0.read() }.lck().get().0 == 1 {
         unsafe {
             con0.modify(|r| {
                 r.endinit()
-                    .set(true)
+                    .set(1u8.into())
                     .lck()
-                    .set(false)
+                    .set(0u8.into())
                     .pw()
                     .set(password)
             })
@@ -174,9 +174,9 @@ pub(crate) fn set_safety_endinit_inline() {
     unsafe {
         con0.modify(|r| {
             r.endinit()
-                .set(false)
+                .set(0u8.into())
                 .lck()
-                .set(true)
+                .set(1u8.into())
                 .pw()
                 .set(password)
         })
@@ -191,7 +191,7 @@ pub fn disable_safety_watchdog() {
         pac::SCU
             .wdts()
             .wdtscon1()
-            .modify(|p| p.dr().set(true))
+            .modify(|p| p.dr().set(1u8.into()))
     };
     set_safety_endinit_inline();
 }
