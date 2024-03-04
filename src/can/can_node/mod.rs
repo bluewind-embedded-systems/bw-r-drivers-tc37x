@@ -20,6 +20,7 @@ use crate::can::msg::ReadFrom;
 use crate::can::msg::RxMessage;
 use crate::cpu::Priority;
 use crate::log::info;
+use crate::pac::common::RegisterValue;
 use crate::scu::wdt_call;
 pub use config::NodeConfig;
 use core::marker::PhantomData;
@@ -902,13 +903,19 @@ impl Port {
         let shift = (index & 0x3) * 8;
 
         // TODO This unsafe code could be made safe by comparing the address (usize) of the port if only self.inner.0 was public
-        let is_supervisor = unsafe { transmute::<_, usize>(self.inner) }
-            == unsafe { transmute(crate::pac::P40) };
+        let is_supervisor =
+            unsafe { transmute::<_, usize>(self.inner) } == unsafe { transmute(crate::pac::P40) };
 
         if is_supervisor {
             wdt_call::call_without_cpu_endinit(|| unsafe {
                 self.inner.pdisc().modify(|mut r| {
-                    *r.data_mut_ref() &= !(1 << index);
+                    // TODO Check if the new version is compatible with the previous one:
+                    // *r.data_mut_ref() &= !(1 << index);
+
+                    let mut v = r.get_raw();
+                    v &= !(1 << index);
+                    r.set_raw(v);
+
                     r
                 })
             });
@@ -916,7 +923,7 @@ impl Port {
 
         // TODO Can we do this without transmute?
         // TODO Use change_pin_mode_port_pin from gpio module instead?
-        let iocr: crate::pac::Reg<crate::pac::p00::Iocr0, crate::pac::RW> = {
+        let iocr: crate::pac::Reg<crate::pac::p00::Iocr0_SPEC, crate::pac::RW> = {
             let iocr0 = self.inner.iocr0();
             let addr: *mut u32 = unsafe { transmute(iocr0) };
             let addr = unsafe { addr.add(ioc_index as usize) };
@@ -925,8 +932,14 @@ impl Port {
 
         unsafe {
             iocr.modify_atomic(|mut r| {
-                *r.data_mut_ref() = (mode.0) << shift;
-                *r.get_mask_mut_ref() = 0xFFu32 << shift;
+                // TODO Check if the new version is compatible with the previous one:
+                // *r.data_mut_ref() = (mode.0) << shift;
+                // *r.get_mask_mut_ref() = 0xFFu32 << shift;
+
+                let v : u32 = (mode.0) << shift;
+                let m : u32 = 0xFFu32 << shift;
+                let mut v = r.set_raw_with_mask(v, m);
+
                 r
             })
         };
@@ -935,7 +948,7 @@ impl Port {
     fn set_pin_pad_driver(&self, index: u8, driver: PadDriver) {
         let pdr_index = index / 8;
         let shift = (index & 0x7) * 4;
-        let pdr: crate::pac::Reg<crate::pac::p00::Pdr0, crate::pac::RW> = {
+        let pdr: crate::pac::Reg<crate::pac::p00::Pdr0_SPEC, crate::pac::RW> = {
             let pdr0 = self.inner.pdr0();
             let addr: *mut u32 = unsafe { transmute(pdr0) };
             let addr = unsafe { addr.add(pdr_index as usize) };
@@ -944,8 +957,12 @@ impl Port {
 
         wdt_call::call_without_cpu_endinit(|| unsafe {
             pdr.modify_atomic(|mut r| {
-                *r.data_mut_ref() = (driver as u32) << shift;
-                *r.get_mask_mut_ref() = 0xF << shift;
+                // TODO Check if the new version is compatible with the previous one:
+                // *r.data_mut_ref() = (driver as u32) << shift;
+                // *r.get_mask_mut_ref() = 0xF << shift;
+                let v : u32 = (driver as u32) << shift;
+                let m : u32 = 0xF << shift;
+                let mut v = r.set_raw_with_mask(v, m);
                 r
             })
         });
