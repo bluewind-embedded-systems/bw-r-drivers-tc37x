@@ -875,8 +875,9 @@ impl Port {
     fn set_pin_state(&self, index: u8, action: State) {
         unsafe {
             self.inner.omr().init(|mut r| {
-                let data = r.data_mut_ref();
-                *data = (action as u32) << index;
+                let mut v = r.get_raw();
+                v = (action as u32) << index;
+                r.set_raw(v);
                 r
             })
         };

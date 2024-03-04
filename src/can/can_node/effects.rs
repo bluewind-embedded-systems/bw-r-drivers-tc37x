@@ -373,8 +373,9 @@ macro_rules! impl_can_node_effect {
                 // SAFETY: bits 20, 21, 29 and 31:30 are written with 0, interrupt is guaranteed to take only allowed values
                 unsafe {
                     self.reg.iei().modify(|mut r| {
-                        //TODO!!!
-                        *r.data_mut_ref() |= 1 << interrupt as u32;
+                        let mut v = r.get_raw();
+                        v |= 1 << interrupt as u32;
+                        r.set_raw(v);
                         r
                     })
                 };
@@ -385,8 +386,9 @@ macro_rules! impl_can_node_effect {
                 // SAFETY: bits 20, 21, 29 and 31:30 are written with 0, interrupt is guaranteed to take only allowed values
                 unsafe {
                     self.reg.iri().init(|mut r| {
-                        //TODO!!!
-                        *r.data_mut_ref() = 1 << interrupt as u32;
+                        let mut v = r.get_raw();
+                        v = 1 << interrupt as u32;
+                        r.set_raw(v);
                         r
                     })
                 };
@@ -396,8 +398,9 @@ macro_rules! impl_can_node_effect {
                 // SAFETY: TODO: line should be in range [0, 16) and group should be in range [0, 8)
                 unsafe {
                     self.reg.grint1i().modify(|mut r| {
-                        //TODO!!!
-                        *r.data_mut_ref() |= line << group;
+                        let mut v = r.get_raw();
+                        v |= line << group;
+                        r.set_raw(v);
                         r
                     })
                 };
@@ -408,8 +411,9 @@ macro_rules! impl_can_node_effect {
                 unsafe {
                     self.reg.grint2i().modify(|mut r| {
 
-                        //TODO!!!
-                        *r.data_mut_ref() |= line << group;
+                        let mut v = r.get_raw();
+                        v |= line << group;
+                        r.set_raw(v);
                         r
                     })
                 };
@@ -550,13 +554,13 @@ macro_rules! impl_can_node_effect {
                 let (data, mask) = if rx_buffer_id < 32 {
                     // last number value in the reg name is the node id
                     // SAFETY: each bit of NDAT1i is RWH
-                    let data = unsafe { self.reg.ndat1i().read() }.data();
+                    let data = unsafe { self.reg.ndat1i().read() }.get_raw();
                     let mask = 1 << u8::from(rx_buffer_id);
                     (data, mask)
                 } else {
                     // last number value in the reg name is the node id
                     // SAFETY: each bit of NDAT2i is RWH
-                    let data = unsafe { self.reg.ndat2i().read() }.data();
+                    let data = unsafe { self.reg.ndat2i().read() }.get_raw();
                     let mask = 1 << (u8::from(rx_buffer_id) - 32);
                     (data, mask)
                 };
@@ -588,7 +592,7 @@ macro_rules! impl_can_node_effect {
             #[inline]
             pub(crate) fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: u8) -> bool {
                 // SAFETY: each bit of TXBTOI is RH
-                let data = unsafe { self.reg.tx().txbtoi().read() }.data();
+                let data = unsafe { self.reg.tx().txbtoi().read() }.get_raw();
                 let mask = 1u32 << u32::from(tx_buffer_id);
                 (data & mask) != 0
             }
