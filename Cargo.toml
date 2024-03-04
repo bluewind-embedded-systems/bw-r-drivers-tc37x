@@ -70,10 +70,6 @@ features = ["ron"]
 
 [dev-dependencies]
 
-[dev-dependencies.tc37x-rt]
-path = "../tc37x-rt"
-features = []
-
 [features]
 default = []
 log_with_defmt = ["dep:defmt", "dep:defmt-rtt", "dep:critical-section"]
