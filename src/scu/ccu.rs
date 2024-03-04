@@ -34,25 +34,25 @@ pub(crate) fn init(config: &Config) -> Result<(), InitError> {
 
 fn wait_ccucon0_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-        unsafe { SCU.cucon0().read() }.lck().get()
+        unsafe { SCU.ccucon0().read() }.lck().get().0 == 1
     })
 }
 
 fn wait_ccucon1_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-        unsafe { SCU.ccucon1().read() }.lck().get()
+        unsafe { SCU.ccucon1().read() }.lck().get().0 == 1
     })
 }
 
 fn wait_ccucon2_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-        unsafe { SCU.ccucon2().read() }.lck().get()
+        unsafe { SCU.ccucon2().read() }.lck().get().0 == 1
     })
 }
 
 fn wait_ccucon5_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-        unsafe { SCU.ccucon5().read() }.lck().get()
+        unsafe { SCU.ccucon5().read() }.lck().get().0 == 1
     })
 }
 
