@@ -706,9 +706,9 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
 
 pub(crate) fn get_mcan_frequency() -> u32 {
     //TODO create enum!
-    const CLKSELMCAN_USEMCANI:u32 = 1; // scu::Ccucon1::Clkselmcan = scu::Ccucon1::Clkselmcan::CONST_11;
-    const CLKSELMCAN_USEOSCILLATOR: u32 = 2; //scu::Ccucon1::Clkselmcan = scu::Ccucon1::Clkselmcan::CONST_22;
-    const MCANDIV_STOPPED: u32 = 0; //scu::Ccucon1::Mcandiv = scu::Ccucon1::Mcandiv::CONST_00;
+    const CLKSELMCAN_USEMCANI:u8 = 1;
+    const CLKSELMCAN_USEOSCILLATOR: u8 = 2;
+    const MCANDIV_STOPPED: u8 = 0;
 
     // SAFETY: each bit of CCUCON1 is at least R
     let ccucon1 = unsafe { SCU.ccucon1().read() };
@@ -717,11 +717,11 @@ pub(crate) fn get_mcan_frequency() -> u32 {
 
     //info!("clkselmcan: {}, mcandiv: {}", clkselmcan, mcandiv);
 
-    match clkselmcan {
+    match clkselmcan.0 {
         CLKSELMCAN_USEMCANI => {
             let source = get_source_frequency(1);
             debug!("source: {}", source);
-            if mcandiv == MCANDIV_STOPPED {
+            if mcandiv.0 == MCANDIV_STOPPED {
                 source
             } else {
                 let div: u64 = mcandiv.into();
