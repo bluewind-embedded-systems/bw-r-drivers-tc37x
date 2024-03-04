@@ -101,10 +101,14 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         // The SMU core configuration is only possible if this field is set to 0xBC
         unsafe { SMU.keys().init(|r| r.cfglck().set(0xBC)) };
 
-        // FIXME After pac update, this is a BW patch on pac
-        unsafe { SMU.ag8cfj()[0].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
-        unsafe { SMU.ag8cfj()[1].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
-        unsafe { SMU.ag8cfj()[2].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        // unsafe { SMU.ag8cfj()[0].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        // unsafe { SMU.ag8cfj()[1].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        // unsafe { SMU.ag8cfj()[2].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+
+        // TODO Check if this is correct, see above the previous version
+        unsafe { SMU.agicfj()[8].agicfj_()[0].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        unsafe { SMU.agicfj()[8].agicfj_()[1].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        unsafe { SMU.agicfj()[8].agicfj_()[2].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
 
         unsafe { SMU.keys().init(|r| r.cfglck().set(0)) };
     }
