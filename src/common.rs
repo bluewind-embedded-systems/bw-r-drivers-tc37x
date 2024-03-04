@@ -272,30 +272,6 @@ impl<T: RegValue, A: Read + Write> Reg<T, A> {
     }
 }
 
-impl<T: Default + RegValue<DataType = u32>, A: Write> Reg<T, A> {
-    #[inline(always)]
-    /// Write register bitfield atomically using value returned by closure.
-    /// Only the bitfield updated by closure are written back to the register.
-    /// `modify_atomic` use `ldmst` assembly instruction that stall the bus until update completion.
-    /// This function can be used only with 32 bits register.
-    ///
-    /// # Arguments
-    ///
-    /// * `f` - Closure that receive as input register value initialized with register value at Power On Reset.
-    ///
-    /// # Safety
-    /// Write operation could cause undefined behavior for some peripheral. Developer shall read device user manual.
-    /// Register is Send and Sync to allow complete freedom. Developer is responsible of proper use in interrupt and thread.
-    ///
-    pub unsafe fn modify_atomic(&self, f: impl FnOnce(T) -> T) {
-        let val = Default::default();
-        let mut res = f(val);
-        let value: u64 = res.data() as u64 | ((*res.get_mask_mut_ref() as u64) << 32);
-        let addr = self.ptr as *mut u32;
-        unsafe { EffectImpl::load_modify_store(addr as _, value) }
-    }
-}
-
 pub struct RegisterField<
     const START_OFFSET: usize,
     const MASK: u64,

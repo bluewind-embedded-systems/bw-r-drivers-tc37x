@@ -71,8 +71,14 @@ fn set_pll_power(syspllpower: bool, perpllpower: bool) -> Result<(), ()> {
     let syspllpower = u8::from(syspllpower);
     let perpllpower = u8::from(perpllpower);
 
-    unsafe { SCU.syspllcon0().modify(|r| r.pllpwd().set(syspllpower.into())) };
-    unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(perpllpower.into())) };
+    unsafe {
+        SCU.syspllcon0()
+            .modify(|r| r.pllpwd().set(syspllpower.into()))
+    };
+    unsafe {
+        SCU.perpllcon0()
+            .modify(|r| r.pllpwd().set(perpllpower.into()))
+    };
 
     wait_cond(SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT, || {
         let sys = unsafe { SCU.syspllstat().read() };
@@ -281,7 +287,7 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
 
     // CCUCON0 config
     {
-        let mut ccucon0 = unsafe { SCU.ccucon0().read() };
+        let ccucon0 = unsafe { SCU.ccucon0().read() };
         let mut v = ccucon0.get_raw();
         v &= !(config.clock_distribution.ccucon0.mask);
         v |= config.clock_distribution.ccucon0.mask & config.clock_distribution.ccucon0.value;
@@ -334,11 +340,10 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     {
         let mut ccucon2 = unsafe { SCU.ccucon2().read() };
 
-        if ccucon2.clkselasclins().get().0 != scu::ccucon2::Clkselasclins::CONST_00.0
-        /*scu::Ccucon2::Clkselasclins::CLKSELASCLINS_STOPPED*/
-        {
+        if ccucon2.clkselasclins().get().0 != scu::ccucon2::Clkselasclins::CONST_00.0 {
             ccucon2 = unsafe { SCU.ccucon2().read() };
             let mut v = ccucon2.get_raw();
+            // TODO Probably a bug, v is not used
             v &= !config.clock_distribution.ccucon2.mask;
             v = config.clock_distribution.ccucon2.mask & config.clock_distribution.ccucon2.value;
             ccucon2.set_raw(v);
@@ -387,7 +392,7 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     // CUCCON6 config
     {
         unsafe {
-            SCU.ccucon6().modify(|mut r| {
+            SCU.ccucon6().modify(|r| {
                 let mut v = r.get_raw();
                 v &= !config.clock_distribution.ccucon6.mask;
                 v |= config.clock_distribution.ccucon6.mask
@@ -400,7 +405,7 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     // CUCCON7 config
     {
         unsafe {
-            SCU.ccucon7().modify(|mut r| {
+            SCU.ccucon7().modify(|r| {
                 let mut v = r.get_raw();
                 v &= !config.clock_distribution.ccucon7.mask;
                 v |= config.clock_distribution.ccucon7.mask
@@ -413,7 +418,7 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     // CUCCON8 config
     {
         unsafe {
-            SCU.ccucon8().modify(|mut r| {
+            SCU.ccucon8().modify(|r| {
                 let mut v = r.get_raw();
                 v &= !config.clock_distribution.ccucon8.mask;
                 v |= config.clock_distribution.ccucon8.mask

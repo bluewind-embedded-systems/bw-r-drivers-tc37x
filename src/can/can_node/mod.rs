@@ -874,9 +874,8 @@ impl Port {
 
     fn set_pin_state(&self, index: u8, action: State) {
         unsafe {
-            self.inner.omr().init(|mut r| {
-                let mut v = r.get_raw();
-                v = (action as u32) << index;
+            self.inner.omr().init(|r| {
+                let v = (action as u32) << index;
                 r.set_raw(v);
                 r
             })
@@ -909,7 +908,7 @@ impl Port {
 
         if is_supervisor {
             wdt_call::call_without_cpu_endinit(|| unsafe {
-                self.inner.pdisc().modify(|mut r| {
+                self.inner.pdisc().modify(|r| {
                     // TODO Check if the new version is compatible with the previous one:
                     // *r.data_mut_ref() &= !(1 << index);
 
@@ -932,15 +931,14 @@ impl Port {
         };
 
         unsafe {
-            iocr.modify_atomic(|mut r| {
+            iocr.modify_atomic(|r| {
                 // TODO Check if the new version is compatible with the previous one:
                 // *r.data_mut_ref() = (mode.0) << shift;
                 // *r.get_mask_mut_ref() = 0xFFu32 << shift;
 
                 let v : u32 = (mode.0) << shift;
                 let m : u32 = 0xFFu32 << shift;
-                let mut v = r.set_raw_with_mask(v, m);
-
+                r.set_raw_with_mask(v, m);
                 r
             })
         };
@@ -957,13 +955,13 @@ impl Port {
         };
 
         wdt_call::call_without_cpu_endinit(|| unsafe {
-            pdr.modify_atomic(|mut r| {
+            pdr.modify_atomic(|r| {
                 // TODO Check if the new version is compatible with the previous one:
                 // *r.data_mut_ref() = (driver as u32) << shift;
                 // *r.get_mask_mut_ref() = 0xF << shift;
                 let v : u32 = (driver as u32) << shift;
                 let m : u32 = 0xF << shift;
-                let mut v = r.set_raw_with_mask(v, m);
+                r.set_raw_with_mask(v, m);
                 r
             })
         });

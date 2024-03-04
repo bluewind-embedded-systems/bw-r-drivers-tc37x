@@ -109,7 +109,7 @@ macro_rules! impl_can_node_effect {
                 let id: u8 = tx_buffer_id.into();
                 // SAFETY: each bit is RW, TODO tx_buffer_id should be in range [0, 31], use try_from?
                 unsafe {
-                    self.reg.tx().txbtiei().modify(|mut r| {
+                    self.reg.tx().txbtiei().modify(|r| {
                         let mut v = r.get_raw();
                         v |= 1 << id;
                         r.set_raw(v);
@@ -374,7 +374,7 @@ macro_rules! impl_can_node_effect {
             pub(crate) fn enable_interrupt(&self, interrupt: Interrupt) {
                 // SAFETY: bits 20, 21, 29 and 31:30 are written with 0, interrupt is guaranteed to take only allowed values
                 unsafe {
-                    self.reg.iei().modify(|mut r| {
+                    self.reg.iei().modify(|r| {
                         let mut v = r.get_raw();
                         v |= 1 << interrupt as u32;
                         r.set_raw(v);
