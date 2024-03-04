@@ -93,9 +93,9 @@ macro_rules! impl_can_module {
                 // Enable CCCE and CI
                 let mcr = mcr
                     .ccce()
-                    .set($($m)::+::mcr::Ccce::CONST_11)
+                    .set(1)
                     .ci()
-                    .set($($m)::+::mcr::Ci::CONST_11);
+                    .set(1);
 
                 // SAFETY: CCCE and CI are RW bits, bits 23:8 are written with 0
                 unsafe { $module_reg.mcr().write(mcr) }
@@ -115,7 +115,7 @@ macro_rules! impl_can_module {
                 unsafe { $module_reg.mcr().write(mcr) }
 
                 // Disable CCCE and CI
-                let mcr = mcr.ccce().set(Ccce::CONST_00).ci().set(Ci::CONST_00);
+                let mcr = mcr.ccce().set(0).ci().set(0);
                 // SAFETY: CCCE and CI are RW bits, bits 23:8 are written with 0
                 unsafe { $module_reg.mcr().write(mcr) }
 
