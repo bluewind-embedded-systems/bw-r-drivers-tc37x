@@ -63,18 +63,21 @@ fn wait_divider() -> Result<(), ()> {
         let sys_k2 = sys.k2rdy().get();
         let per_k2 = sys.k2rdy().get();
         let per_k3 = per.k3rdy().get();
-        sys_k2 == false || per_k2 == false || per_k3 == false
+        sys_k2.0 == 0u8 || per_k2.0 == 0u8 || per_k3.0 == 0u8
     })
 }
 
 fn set_pll_power(syspllpower: bool, perpllpower: bool) -> Result<(), ()> {
-    unsafe { SCU.syspllcon0().modify(|r| r.pllpwd().set(syspllpower)) };
-    unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(perpllpower)) };
+    let syspllpower = u8::from(syspllpower);
+    let perpllpower = u8::from(perpllpower);
+
+    unsafe { SCU.syspllcon0().modify(|r| r.pllpwd().set(syspllpower.into())) };
+    unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(perpllpower.into())) };
 
     wait_cond(SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT, || {
         let sys = unsafe { SCU.syspllstat().read() };
         let per = unsafe { SCU.perpllstat().read() };
-        (syspllpower) == (sys.pwdstat().get()) || (perpllpower) == (per.pwdstat().get())
+        (syspllpower) == (sys.pwdstat().get().0) || (perpllpower) == (per.pwdstat().get().0)
     })
 }
 
@@ -88,12 +91,8 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
 
     // TODO Explain this
     unsafe {
-        SCU.ccucon0().modify(|r| {
-            r.clksel()
-                .set(scu::Ccucon0::Clksel(CLKSEL_BACKUP))
-                .up()
-                .set(true)
-        })
+        SCU.ccucon0()
+            .modify(|r| r.clksel().set(CLKSEL_BACKUP.into()).up().set(1u8.into()))
     };
     wait_ccucon0_lock()?;
 
@@ -113,10 +112,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     // Power down the both the PLLs before configuring registers
     // Both the PLLs are powered down to be sure for asynchronous PLL registers
     // update cause no glitches.
-    set_pll_power(
-        scu::Syspllcon0::Pllpwd::CONST_00,
-        scu::Perpllcon0::Pllpwd::CONST_00,
-    )?;
+    set_pll_power(false, false)?;
 
     let plls_params = &config.pll_initial_step.plls_parameters;
 
@@ -134,7 +130,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
 
         unsafe {
             SCU.osccon()
-                .modify(|r| r.mode().set(scu::Osccon::Mode(mode)).oscval().set(oscval))
+                .modify(|r| r.mode().set(mode.into()).oscval().set(oscval))
         };
     }
 
@@ -146,9 +142,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
                 .ndiv()
                 .set(plls_params.sys_pll.n_divider)
                 .insel()
-                .set(scu::Syspllcon0::Insel(
-                    plls_params.pll_input_clock_selection as u8,
-                ))
+                .set((plls_params.pll_input_clock_selection as u8).into())
         })
     }
 
@@ -164,10 +158,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         })
     }
 
-    set_pll_power(
-        scu::Syspllcon0::Pllpwd::CONST_11,
-        scu::Perpllcon0::Pllpwd::CONST_11,
-    )?;
+    set_pll_power(true, true)?;
 
     wait_divider()?;
 
@@ -219,9 +210,9 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     {
         let ccucon0 = unsafe { SCU.ccucon0().read() }
             .clksel()
-            .set(scu::Ccucon0::Clksel::CONST_11)
+            .set(scu::ccucon0::Clksel::CONST_11)
             .up()
-            .set(scu::Ccucon0::Up::CONST_11);
+            .set(scu::ccucon0::Up::CONST_11);
 
         wait_ccucon0_lock()?;
 
@@ -248,7 +239,7 @@ pub(crate) fn modulation_init(config: &Config) -> Result<(), ()> {
 
         unsafe {
             SCU.syspllcon0()
-                .modify(|r| r.moden().set(scu::Syspllcon0::Moden::CONST_11))
+                .modify(|r| r.moden().set(scu::syspllcon0::Moden::CONST_11))
         };
 
         wdt::set_safety_endinit_inline();
