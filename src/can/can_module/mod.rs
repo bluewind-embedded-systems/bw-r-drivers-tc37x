@@ -113,7 +113,7 @@ macro_rules! impl_can_module {
                 unsafe { $module_reg.mcr().write(mcr) }
 
                 // Disable CCCE and CI
-                let mcr = mcr.ccce().set(false).ci().set(false);
+                let mcr = mcr.ccce().set(0u8.into()).ci().set(0u8.into());
                 // SAFETY: CCCE and CI are RW bits, bits 23:8 are written with 0
                 unsafe { $module_reg.mcr().write(mcr) }
 
