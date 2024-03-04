@@ -96,7 +96,7 @@ fn setup_can0() -> Option<Node<Can0Node, Can0, Node0, Configured>> {
 
 /// Initialize the STB pin for the CAN transceiver.
 fn init_can_stb_pin() {
-    let gpio20 = pac::PORT_20.split();
+    let gpio20 = pac::P20.split();
     let mut stb = gpio20.p20_6.into_push_pull_output();
     stb.set_low();
 }
@@ -114,7 +114,7 @@ fn main() -> ! {
     enable_interrupts();
 
     info!("Setup notification LED");
-    let gpio00 = pac::PORT_00.split();
+    let gpio00 = pac::P00.split();
     let mut led1 = gpio00.p00_5.into_push_pull_output();
 
     info!("Initialize CAN transceiver");

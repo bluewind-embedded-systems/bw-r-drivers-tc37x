@@ -1,2 +1,2 @@
 [toolchain]
-path = "/opt/HighTec/toolchains/rust/v0.1.0/"
+path = "/opt/HighTec/toolchains/rust/v0.2.0/"

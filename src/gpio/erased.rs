@@ -80,15 +80,15 @@ impl<MODE> ErasedPin<MODE> {
         // - consecutive gpio register blocks have the same offset between them: 0x100 (256)
         // - ErasedPin::new was called with a valid port
 
-        use crate::pac::port_00::Port00;
-        use crate::pac::PORT_00;
+        use crate::pac::p00::P00 as Port;
+        use crate::pac::P00 as PORT;
 
         const PORT_REGISTER_OFFSET: usize = 0x100;
 
         #[allow(clippy::useless_conversion)]
         let port_index: usize = self.port_id().0.into();
         let offset = PORT_REGISTER_OFFSET * port_index;
-        let block_ptr = unsafe { (&PORT_00 as *const Port00).add(offset) };
+        let block_ptr = unsafe { (&PORT as *const Port).add(offset) };
 
         unsafe { &*block_ptr }
     }

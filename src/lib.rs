@@ -136,9 +136,6 @@
 #![warn(unused_unsafe)]
 #![warn(clippy::unnecessary_safety_comment)] // Since Rust 1.67
 
-#[cfg(not(target_arch = "tricore"))]
-pub mod tracing;
-
 pub mod can;
 pub mod cpu;
 pub mod gpio;

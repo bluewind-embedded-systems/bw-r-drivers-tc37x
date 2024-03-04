@@ -63,7 +63,7 @@ fn wait_divider() -> Result<(), ()> {
         let sys_k2 = sys.k2rdy().get();
         let per_k2 = sys.k2rdy().get();
         let per_k3 = per.k3rdy().get();
-        sys_k2.0 == 0 || per_k2.0 == 0 || per_k3.0 == 0
+        sys_k2 == false || per_k2 == false || per_k3 == false
     })
 }
 
@@ -77,7 +77,7 @@ fn set_pll_power(
     wait_cond(SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT, || {
         let sys = unsafe { SCU.syspllstat().read() };
         let per = unsafe { SCU.perpllstat().read() };
-        (syspllpower.0) == (sys.pwdstat().get().0) || (perpllpower.0) == (per.pwdstat().get().0)
+        (syspllpower) == (sys.pwdstat().get()) || (perpllpower) == (per.pwdstat().get())
     })
 }
 

@@ -811,7 +811,7 @@ pub enum PadDriver {
 }
 
 struct Port {
-    inner: tc37x::port_00::Port00,
+    inner: tc37x::p00::P00,
 }
 
 #[derive(Clone, Copy)]
@@ -846,27 +846,27 @@ enum State {
 // TODO Is this needed? Can we get rid of it? Seems to be a duplicate of gpio
 impl Port {
     fn new(port: PortNumber) -> Self {
-        use tc37x::port_00::Port00;
+        use tc37x::p00::P00;
         use tc37x::*;
 
-        let inner: Port00 = match port {
-            PortNumber::_00 => PORT_00,
-            PortNumber::_01 => unsafe { transmute(PORT_01) },
-            PortNumber::_02 => unsafe { transmute(PORT_02) },
-            PortNumber::_10 => unsafe { transmute(PORT_10) },
-            PortNumber::_11 => unsafe { transmute(PORT_11) },
-            PortNumber::_12 => unsafe { transmute(PORT_12) },
-            PortNumber::_13 => unsafe { transmute(PORT_13) },
-            PortNumber::_14 => unsafe { transmute(PORT_14) },
-            PortNumber::_15 => unsafe { transmute(PORT_15) },
-            PortNumber::_20 => unsafe { transmute(PORT_20) },
-            PortNumber::_21 => unsafe { transmute(PORT_21) },
-            PortNumber::_22 => unsafe { transmute(PORT_22) },
-            PortNumber::_23 => unsafe { transmute(PORT_23) },
-            PortNumber::_32 => unsafe { transmute(PORT_32) },
-            PortNumber::_33 => unsafe { transmute(PORT_33) },
-            PortNumber::_34 => unsafe { transmute(PORT_34) },
-            PortNumber::_40 => unsafe { transmute(PORT_40) },
+        let inner: P00 = match port {
+            PortNumber::_00 => P00,
+            PortNumber::_01 => unsafe { transmute(P01) },
+            PortNumber::_02 => unsafe { transmute(P02) },
+            PortNumber::_10 => unsafe { transmute(P10) },
+            PortNumber::_11 => unsafe { transmute(P11) },
+            PortNumber::_12 => unsafe { transmute(P12) },
+            PortNumber::_13 => unsafe { transmute(P13) },
+            PortNumber::_14 => unsafe { transmute(P14) },
+            PortNumber::_15 => unsafe { transmute(P15) },
+            PortNumber::_20 => unsafe { transmute(P20) },
+            PortNumber::_21 => unsafe { transmute(P21) },
+            PortNumber::_22 => unsafe { transmute(P22) },
+            PortNumber::_23 => unsafe { transmute(P23) },
+            PortNumber::_32 => unsafe { transmute(P32) },
+            PortNumber::_33 => unsafe { transmute(P33) },
+            PortNumber::_34 => unsafe { transmute(P34) },
+            PortNumber::_40 => unsafe { transmute(P40) },
         };
         Self { inner }
     }
@@ -903,7 +903,7 @@ impl Port {
 
         // TODO This unsafe code could be made safe by comparing the address (usize) of the port if only self.inner.0 was public
         let is_supervisor = unsafe { transmute::<_, usize>(self.inner) }
-            == unsafe { transmute(crate::pac::PORT_40) };
+            == unsafe { transmute(crate::pac::P40) };
 
         if is_supervisor {
             wdt_call::call_without_cpu_endinit(|| unsafe {
@@ -916,7 +916,7 @@ impl Port {
 
         // TODO Can we do this without transmute?
         // TODO Use change_pin_mode_port_pin from gpio module instead?
-        let iocr: crate::pac::Reg<crate::pac::port_00::Iocr0, crate::pac::RW> = {
+        let iocr: crate::pac::Reg<crate::pac::p00::Iocr0, crate::pac::RW> = {
             let iocr0 = self.inner.iocr0();
             let addr: *mut u32 = unsafe { transmute(iocr0) };
             let addr = unsafe { addr.add(ioc_index as usize) };
@@ -935,7 +935,7 @@ impl Port {
     fn set_pin_pad_driver(&self, index: u8, driver: PadDriver) {
         let pdr_index = index / 8;
         let shift = (index & 0x7) * 4;
-        let pdr: crate::pac::Reg<crate::pac::port_00::Pdr0, crate::pac::RW> = {
+        let pdr: crate::pac::Reg<crate::pac::p00::Pdr0, crate::pac::RW> = {
             let pdr0 = self.inner.pdr0();
             let addr: *mut u32 = unsafe { transmute(pdr0) };
             let addr = unsafe { addr.add(pdr_index as usize) };
