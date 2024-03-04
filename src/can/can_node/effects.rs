@@ -110,7 +110,9 @@ macro_rules! impl_can_node_effect {
                 // SAFETY: each bit is RW, TODO tx_buffer_id should be in range [0, 31], use try_from?
                 unsafe {
                     self.reg.tx().txbtiei().modify(|mut r| {
-                        *r.data_mut_ref() |= 1 << id;
+                        let mut v = r.get_raw();
+                        v |= 1 << id;
+                        r.set_raw(v);
                         r
                     })
                 };
