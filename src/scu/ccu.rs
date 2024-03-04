@@ -61,7 +61,7 @@ fn wait_divider() -> Result<(), ()> {
         let sys = unsafe { SCU.syspllstat().read() };
         let per = unsafe { SCU.perpllstat().read() };
         let sys_k2 = sys.k2rdy().get();
-        let per_k2 = sys.k2rdy().get();
+        let per_k2 = per.k2rdy().get();
         let per_k3 = per.k3rdy().get();
         sys_k2.0 == 0u8 || per_k2.0 == 0u8 || per_k3.0 == 0u8
     })
