@@ -735,14 +735,14 @@ pub(crate) fn get_mcan_frequency() -> u32 {
 }
 
 fn get_source_frequency(source: u32) -> u32 {
-    const CLKSEL_BACKUP:u32 = 0; // TODO create enum 
-    const CLKSEL_PLL:u32 = 1;
+    const CLKSEL_BACKUP:u8 = 0; // TODO create enum 
+    const CLKSEL_PLL:u8 = 1;
 
     // SAFETY: each bit of CCUCON0 is at least R
     let clksel = unsafe { SCU.ccucon0().read() }.clksel().get();
     //info!("clksel: {}", clksel);
 
-    match clksel {
+    match clksel.0 {
         CLKSEL_BACKUP => get_evr_frequency(),
         CLKSEL_PLL => match source {
             0 => get_pll_frequency(),
@@ -750,7 +750,7 @@ fn get_source_frequency(source: u32) -> u32 {
                 let source_freq = get_per_pll_frequency1();
                 // SAFETY: each bit of CCUCON1 is at least R
                 let ccucon1 = unsafe { SCU.ccucon1().read() };
-                if ccucon1.pll1divdis().get() {
+                if ccucon1.pll1divdis().get().0 == 1 {
                     source_freq
                 } else {
                     source_freq / 2
