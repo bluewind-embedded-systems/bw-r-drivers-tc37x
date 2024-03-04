@@ -136,6 +136,8 @@
 #![warn(unused_unsafe)]
 #![warn(clippy::unnecessary_safety_comment)] // Since Rust 1.67
 
+pub(crate) mod common;
+
 pub mod can;
 pub mod cpu;
 pub mod gpio;

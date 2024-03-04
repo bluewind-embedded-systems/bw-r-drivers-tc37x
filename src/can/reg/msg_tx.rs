@@ -4,9 +4,8 @@
 // Note: this module try to mimic the behavior of the pac module, for message SRAM access
 // Note: transmute is used to create a Reg from a pointer, because the pac module does not support creating Reg from pointers
 
-use crate::pac::common::{Reg, RegisterField, RegisterFieldBool, RW};
+use crate::common::{Reg, RegisterField, RegisterFieldBool, RW, hidden::RegValue};
 use core::mem::transmute;
-// use tc37x::hidden::RegValue;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct TxMsg(pub(super) *mut u8);
@@ -32,25 +31,25 @@ impl TxMsg {
 
 #[derive(Copy, Clone, Eq, PartialEq, Default)]
 pub struct T0(u32, u32);
-// impl RegValue for T0 {
-//     type DataType = u32;
-//     #[inline(always)]
-//     fn data_mut_ref(&mut self) -> &mut Self::DataType {
-//         &mut self.0
-//     }
-//     #[inline(always)]
-//     fn data(&self) -> Self::DataType {
-//         self.0
-//     }
-//     #[inline(always)]
-//     fn get_mask_mut_ref(&mut self) -> &mut Self::DataType {
-//         &mut self.1
-//     }
-//     #[inline(always)]
-//     fn new(data: Self::DataType, write_mask: Self::DataType) -> Self {
-//         Self(data, write_mask)
-//     }
-// }
+impl RegValue for T0 {
+    type DataType = u32;
+    #[inline(always)]
+    fn data_mut_ref(&mut self) -> &mut Self::DataType {
+        &mut self.0
+    }
+    #[inline(always)]
+    fn data(&self) -> Self::DataType {
+        self.0
+    }
+    #[inline(always)]
+    fn get_mask_mut_ref(&mut self) -> &mut Self::DataType {
+        &mut self.1
+    }
+    #[inline(always)]
+    fn new(data: Self::DataType, write_mask: Self::DataType) -> Self {
+        Self(data, write_mask)
+    }
+}
 impl T0 {
     #[inline(always)]
     pub fn id(self) -> RegisterField<0, 0x1FFFFFFF, 1, 0, u32, T0, RW> {
@@ -74,25 +73,25 @@ impl T0 {
 
 #[derive(Copy, Clone, Eq, PartialEq, Default)]
 pub struct T1(u32, u32);
-// impl RegValue for T1 {
-//     type DataType = u32;
-//     #[inline(always)]
-//     fn data_mut_ref(&mut self) -> &mut Self::DataType {
-//         &mut self.0
-//     }
-//     #[inline(always)]
-//     fn data(&self) -> Self::DataType {
-//         self.0
-//     }
-//     #[inline(always)]
-//     fn get_mask_mut_ref(&mut self) -> &mut Self::DataType {
-//         &mut self.1
-//     }
-//     #[inline(always)]
-//     fn new(data: Self::DataType, write_mask: Self::DataType) -> Self {
-//         Self(data, write_mask)
-//     }
-// }
+impl RegValue for T1 {
+    type DataType = u32;
+    #[inline(always)]
+    fn data_mut_ref(&mut self) -> &mut Self::DataType {
+        &mut self.0
+    }
+    #[inline(always)]
+    fn data(&self) -> Self::DataType {
+        self.0
+    }
+    #[inline(always)]
+    fn get_mask_mut_ref(&mut self) -> &mut Self::DataType {
+        &mut self.1
+    }
+    #[inline(always)]
+    fn new(data: Self::DataType, write_mask: Self::DataType) -> Self {
+        Self(data, write_mask)
+    }
+}
 impl T1 {
     #[inline(always)]
     pub fn dlc(self) -> RegisterField<16, 0xf, 1, 0, u8, T1, RW> {
@@ -122,23 +121,23 @@ impl T1 {
 
 #[derive(Copy, Clone, Eq, PartialEq, Default)]
 pub struct Db(u32, u32);
-// impl RegValue for Db {
-//     type DataType = u32;
-//     #[inline(always)]
-//     fn data_mut_ref(&mut self) -> &mut Self::DataType {
-//         &mut self.0
-//     }
-//     #[inline(always)]
-//     fn data(&self) -> Self::DataType {
-//         self.0
-//     }
-//     #[inline(always)]
-//     fn get_mask_mut_ref(&mut self) -> &mut Self::DataType {
-//         &mut self.1
-//     }
-//     #[inline(always)]
-//     fn new(data: Self::DataType, write_mask: Self::DataType) -> Self {
-//         Self(data, write_mask)
-//     }
-// }
+impl RegValue for Db {
+    type DataType = u32;
+    #[inline(always)]
+    fn data_mut_ref(&mut self) -> &mut Self::DataType {
+        &mut self.0
+    }
+    #[inline(always)]
+    fn data(&self) -> Self::DataType {
+        self.0
+    }
+    #[inline(always)]
+    fn get_mask_mut_ref(&mut self) -> &mut Self::DataType {
+        &mut self.1
+    }
+    #[inline(always)]
+    fn new(data: Self::DataType, write_mask: Self::DataType) -> Self {
+        Self(data, write_mask)
+    }
+}
 impl Db {}
