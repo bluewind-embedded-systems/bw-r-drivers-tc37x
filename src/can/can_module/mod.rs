@@ -91,9 +91,9 @@ macro_rules! impl_can_module {
                 // Enable CCCE and CI
                 let mcr = mcr
                     .ccce()
-                    .set(true)
+                    .set(1u8.into())
                     .ci()
-                    .set(true);
+                    .set(1u8.into());
 
                 // SAFETY: CCCE and CI are RW bits, bits 23:8 are written with 0
                 unsafe { $module_reg.mcr().write(mcr) }
@@ -126,10 +126,10 @@ macro_rules! impl_can_module {
                 let mcr = unsafe { $module_reg.mcr().read() };
 
                 let actual_clock_source = match clock_select.0 {
-                    0 => mcr.clksel0().get(),
-                    1 => mcr.clksel1().get(),
-                    2 => mcr.clksel2().get(),
-                    3 => mcr.clksel3().get(),
+                    0 => mcr.clksel0().get().0,
+                    1 => mcr.clksel1().get().0,
+                    2 => mcr.clksel2().get().0,
+                    3 => mcr.clksel3().get().0,
                     _ => unreachable!(),
                 };
 
