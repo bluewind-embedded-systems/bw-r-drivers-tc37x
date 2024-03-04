@@ -35,13 +35,13 @@ mod tricore {
     impl super::Effect for EffectImpl {
         #[inline(always)]
         unsafe fn read_volatile<T: RegValue>(addr: usize) -> T {
-            let val = (addr as *mut T::DataType).read_volatile();
+            let val = unsafe { (addr as *mut T::DataType).read_volatile() };
             T::new(val, 0.into())
         }
 
         #[inline(always)]
         unsafe fn write_volatile<T: RegValue>(addr: usize, val: T) {
-            (addr as *mut T::DataType).write_volatile(val.data())
+            unsafe { (addr as *mut T::DataType).write_volatile(val.data()) }
         }
 
         #[inline(always)]
@@ -212,7 +212,7 @@ impl<T: RegValue, A: Read> Reg<T, A> {
     #[inline(always)]
     #[must_use]
     pub unsafe fn read(&self) -> T {
-        EffectImpl::read_volatile(self.ptr as _)
+        unsafe { EffectImpl::read_volatile(self.ptr as _) }
     }
 }
 
@@ -229,7 +229,7 @@ impl<T: RegValue, A: Write> Reg<T, A> {
     ///
     #[inline(always)]
     pub unsafe fn write(&self, reg_value: T) {
-        EffectImpl::write_volatile(self.ptr as _, reg_value)
+        unsafe { EffectImpl::write_volatile(self.ptr as _, reg_value) }
     }
 }
 
@@ -249,7 +249,7 @@ impl<T: Default + RegValue, A: Write> Reg<T, A> {
     pub unsafe fn init(&self, f: impl FnOnce(T) -> T) {
         let val = Default::default();
         let res = f(val);
-        self.write(res);
+        unsafe { self.write(res) };
     }
 }
 
@@ -266,9 +266,9 @@ impl<T: RegValue, A: Read + Write> Reg<T, A> {
     /// Register is Send and Sync to allow complete freedom. Developer is responsible of proper use in interrupt and thread.
     ///
     pub unsafe fn modify(&self, f: impl FnOnce(T) -> T) {
-        let val = self.read();
+        let val = unsafe { self.read() };
         let res = f(val);
-        self.write(res);
+        unsafe { self.write(res) };
     }
 }
 
@@ -292,7 +292,7 @@ impl<T: Default + RegValue<DataType = u32>, A: Write> Reg<T, A> {
         let mut res = f(val);
         let value: u64 = res.data() as u64 | ((*res.get_mask_mut_ref() as u64) << 32);
         let addr = self.ptr as *mut u32;
-        EffectImpl::load_modify_store(addr as _, value)
+        unsafe { EffectImpl::load_modify_store(addr as _, value) }
     }
 }
 

@@ -387,9 +387,8 @@ macro_rules! impl_can_node_effect {
             pub(crate) fn clear_interrupt_flag(&self, interrupt: Interrupt) {
                 // SAFETY: bits 20, 21, 29 and 31:30 are written with 0, interrupt is guaranteed to take only allowed values
                 unsafe {
-                    self.reg.iri().init(|mut r| {
-                        let mut v = r.get_raw();
-                        v = 1 << interrupt as u32;
+                    self.reg.iri().init(|r| {
+                        let v = 1 << interrupt as u32;
                         r.set_raw(v);
                         r
                     })
@@ -399,7 +398,7 @@ macro_rules! impl_can_node_effect {
             pub(crate) fn set_interrupt_routing_group_1(&self, line: u32, group: u32) {
                 // SAFETY: TODO: line should be in range [0, 16) and group should be in range [0, 8)
                 unsafe {
-                    self.reg.grint1i().modify(|mut r| {
+                    self.reg.grint1i().modify(|r| {
                         let mut v = r.get_raw();
                         v |= line << group;
                         r.set_raw(v);
@@ -411,7 +410,7 @@ macro_rules! impl_can_node_effect {
             pub(crate) fn set_interrupt_routing_group_2(&self, line: u32, group: u32) {
                 // SAFETY: TODO: line should be in range [0, 16) and group should be in range [0, 8)
                 unsafe {
-                    self.reg.grint2i().modify(|mut r| {
+                    self.reg.grint2i().modify(|r| {
 
                         let mut v = r.get_raw();
                         v |= line << group;
