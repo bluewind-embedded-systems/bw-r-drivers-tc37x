@@ -85,8 +85,6 @@ macro_rules! impl_can_module {
                 clock_select: ClockSelect,
                 clock_source: ClockSource,
             ) -> Result<(), ()> {
-                use $($m)::+::mcr::{Ccce, Ci, Clksel0, Clksel1, Clksel2, Clksel3};
-
                 // SAFETY: Entire MCR register is readable
                 let mcr = unsafe { $module_reg.mcr().read() };
 
@@ -104,10 +102,10 @@ macro_rules! impl_can_module {
                 let clock_source: u8 = clock_source.into();
 
                 let mcr = match clock_select.0 {
-                    0 => mcr.clksel0().set(Clksel0::cast_from(clock_source.into())),
-                    1 => mcr.clksel1().set(Clksel1::cast_from(clock_source.into())),
-                    2 => mcr.clksel2().set(Clksel2::cast_from(clock_source.into())),
-                    3 => mcr.clksel3().set(Clksel3::cast_from(clock_source.into())),
+                    0 => mcr.clksel0().set(clock_source.into()),
+                    1 => mcr.clksel1().set(clock_source.into()),
+                    2 => mcr.clksel2().set(clock_source.into()),
+                    3 => mcr.clksel3().set(clock_source.into()),
                     _ => unreachable!(),
                 };
 

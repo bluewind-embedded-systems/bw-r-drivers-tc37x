@@ -68,8 +68,8 @@ fn wait_divider() -> Result<(), ()> {
 }
 
 fn set_pll_power(
-    syspllpower: scu::Syspllcon0::Pllpwd,
-    perpllpower: scu::Perpllcon0::Pllpwd,
+    syspllpower: bool,
+    perpllpower: bool,
 ) -> Result<(), ()> {
     unsafe { SCU.syspllcon0().modify(|r| r.pllpwd().set(syspllpower)) };
     unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(perpllpower)) };
