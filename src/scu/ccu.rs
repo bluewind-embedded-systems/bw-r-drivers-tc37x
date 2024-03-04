@@ -52,7 +52,7 @@ fn wait_ccucon2_lock() -> Result<(), ()> {
 
 fn wait_ccucon5_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
-        unsafe { SCU.ccucon5().read() }.lck().get() 
+        unsafe { SCU.ccucon5().read() }.lck().get()
     })
 }
 
@@ -67,10 +67,7 @@ fn wait_divider() -> Result<(), ()> {
     })
 }
 
-fn set_pll_power(
-    syspllpower: bool,
-    perpllpower: bool,
-) -> Result<(), ()> {
+fn set_pll_power(syspllpower: bool, perpllpower: bool) -> Result<(), ()> {
     unsafe { SCU.syspllcon0().modify(|r| r.pllpwd().set(syspllpower)) };
     unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(perpllpower)) };
 
@@ -289,42 +286,38 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
 
     // CCUCON0 config
     {
-        let mut cuccon0 = unsafe { SCU.ccucon0().read() };
-        *cuccon0.data_mut_ref() &= !(config.clock_distribution.ccucon0.mask);
-        *cuccon0.data_mut_ref() |=
-            config.clock_distribution.ccucon0.mask & config.clock_distribution.ccucon0.value;
+        let mut ccucon0 = unsafe { SCU.ccucon0().read() };
+        let mut v = ccucon0.get_raw();
+        v &= !(config.clock_distribution.ccucon0.mask);
+        v |= config.clock_distribution.ccucon0.mask & config.clock_distribution.ccucon0.value;
+        ccucon0.set_raw(v);
 
         wait_ccucon0_lock()?;
 
-        unsafe { SCU.ccucon0().write(cuccon0) };
+        unsafe { SCU.ccucon0().write(ccucon0) };
 
         wait_ccucon0_lock()?;
     }
+
     // CCUCON1 config
     {
         let mut ccucon1 = unsafe { SCU.ccucon1().read() };
-        if ccucon1.clkselmcan().get() !=  scu::Ccucon1::Clkselmcan::CONST_00 /*ccucon1::Clkselmcan::CLKSELMCAN_STOPPED*/
-            || ccucon1.clkselmsc().get() != scu::Ccucon1::Clkselmsc::CONST_11 /*ccucon1::Clkselmsc::CLKSELMSC_STOPPED*/
-            || ccucon1.clkselqspi().get() != scu::Ccucon1::Clkselqspi::CONST_22
-        /*ccucon1::Clkselqspi::CLKSELQSPI_STOPPED*/
+        if ccucon1.clkselmcan().get().0 != scu::ccucon1::Clkselmcan::CONST_00.0
+            || ccucon1.clkselmsc().get().0 != scu::ccucon1::Clkselmsc::CONST_11.0
+            || ccucon1.clkselqspi().get().0 != scu::ccucon1::Clkselqspi::CONST_22.0
         {
-            *ccucon1.data_mut_ref() &= !config.clock_distribution.ccucon1.mask;
-            *ccucon1.data_mut_ref() |=
-                config.clock_distribution.ccucon1.mask & config.clock_distribution.ccucon1.value;
+            let mut v = ccucon1.get_raw();
+            v &= !config.clock_distribution.ccucon1.mask;
+            v |= config.clock_distribution.ccucon1.mask & config.clock_distribution.ccucon1.value;
+            ccucon1.set_raw(v);
 
             ccucon1 = ccucon1
                 .clkselmcan()
-                .set(
-                    scu::Ccucon1::Clkselmcan::CONST_00, /*ccucon1::Clkselmcan::CLKSELMCAN_STOPPED*/
-                )
+                .set(scu::ccucon1::Clkselmcan::CONST_00)
                 .clkselmsc()
-                .set(
-                    scu::Ccucon1::Clkselmsc::CONST_11, /*ccucon1::Clkselmsc::CLKSELMSC_STOPPED*/
-                )
+                .set(scu::ccucon1::Clkselmsc::CONST_11)
                 .clkselqspi()
-                .set(
-                    scu::Ccucon1::Clkselqspi::CONST_22, /*ccucon1::Clkselqspi::CLKSELQSPI_STOPPED*/
-                );
+                .set(scu::ccucon1::Clkselqspi::CONST_22);
 
             wait_ccucon1_lock()?;
             unsafe { SCU.ccucon1().write(ccucon1) };
@@ -332,9 +325,10 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         }
 
         ccucon1 = unsafe { SCU.ccucon1().read() };
-        *ccucon1.data_mut_ref() &= !config.clock_distribution.ccucon1.mask;
-        *ccucon1.data_mut_ref() |=
-            config.clock_distribution.ccucon1.mask & config.clock_distribution.ccucon1.value;
+        let mut v = ccucon1.get_raw();
+        v &= !config.clock_distribution.ccucon1.mask;
+        v |= config.clock_distribution.ccucon1.mask & config.clock_distribution.ccucon1.value;
+        ccucon1.set_raw(v);
 
         wait_ccucon1_lock()?;
         unsafe { SCU.ccucon1().write(ccucon1) };
@@ -344,16 +338,18 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     // CCUCON2 config
     {
         let mut ccucon2 = unsafe { SCU.ccucon2().read() };
-        if ccucon2.clkselasclins().get() != scu::Ccucon2::Clkselasclins::CONST_00
+
+        if ccucon2.clkselasclins().get().0 != scu::ccucon2::Clkselasclins::CONST_00.0
         /*scu::Ccucon2::Clkselasclins::CLKSELASCLINS_STOPPED*/
         {
             ccucon2 = unsafe { SCU.ccucon2().read() };
-            *ccucon2.data_mut_ref() &= !config.clock_distribution.ccucon2.mask;
-            *ccucon2.data_mut_ref() =
-                config.clock_distribution.ccucon2.mask & config.clock_distribution.ccucon2.value;
+            let mut v = ccucon2.get_raw();
+            v &= !config.clock_distribution.ccucon2.mask;
+            v = config.clock_distribution.ccucon2.mask & config.clock_distribution.ccucon2.value;
+            ccucon2.set_raw(v);
 
             ccucon2 = ccucon2.clkselasclins().set(
-                scu::Ccucon2::Clkselasclins::CONST_00, /*scu::Ccucon2::Clkselasclins::CLKSELASCLINS_STOPPED*/
+                scu::ccucon2::Clkselasclins::CONST_00, /*scu::Ccucon2::Clkselasclins::CLKSELASCLINS_STOPPED*/
             );
 
             wait_ccucon2_lock()?;
@@ -364,9 +360,10 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         }
 
         ccucon2 = unsafe { SCU.ccucon2().read() };
-        *ccucon2.data_mut_ref() &= !config.clock_distribution.ccucon2.mask;
-        *ccucon2.data_mut_ref() |=
-            config.clock_distribution.ccucon2.mask & config.clock_distribution.ccucon2.value;
+        let mut v = ccucon2.get_raw();
+        v &= !config.clock_distribution.ccucon2.mask;
+        v |= config.clock_distribution.ccucon2.mask & config.clock_distribution.ccucon2.value;
+        ccucon2.set_raw(v);
 
         wait_ccucon2_lock()?;
         unsafe { SCU.ccucon2().write(ccucon2) };
@@ -376,10 +373,14 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     // CUCCON5 config
     {
         let mut ccucon5 = unsafe { SCU.ccucon5().read() };
-        *ccucon5.data_mut_ref() &= !config.clock_distribution.ccucon5.mask;
-        *ccucon5.data_mut_ref() |=
-            config.clock_distribution.ccucon5.mask & config.clock_distribution.ccucon5.value;
-        ccucon5 = ccucon5.up().set(scu::Ccucon5::Up::CONST_11);
+
+        // TODO Can we get rid of get_raw and use the bitfield access?
+        let mut v = ccucon5.get_raw();
+        v &= !config.clock_distribution.ccucon5.mask;
+        v |= config.clock_distribution.ccucon5.mask & config.clock_distribution.ccucon5.value;
+        ccucon5.set_raw(v);
+
+        ccucon5 = ccucon5.up().set(scu::ccucon5::Up::CONST_11);
 
         wait_ccucon5_lock()?;
 
@@ -392,10 +393,11 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     {
         unsafe {
             SCU.ccucon6().modify(|mut r| {
-                *r.data_mut_ref() &= !config.clock_distribution.ccucon6.mask;
-                *r.data_mut_ref() |= config.clock_distribution.ccucon6.mask
+                let mut v = r.get_raw();
+                v &= !config.clock_distribution.ccucon6.mask;
+                v |= config.clock_distribution.ccucon6.mask
                     & config.clock_distribution.ccucon6.value;
-                r
+                r.set_raw(v)
             })
         };
     }
@@ -404,10 +406,11 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     {
         unsafe {
             SCU.ccucon7().modify(|mut r| {
-                *r.data_mut_ref() &= !config.clock_distribution.ccucon7.mask;
-                *r.data_mut_ref() |= config.clock_distribution.ccucon7.mask
+                let mut v = r.get_raw();
+                v &= !config.clock_distribution.ccucon7.mask;
+                v |= config.clock_distribution.ccucon7.mask
                     & config.clock_distribution.ccucon7.value;
-                r
+                r.set_raw(v)
             })
         };
     }
@@ -416,10 +419,11 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     {
         unsafe {
             SCU.ccucon8().modify(|mut r| {
-                *r.data_mut_ref() &= !config.clock_distribution.ccucon8.mask;
-                *r.data_mut_ref() |= config.clock_distribution.ccucon8.mask
+                let mut v = r.get_raw();
+                v &= !config.clock_distribution.ccucon8.mask;
+                v |= config.clock_distribution.ccucon8.mask
                     & config.clock_distribution.ccucon8.value;
-                r
+                r.set_raw(v)
             })
         };
     }
@@ -706,7 +710,7 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
 
 pub(crate) fn get_mcan_frequency() -> u32 {
     //TODO create enum!
-    const CLKSELMCAN_USEMCANI:u8 = 1;
+    const CLKSELMCAN_USEMCANI: u8 = 1;
     const CLKSELMCAN_USEOSCILLATOR: u8 = 2;
     const MCANDIV_STOPPED: u8 = 0;
 
@@ -735,8 +739,8 @@ pub(crate) fn get_mcan_frequency() -> u32 {
 }
 
 fn get_source_frequency(source: u32) -> u32 {
-    const CLKSEL_BACKUP:u8 = 0; // TODO create enum 
-    const CLKSEL_PLL:u8 = 1;
+    const CLKSEL_BACKUP: u8 = 0; // TODO create enum
+    const CLKSEL_PLL: u8 = 1;
 
     // SAFETY: each bit of CCUCON0 is at least R
     let clksel = unsafe { SCU.ccucon0().read() }.clksel().get();
