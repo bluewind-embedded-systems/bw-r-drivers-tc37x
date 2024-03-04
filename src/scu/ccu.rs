@@ -469,9 +469,9 @@ const SYSCLK_FREQUENCY: u32 = 20_000_000;
 #[inline]
 pub(crate) fn get_osc_frequency() -> f32 {
     let f = match unsafe { SCU.syspllcon0().read() }.insel().get() {
-        scu::Syspllcon0::Insel::CONST_00 => EVR_OSC_FREQUENCY,
-        scu::Syspllcon0::Insel::CONST_11 => XTAL_FREQUENCY,
-        scu::Syspllcon0::Insel::CONST_22 => SYSCLK_FREQUENCY,
+        scu::syspllcon0::Insel::CONST_00 => EVR_OSC_FREQUENCY,
+        scu::syspllcon0::Insel::CONST_11 => XTAL_FREQUENCY,
+        scu::syspllcon0::Insel::CONST_22 => SYSCLK_FREQUENCY,
         _ => 0,
     };
     f as f32
