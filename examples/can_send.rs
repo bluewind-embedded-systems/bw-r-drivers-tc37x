@@ -72,7 +72,7 @@ fn setup_can0() -> Option<Node<Can0Node, Can0, Node0, Configured>> {
 
     // TODO Can we use gpio for this?
     {
-        let gpio20 = pac::PORT_20.split();
+        let gpio20 = pac::P20.split();
         let _tx = gpio20.p20_8;
         let _rx = gpio20.p20_7;
         // node.setup_pins(tx, rx);
