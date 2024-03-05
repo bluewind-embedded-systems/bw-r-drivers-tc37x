@@ -58,6 +58,9 @@ features = [
     "can1",
 ]
 
+[dependencies.tc37x-rt]
+path = "../tc37x-rt"
+
 [dependencies.critical-section]
 optional = true
 version = "1.1.1"
