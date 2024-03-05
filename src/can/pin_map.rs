@@ -3,6 +3,8 @@ use crate::can::{Module0, Module1};
 use crate::can::{Node0, Node1, Node2, Node3};
 use PortNumber as P;
 
+// TODO It's not safe to let these be public, because the resource behind them is the same (GPIO pin) of the gpio module.
+
 pub const PIN_RX_0_0_P02_1: RxdIn<Module0, Node0> = RxdIn::new(P::_02, 1, RxSel::_A);
 pub const PIN_RX_0_0_P20_7: RxdIn<Module0, Node0> = RxdIn::new(P::_20, 7, RxSel::_B);
 pub const PIN_RX_0_0_P12_0: RxdIn<Module0, Node0> = RxdIn::new(P::_12, 0, RxSel::_C);

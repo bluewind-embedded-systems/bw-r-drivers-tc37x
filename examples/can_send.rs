@@ -70,6 +70,14 @@ fn setup_can0() -> Option<Node<Can0Node, Can0, Node0, Configured>> {
         rx_buffers_start_address: 0x300,
     });
 
+    // TODO Can we use gpio for this?
+    {
+        let gpio20 = pac::PORT_20.split();
+        let _tx = gpio20.p20_8;
+        let _rx = gpio20.p20_7;
+        // node.setup_pins(tx, rx);
+    }
+
     node.setup_pins(&Pins {
         tx: PIN_TX_0_0_P20_8,
         rx: PIN_RX_0_0_P20_7,
@@ -167,8 +175,9 @@ fn main() -> ! {
 }
 
 /// Wait for a number of cycles roughly calculated from a duration.
+// TODO Are we sure we want to publish this function?
 #[inline(always)]
-pub fn wait_nop(period: Duration) {
+fn wait_nop(period: Duration) {
     #[cfg(target_arch = "tricore")]
     {
         use tc37x_driver::util::wait_nop_cycles;

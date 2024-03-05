@@ -38,6 +38,7 @@ macro_rules! impl_can_module {
     ($module_reg:path, $($m:ident)::+, $ModuleReg:ty, $ModuleId: ty) => {
         impl Module<$ModuleId, $ModuleReg, Disabled> {
             fn is_enabled(&self) -> bool {
+                // SAFETY: DISS is a RH bit
                 !unsafe { $module_reg.clc().read() }.diss().get()
             }
 
@@ -45,6 +46,7 @@ macro_rules! impl_can_module {
             pub fn enable(self) -> Module<$ModuleId, $ModuleReg, Enabled> {
                 scu::wdt::clear_cpu_endinit_inline();
 
+                // SAFETY: DISR is a RW bit, bits 2 and 31:4 are written with 0
                 unsafe { $module_reg.clc().modify_atomic(|r| r.disr().set(false)) };
                 while !self.is_enabled() {}
 
@@ -63,13 +65,16 @@ macro_rules! impl_can_module {
             pub fn take_node<I>(&mut self, node_id: I, config: NodeConfig) -> Option<Node<$($m)::+::N, $ModuleReg, I, crate::can::can_node::Configurable>> where I: NodeId {
                 let node_index = node_id.as_index();
 
+                #[allow(clippy::indexing_slicing)]
+                let flag : &mut bool = &mut self.nodes_taken[node_index];
+
                 // Check if node is already taken, return None if it is
-                if self.nodes_taken[node_index] {
+                if *flag {
                     return None;
                 }
 
                 // Mark node as taken
-                self.nodes_taken[node_index] = true;
+                *flag = true;
 
                 // Create node
                 Node::<$($m)::+::N, $ModuleReg, I, crate::can::can_node::Configurable>::new(self, node_id, config).ok()
@@ -82,6 +87,7 @@ macro_rules! impl_can_module {
             ) -> Result<(), ()> {
                 use $($m)::+::mcr::{Ccce, Ci, Clksel0, Clksel1, Clksel2, Clksel3};
 
+                // SAFETY: Entire MCR register is readable
                 let mcr = unsafe { $module_reg.mcr().read() };
 
                 // Enable CCCE and CI
@@ -91,6 +97,7 @@ macro_rules! impl_can_module {
                     .ci()
                     .set($($m)::+::mcr::Ci::CONST_11);
 
+                // SAFETY: CCCE and CI are RW bits, bits 23:8 are written with 0
                 unsafe { $module_reg.mcr().write(mcr) }
 
                 // Select clock
@@ -104,10 +111,12 @@ macro_rules! impl_can_module {
                     _ => unreachable!(),
                 };
 
+                // SAFETY: CLKSELx are 2 bits fields, clock_source is in range [1,3], bits 23:8 are written with 0
                 unsafe { $module_reg.mcr().write(mcr) }
 
                 // Disable CCCE and CI
                 let mcr = mcr.ccce().set(Ccce::CONST_00).ci().set(Ci::CONST_00);
+                // SAFETY: CCCE and CI are RW bits, bits 23:8 are written with 0
                 unsafe { $module_reg.mcr().write(mcr) }
 
                 // TODO Is this enough or we need to wait until actual_clock_source == clock_source
@@ -115,6 +124,7 @@ macro_rules! impl_can_module {
                  wait_nop_cycles(10);
 
                 // Check if clock switch was successful
+                // SAFETY: Entire MCR register is readable
                 let mcr = unsafe { $module_reg.mcr().read() };
 
                 let actual_clock_source = match clock_select.0 {

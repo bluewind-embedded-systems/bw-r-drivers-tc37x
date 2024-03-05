@@ -121,24 +121,24 @@ impl From<TxBufferId> for u8 {
 
 #[repr(transparent)]
 #[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
-pub struct RxBufferId(pub u8);
+pub struct RxBufferId(u8);
 
 impl RxBufferId {
     pub const MAX: u8 = 63;
 
-    pub fn new(n: u8) -> Option<Self> {
+    pub(super) fn new(n: u8) -> Option<Self> {
         match n {
             ..=Self::MAX => Some(Self(n)),
             _ => None,
         }
     }
 
-    // TODO This can cause a runtime panic
-    pub const fn new_const(n: u8) -> Self {
-        match n {
-            ..=Self::MAX => Self(n),
-            _ => panic!("over the max range"),
-        }
+    /// # Safety
+    ///
+    /// The caller must ensure that the value is less than or equal to `Self::MAX`.
+    pub(super) unsafe fn new_unchecked(n: u8) -> Self {
+        debug_assert!(n <= Self::MAX);
+        Self(n)
     }
 }
 

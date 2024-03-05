@@ -1,3 +1,5 @@
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
 // TODO Remove asap
 #![allow(dead_code)]
 
@@ -55,6 +57,7 @@ pub enum RxMode {
     SharedAll,
 }
 
+// TODO Suspicious
 const TX_BUFFER_START_ADDRESS: u32 = 0x0440u32;
 
 pub trait NodeId {
@@ -118,6 +121,7 @@ macro_rules! impl_can_node {
                 config: NodeConfig,
             ) -> Result<Node<$NodeReg, $ModuleReg, I, Configurable>, ConfigError> {
                 let node_index = node_id.as_index();
+                #[allow(clippy::indexing_slicing)]
                 let node_reg = module.registers().n()[node_index];
                 let effects = NodeEffects::<$NodeReg>::new(node_reg);
                 let clock_select = ClockSelect::from(node_id);
@@ -275,6 +279,7 @@ macro_rules! impl_can_node {
                 self.set_frame_mode(self.frame_mode);
             }
 
+            // TODO I think this should accept pins as provided by gpio module
             pub fn setup_pins(&self, pins: &Pins<$ModuleId, I>) {
                 self.connect_pin_rx(
                     &pins.rx,
@@ -299,8 +304,7 @@ macro_rules! impl_can_node {
             }
 
             fn set_rx_fifo0(&self, data: FifoData) {
-                self.effects
-                    .set_rx_fifo0_data_field_size(data.field_size.to_esci_register_value());
+                self.effects.set_rx_fifo0_data_field_size(data.field_size);
                 self.effects.set_rx_fifo0_start_address(data.start_address);
                 self.effects.set_rx_fifo0_size(data.size);
                 self.effects
@@ -310,8 +314,7 @@ macro_rules! impl_can_node {
             }
 
             fn set_rx_fifo1(&self, data: FifoData) {
-                self.effects
-                    .set_rx_fifo1_data_field_size(data.field_size.to_esci_register_value());
+                self.effects.set_rx_fifo1_data_field_size(data.field_size);
                 self.effects.set_rx_fifo1_start_address(data.start_address);
                 self.effects.set_rx_fifo1_size(data.size);
                 self.effects
@@ -391,8 +394,7 @@ macro_rules! impl_can_node {
 
             #[inline]
             fn set_rx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
-                self.effects
-                    .set_rx_buffer_data_field_size(data_field_size.to_esci_register_value());
+                self.effects.set_rx_buffer_data_field_size(data_field_size);
             }
 
             fn set_frame_mode(&self, frame_mode: FrameMode) {
@@ -473,8 +475,8 @@ macro_rules! impl_can_node {
 
             pub fn receive(&self, from: ReadFrom, data: &mut [u8]) -> Option<RxMessage> {
                 let Some(rx_config) = self.rx_config else {
-                                                                                    return None;
-                                                                                };
+                    return None;
+                };
 
                 let buffer_id = match from {
                     ReadFrom::RxFifo0 => self.effects.get_rx_fifo0_get_index(),
@@ -715,7 +717,9 @@ pub enum Interrupt {
     MessageRamaccessFailure,
     TimeoutOccurred,
     MessageStoredToDedicatedRxBuffer,
+    // TODO: reserved
     BitErrorCorrected,
+    // TODO: reserved
     BitErrorUncorrected,
     ErrorLoggingOverflow,
     ErrorPassive,
@@ -807,7 +811,7 @@ pub enum PadDriver {
     Ttl3v3speed4 = 15,
 }
 
-pub struct Port {
+struct Port {
     inner: tc37x_pac::port_00::Port00,
 }
 
@@ -840,31 +844,30 @@ enum State {
     Toggled = (1 << 16) | 1,
 }
 
+// TODO Is this needed? Can we get rid of it? Seems to be a duplicate of gpio
 impl Port {
     fn new(port: PortNumber) -> Self {
         use tc37x_pac::port_00::Port00;
         use tc37x_pac::*;
 
-        let inner: Port00 = unsafe {
-            match port {
-                PortNumber::_00 => PORT_00,
-                PortNumber::_01 => transmute(PORT_01),
-                PortNumber::_02 => transmute(PORT_02),
-                PortNumber::_10 => transmute(PORT_10),
-                PortNumber::_11 => transmute(PORT_11),
-                PortNumber::_12 => transmute(PORT_12),
-                PortNumber::_13 => transmute(PORT_13),
-                PortNumber::_14 => transmute(PORT_14),
-                PortNumber::_15 => transmute(PORT_15),
-                PortNumber::_20 => transmute(PORT_20),
-                PortNumber::_21 => transmute(PORT_21),
-                PortNumber::_22 => transmute(PORT_22),
-                PortNumber::_23 => transmute(PORT_23),
-                PortNumber::_32 => transmute(PORT_32),
-                PortNumber::_33 => transmute(PORT_33),
-                PortNumber::_34 => transmute(PORT_34),
-                PortNumber::_40 => transmute(PORT_40),
-            }
+        let inner: Port00 = match port {
+            PortNumber::_00 => PORT_00,
+            PortNumber::_01 => unsafe { transmute(PORT_01) },
+            PortNumber::_02 => unsafe { transmute(PORT_02) },
+            PortNumber::_10 => unsafe { transmute(PORT_10) },
+            PortNumber::_11 => unsafe { transmute(PORT_11) },
+            PortNumber::_12 => unsafe { transmute(PORT_12) },
+            PortNumber::_13 => unsafe { transmute(PORT_13) },
+            PortNumber::_14 => unsafe { transmute(PORT_14) },
+            PortNumber::_15 => unsafe { transmute(PORT_15) },
+            PortNumber::_20 => unsafe { transmute(PORT_20) },
+            PortNumber::_21 => unsafe { transmute(PORT_21) },
+            PortNumber::_22 => unsafe { transmute(PORT_22) },
+            PortNumber::_23 => unsafe { transmute(PORT_23) },
+            PortNumber::_32 => unsafe { transmute(PORT_32) },
+            PortNumber::_33 => unsafe { transmute(PORT_33) },
+            PortNumber::_34 => unsafe { transmute(PORT_34) },
+            PortNumber::_40 => unsafe { transmute(PORT_40) },
         };
         Self { inner }
     }
@@ -883,10 +886,6 @@ impl Port {
         self.set_pin_state(index, State::Toggled)
     }
 
-    fn set_pin_high(&self, index: u8) {
-        self.set_pin_state(index, State::High)
-    }
-
     fn set_pin_low(&self, index: u8) {
         self.set_pin_state(index, State::Low)
     }
@@ -903,8 +902,10 @@ impl Port {
         let ioc_index = index / 4;
         let shift = (index & 0x3) * 8;
 
-        let is_supervisor =
-            unsafe { transmute::<_, usize>(self.inner) == transmute(crate::pac::PORT_40) };
+        // TODO This unsafe code could be made safe by comparing the address (usize) of the port if only self.inner.0 was public
+        let is_supervisor = unsafe { transmute::<_, usize>(self.inner) }
+            == unsafe { transmute(crate::pac::PORT_40) };
+
         if is_supervisor {
             wdt_call::call_without_cpu_endinit(|| unsafe {
                 self.inner.pdisc().modify(|mut r| {
@@ -914,11 +915,13 @@ impl Port {
             });
         }
 
-        let iocr: crate::pac::Reg<crate::pac::port_00::Iocr0, crate::pac::RW> = unsafe {
+        // TODO Can we do this without transmute?
+        // TODO Use change_pin_mode_port_pin from gpio module instead?
+        let iocr: crate::pac::Reg<crate::pac::port_00::Iocr0, crate::pac::RW> = {
             let iocr0 = self.inner.iocr0();
-            let addr: *mut u32 = transmute(iocr0);
-            let addr = addr.add(ioc_index as _);
-            transmute(addr)
+            let addr: *mut u32 = unsafe { transmute(iocr0) };
+            let addr = unsafe { addr.add(ioc_index as usize) };
+            unsafe { transmute(addr) }
         };
 
         unsafe {
@@ -933,11 +936,11 @@ impl Port {
     fn set_pin_pad_driver(&self, index: u8, driver: PadDriver) {
         let pdr_index = index / 8;
         let shift = (index & 0x7) * 4;
-        let pdr: crate::pac::Reg<crate::pac::port_00::Pdr0, crate::pac::RW> = unsafe {
+        let pdr: crate::pac::Reg<crate::pac::port_00::Pdr0, crate::pac::RW> = {
             let pdr0 = self.inner.pdr0();
-            let addr: *mut u32 = core::mem::transmute(pdr0);
-            let addr = addr.add(pdr_index as _);
-            core::mem::transmute(addr)
+            let addr: *mut u32 = unsafe { transmute(pdr0) };
+            let addr = unsafe { addr.add(pdr_index as usize) };
+            unsafe { transmute(addr) }
         };
 
         wdt_call::call_without_cpu_endinit(|| unsafe {

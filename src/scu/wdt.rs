@@ -1,8 +1,13 @@
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
+
 use crate::cpu::asm::read_cpu_core_id;
+use core::mem::transmute;
 use tc37x_pac as pac;
 
+// TODO Are we sure we want to publish this function?
 #[inline]
-pub fn get_cpu_watchdog_password() -> u16 {
+pub(crate) fn get_cpu_watchdog_password() -> u16 {
     let core_id = read_cpu_core_id();
     let password = match core_id {
         0 => unsafe { pac::SCU.wdtcpu0con0().read() }.pw().get(),
@@ -15,8 +20,9 @@ pub fn get_cpu_watchdog_password() -> u16 {
     password ^ 0x003F
 }
 
+// TODO Are we sure we want to publish this function?
 #[inline]
-pub fn get_safety_watchdog_password() -> u16 {
+pub(crate) fn get_safety_watchdog_password() -> u16 {
     let password = unsafe { pac::SCU.wdts().wdtscon0().read() }.pw().get();
 
     // If PAS=0: WDTxCON0.PW[7:2] must be written with inverted current value read from WDTxCON0.PW[7:2]
@@ -26,24 +32,25 @@ pub fn get_safety_watchdog_password() -> u16 {
 #[inline]
 unsafe fn get_wdt_con0(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con0, pac::RW> {
     // unsafe cast to get the valid SCU WDT based on the core id
-    let off: *mut u8 = unsafe { core::mem::transmute(pac::SCU.wdtcpu0con0()) };
+    let off: *mut u8 = unsafe { transmute(pac::SCU.wdtcpu0con0()) };
     let off = unsafe { off.add(core::mem::size_of::<u32>() * 3 * core_id as usize) };
-    unsafe { core::mem::transmute(off) }
+    unsafe { transmute(off) }
 }
 
 #[inline]
 unsafe fn get_wdt_con1(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con1, pac::RW> {
     // unsafe cast to get the valid SCU WDT based on the core id
-    let off: *mut u8 = unsafe { core::mem::transmute(pac::SCU.wdtcpu0con1()) };
+    let off: *mut u8 = unsafe { transmute(pac::SCU.wdtcpu0con1()) };
     let off = unsafe { off.add(core::mem::size_of::<u32>() * 3 * core_id as usize) };
-    unsafe { core::mem::transmute(off) }
+    unsafe { transmute(off) }
 }
 
+// TODO Duplicate? Bad function name?
 #[inline]
-pub fn clear_cpu_endinit_inline() {
+pub(crate) fn clear_cpu_endinit_inline() {
     let password = get_cpu_watchdog_password();
     let core_id = read_cpu_core_id();
-    let con0 = unsafe { get_wdt_con0(core_id as _) };
+    let con0 = unsafe { get_wdt_con0(core_id as u8) };
 
     if unsafe { con0.read() }.lck().get() {
         let rel = unsafe { con0.read() }.rel().get();
@@ -75,11 +82,12 @@ pub fn clear_cpu_endinit_inline() {
     while unsafe { con0.read() }.endinit().get() {}
 }
 
+// TODO Duplicate? Bad function name?
 #[inline]
-pub fn set_cpu_endinit_inline() {
+pub(crate) fn set_cpu_endinit_inline() {
     let password = get_cpu_watchdog_password();
     let core_id = read_cpu_core_id();
-    let con0 = unsafe { get_wdt_con0(core_id as _) };
+    let con0 = unsafe { get_wdt_con0(core_id as u8) };
 
     if unsafe { con0.read() }.lck().get() {
         let rel = unsafe { con0.read() }.rel().get();
@@ -111,8 +119,9 @@ pub fn set_cpu_endinit_inline() {
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
+// TODO Duplicate? Bad function name?
 #[inline]
-pub fn clear_safety_endinit_inline() {
+pub(crate) fn clear_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
@@ -143,8 +152,9 @@ pub fn clear_safety_endinit_inline() {
     while unsafe { con0.read() }.endinit().get() {}
 }
 
+// TODO Duplicate? Bad function name?
 #[inline]
-pub fn set_safety_endinit_inline() {
+pub(crate) fn set_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
@@ -190,7 +200,7 @@ pub fn disable_cpu_watchdog() {
     clear_cpu_endinit_inline();
 
     let core_id = read_cpu_core_id();
-    let con1 = unsafe { get_wdt_con1(core_id as _) };
+    let con1 = unsafe { get_wdt_con1(core_id as u8) };
     unsafe { con1.modify(|p| p.dr().set(true)) };
 
     set_cpu_endinit_inline();
@@ -201,7 +211,7 @@ mod tests {
     use super::*;
 
     #[test]
-    pub fn test_get_wdt_con0() {
+    fn test_get_wdt_con0() {
         let pwd = get_cpu_watchdog_password();
         assert_eq!(pwd, 0x3F);
     }

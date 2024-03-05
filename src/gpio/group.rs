@@ -1,3 +1,5 @@
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
 // TODO (alepez) Remove this warning suppression
 #![allow(unused)]
 
@@ -92,11 +94,13 @@ impl<const P: PortIndex, const SIZE: usize> PinGroup for [PEPin<P, Output<PushPu
 impl<const P: PortIndex, const SIZE: usize> PinArray<P, SIZE> {
     fn mask(&self) -> u32 {
         let mut msk = 0;
-        for pin in self.0.iter() {
+        for pin in &self.0 {
             msk |= 1 << pin.pin.0;
         }
         msk
     }
+
+    #[allow(clippy::if_not_else)]
     fn value_for_write_bsrr(&self, val: u32) -> u32 {
         let mut msk = 0;
         for (idx, pin) in self.0.iter().enumerate() {

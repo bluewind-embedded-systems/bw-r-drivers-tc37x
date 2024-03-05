@@ -1,3 +1,5 @@
+#![allow(clippy::print_stdout)]
+
 use std::any::Any;
 use tc37x_pac::tracing::TraceGuard;
 
