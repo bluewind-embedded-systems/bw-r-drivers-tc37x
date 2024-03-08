@@ -343,9 +343,8 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         if ccucon2.clkselasclins().get().0 != scu::ccucon2::Clkselasclins::CONST_00.0 {
             ccucon2 = unsafe { SCU.ccucon2().read() };
             let mut v = ccucon2.get_raw();
-            // TODO Probably a bug, v is not used
             v &= !config.clock_distribution.ccucon2.mask;
-            v = config.clock_distribution.ccucon2.mask & config.clock_distribution.ccucon2.value;
+            v |= config.clock_distribution.ccucon2.mask & config.clock_distribution.ccucon2.value;
             ccucon2.set_raw(v);
 
             ccucon2 = ccucon2.clkselasclins().set(
