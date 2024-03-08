@@ -136,6 +136,8 @@
 #![warn(unused_unsafe)]
 #![warn(clippy::unnecessary_safety_comment)] // Since Rust 1.67
 
+#![cfg_attr(target_arch = "tricore", feature(stdsimd))]
+
 pub(crate) mod common;
 
 pub mod can;

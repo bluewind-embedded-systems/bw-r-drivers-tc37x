@@ -930,18 +930,12 @@ impl Port {
             unsafe { transmute(addr) }
         };
 
-        unsafe {
-            iocr.modify_atomic(|r| {
-                // TODO Check if the new version is compatible with the previous one:
-                // *r.data_mut_ref() = (mode.0) << shift;
-                // *r.get_mask_mut_ref() = 0xFFu32 << shift;
+        let v : u32 = (mode.0) << shift;
+        let m : u32 = 0xFFu32 << shift;
 
-                let v : u32 = (mode.0) << shift;
-                let m : u32 = 0xFFu32 << shift;
-                r.set_raw_with_mask(v, m);
-                r
-            })
-        };
+        unsafe {
+            core::arch::tricore::intrinsics::__ldmst(iocr.ptr(), v, m);
+        }
     }
 
     fn set_pin_pad_driver(&self, index: u8, driver: PadDriver) {
@@ -955,15 +949,11 @@ impl Port {
         };
 
         wdt_call::call_without_cpu_endinit(|| unsafe {
-            pdr.modify_atomic(|r| {
-                // TODO Check if the new version is compatible with the previous one:
-                // *r.data_mut_ref() = (driver as u32) << shift;
-                // *r.get_mask_mut_ref() = 0xF << shift;
-                let v : u32 = (driver as u32) << shift;
-                let m : u32 = 0xF << shift;
-                r.set_raw_with_mask(v, m);
-                r
-            })
+            let v : u32 = (driver as u32) << shift;
+            let m : u32 = 0xF << shift;
+            unsafe {
+                core::arch::tricore::intrinsics::__ldmst(pdr.ptr(), v, m);
+            }
         });
     }
 }
