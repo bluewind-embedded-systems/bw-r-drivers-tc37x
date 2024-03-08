@@ -145,7 +145,9 @@ macro_rules! impl_can_module {
             }
 
             pub(crate) fn ram_base_address(&self) -> u32 {
-                $module_reg.0 as u32
+                // TODO Ugly hack to obtain the ram base addresssize
+                // This is needed because current pac does not provide it
+                ($module_reg.accen0().addr() as u32) - 33020u32
             }
         }
     };
