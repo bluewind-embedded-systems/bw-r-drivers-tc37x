@@ -1,20 +1,3 @@
-/*
-*****************************************************************************
-	*
-	* Copyright (C) 2023 Infineon Technologies AG. All rights reserved.
-	*
-	* Infineon Technologies AG (Infineon) is supplying this software for use with
-	* Infineon's microcontrollers. This file can be freely distributed within
-	* development tools that are supporting such microcontrollers.
-	*
-	* THIS SOFTWARE IS PROVIDED "AS IS". NO WARRANTIES, WHETHER EXPRESS, IMPLIED
-	* OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF
-	* MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE.
-	* INFINEON SHALL NOT, IN ANY CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL,
-	* OR CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
-	*
-	******************************************************************************
-*/
 use core::convert::From;
 use core::marker::PhantomData;
 
@@ -25,39 +8,6 @@ pub trait Effect {
     unsafe fn write_volatile<T: RegValue>(addr: usize, val: T);
     unsafe fn load_modify_store(addr: usize, val: u64);
 }
-
-#[cfg(target_arch = "tricore")]
-mod tricore {
-    use super::hidden::RegValue;
-
-    pub struct EffectImpl;
-
-    impl super::Effect for EffectImpl {
-        #[inline(always)]
-        unsafe fn read_volatile<T: RegValue>(addr: usize) -> T {
-            let val = unsafe { (addr as *mut T::DataType).read_volatile() };
-            T::new(val, 0.into())
-        }
-
-        #[inline(always)]
-        unsafe fn write_volatile<T: RegValue>(addr: usize, val: T) {
-            unsafe { (addr as *mut T::DataType).write_volatile(val.data()) }
-        }
-
-        #[inline(always)]
-        unsafe fn load_modify_store(addr: usize, val: u64) {
-            unsafe {
-                core::arch::asm!("ldmst [{}],0, {}", in(reg_ptr) addr,in(reg64) val);
-            }
-        }
-    }
-}
-
-#[cfg(target_arch = "tricore")]
-pub use tricore::EffectImpl;
-
-#[cfg(not(target_arch = "tricore"))]
-use super::tracing::TracingEffect as EffectImpl;
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct RW;
@@ -212,7 +162,8 @@ impl<T: RegValue, A: Read> Reg<T, A> {
     #[inline(always)]
     #[must_use]
     pub unsafe fn read(&self) -> T {
-        unsafe { EffectImpl::read_volatile(self.ptr as _) }
+        let v = unsafe { (self.ptr as *mut T::DataType).read_volatile() };
+        T::new(v, 0.into())
     }
 }
 
@@ -229,7 +180,7 @@ impl<T: RegValue, A: Write> Reg<T, A> {
     ///
     #[inline(always)]
     pub unsafe fn write(&self, reg_value: T) {
-        unsafe { EffectImpl::write_volatile(self.ptr as _, reg_value) }
+        unsafe { (self.ptr as *mut T::DataType).write_volatile(reg_value.data()); }
     }
 }
 
