@@ -112,8 +112,7 @@ macro_rules! impl_can_node_effect {
                     self.reg.tx().txbtiei().modify(|r| {
                         let mut v = r.get_raw();
                         v |= 1 << id;
-                        r.set_raw(v);
-                        r
+                        r.set_raw(v)
                     })
                 };
             }
@@ -377,8 +376,7 @@ macro_rules! impl_can_node_effect {
                     self.reg.iei().modify(|r| {
                         let mut v = r.get_raw();
                         v |= 1 << interrupt as u32;
-                        r.set_raw(v);
-                        r
+                        r.set_raw(v)
                     })
                 };
             }
@@ -389,8 +387,7 @@ macro_rules! impl_can_node_effect {
                 unsafe {
                     self.reg.iri().init(|r| {
                         let v = 1 << interrupt as u32;
-                        r.set_raw(v);
-                        r
+                        r.set_raw(v)
                     })
                 };
             }
@@ -401,8 +398,7 @@ macro_rules! impl_can_node_effect {
                     self.reg.grint1i().modify(|r| {
                         let mut v = r.get_raw();
                         v |= line << group;
-                        r.set_raw(v);
-                        r
+                        r.set_raw(v)
                     })
                 };
             }
@@ -414,8 +410,7 @@ macro_rules! impl_can_node_effect {
 
                         let mut v = r.get_raw();
                         v |= line << group;
-                        r.set_raw(v);
-                        r
+                        r.set_raw(v)
                     })
                 };
             }
