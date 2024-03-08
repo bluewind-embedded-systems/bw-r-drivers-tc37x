@@ -945,7 +945,7 @@ impl Port {
             unsafe { transmute(addr) }
         };
 
-        wdt_call::call_without_cpu_endinit(|| unsafe {
+        wdt_call::call_without_cpu_endinit(|| {
             let v : u32 = (driver as u32) << shift;
             let m : u32 = 0xF << shift;
             unsafe {
