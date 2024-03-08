@@ -876,8 +876,7 @@ impl Port {
         unsafe {
             self.inner.omr().init(|r| {
                 let v = (action as u32) << index;
-                r.set_raw(v);
-                r
+                r.set_raw(v)
             })
         };
     }
@@ -914,9 +913,7 @@ impl Port {
 
                     let mut v = r.get_raw();
                     v &= !(1 << index);
-                    r.set_raw(v);
-
-                    r
+                    r.set_raw(v)
                 })
             });
         }
