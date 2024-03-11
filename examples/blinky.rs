@@ -113,6 +113,7 @@ fn post_init_fn() {
     load_interrupt_table();
 }
 
+#[cfg(target_arch = "tricore")]
 #[allow(unused_variables)]
 #[panic_handler]
 fn panic(panic: &core::panic::PanicInfo<'_>) -> ! {
