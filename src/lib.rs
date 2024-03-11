@@ -138,6 +138,9 @@
 
 #![cfg_attr(target_arch = "tricore", feature(stdsimd))]
 
+#[cfg(feature = "tracing")]
+pub mod tracing;
+
 pub(crate) mod common;
 
 pub mod can;
