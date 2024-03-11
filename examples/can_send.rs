@@ -21,6 +21,10 @@ use tc37x_driver::{pac, ssw};
 use tc37x::can0::{Can0, N as Can0Node};
 // use tc37x::can1::{Can1, N as Can1Node};
 use tc37x_rt::{isr::load_interrupt_table, post_init, pre_init};
+use core::sync::atomic::AtomicBool;
+use core::sync::atomic::Ordering;
+use tc37x_driver::cpu::Priority;
+use tc37x_driver::can::msg::ReadFrom;
 
 pub static CAN0_NODE0_NEW_MSG: AtomicBool = AtomicBool::new(false);
 
@@ -209,33 +213,35 @@ fn post_init_fn() {
     load_interrupt_table();
 }
 
+#[cfg(target_arch = "tricore")]
 #[allow(unused_variables)]
 #[panic_handler]
 fn panic(panic: &core::panic::PanicInfo<'_>) -> ! {
+    #[cfg(feature = "log_with_defmt")]
     defmt::error!("Panic! {}", defmt::Display2Format(panic));
     #[allow(clippy::empty_loop)]
     loop {}
 }
 
-use core::arch::asm;
-use core::sync::atomic::{AtomicBool, Ordering};
-use critical_section::RawRestoreState;
-use tc37x_driver::can::msg::ReadFrom;
-use tc37x_driver::cpu::Priority;
+#[cfg(feature = "log_with_defmt")]
+mod critical_section_impl {
+    use core::arch::asm;
+    use critical_section::RawRestoreState;
 
-struct Section;
+    struct Section;
 
-critical_section::set_impl!(Section);
+    critical_section::set_impl!(Section);
 
-unsafe impl critical_section::Impl for Section {
-    unsafe fn acquire() -> RawRestoreState {
-        unsafe { asm!("disable") };
-        true
-    }
+    unsafe impl critical_section::Impl for Section {
+        unsafe fn acquire() -> RawRestoreState {
+            unsafe { asm!("disable") };
+            true
+        }
 
-    unsafe fn release(token: RawRestoreState) {
-        if token {
-            unsafe { asm!("enable") }
+        unsafe fn release(token: RawRestoreState) {
+            if token {
+                unsafe { asm!("enable") }
+            }
         }
     }
 }
