@@ -14,4 +14,4 @@ pub use baud_rate::*;
 pub use can_module::*;
 pub use can_node::*;
 pub use frame::Frame;
-pub use msg::MessageId;
+pub use msg::{FrameMode, MessageId};

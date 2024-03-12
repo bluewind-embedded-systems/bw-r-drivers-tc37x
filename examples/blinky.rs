@@ -11,8 +11,8 @@ use embedded_hal::digital::StatefulOutputPin;
 use tc37x_driver::cpu::asm::read_cpu_core_id;
 use tc37x_driver::gpio::GpioExt;
 use tc37x_driver::log::info;
-use tc37x_driver::pac;
 use tc37x_driver::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
+use tc37x_driver::{pac, ssw};
 use tc37x_rt::{isr::load_interrupt_table, post_init, pre_init};
 
 pub enum State {
@@ -79,8 +79,9 @@ fn main() -> ! {
 }
 
 /// Wait for a number of cycles roughly calculated from a duration.
+// TODO Are we sure we want to publish this function?
 #[inline(always)]
-pub fn wait_nop(period: Duration) {
+fn wait_nop(period: Duration) {
     #[cfg(target_arch = "tricore")]
     {
         use tc37x_driver::util::wait_nop_cycles;
@@ -104,33 +105,42 @@ fn pre_init_fn() {
 
 post_init!(post_init_fn);
 fn post_init_fn() {
+    if let Err(_) = ssw::init_clock() {
+        info!("Error in ssw init");
+        loop {}
+    }
+
     load_interrupt_table();
 }
 
 #[allow(unused_variables)]
 #[panic_handler]
 fn panic(panic: &core::panic::PanicInfo<'_>) -> ! {
+    #[cfg(feature = "log_with_defmt")]
     defmt::error!("Panic! {}", defmt::Display2Format(panic));
     #[allow(clippy::empty_loop)]
     loop {}
 }
 
-use core::arch::asm;
-use critical_section::RawRestoreState;
+#[cfg(feature = "log_with_defmt")]
+mod critical_section_impl {
+    use core::arch::asm;
+    use critical_section::RawRestoreState;
 
-struct Section;
+    struct Section;
 
-critical_section::set_impl!(Section);
+    critical_section::set_impl!(Section);
 
-unsafe impl critical_section::Impl for Section {
-    unsafe fn acquire() -> RawRestoreState {
-        unsafe { asm!("disable") };
-        true
-    }
+    unsafe impl critical_section::Impl for Section {
+        unsafe fn acquire() -> RawRestoreState {
+            unsafe { asm!("disable") };
+            true
+        }
 
-    unsafe fn release(token: RawRestoreState) {
-        if token {
-            unsafe { asm!("enable") }
+        unsafe fn release(token: RawRestoreState) {
+            if token {
+                unsafe { asm!("enable") }
+            }
         }
     }
 }

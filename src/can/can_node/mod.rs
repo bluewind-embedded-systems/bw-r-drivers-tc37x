@@ -1,32 +1,31 @@
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
 // TODO Remove asap
 #![allow(dead_code)]
 
+pub mod config;
 mod effects;
 
 use super::baud_rate::*;
-use super::can_module::ClockSource;
 use super::frame::{DataLenghtCode, Frame};
 use super::internals::Tx;
 use super::msg::TxBufferId;
-use super::{can_module, Module};
+use super::{can_module, Module, ModuleId};
 use crate::can::can_module::ClockSelect;
-use crate::can::msg::MessageId;
-
 use crate::can::can_node::effects::NodeEffects;
+use crate::can::config::NodeInterruptConfig;
+use crate::can::msg::FrameMode;
+use crate::can::msg::MessageId;
+use crate::can::msg::ReadFrom;
+use crate::can::msg::RxMessage;
+use crate::cpu::Priority;
 use crate::log::info;
 use crate::scu::wdt_call;
-
+pub use config::NodeConfig;
 use core::marker::PhantomData;
 use core::mem::transmute;
 use tc37x_pac::hidden::RegValue;
 
-#[derive(PartialEq, Debug, Default, Copy, Clone)]
-pub enum FrameMode {
-    #[default]
-    Standard,
-    FdLong,
-    FdLongAndFast,
-}
 #[derive(PartialEq, Debug, Default)]
 pub enum FrameType {
     #[default]
@@ -58,37 +57,7 @@ pub enum RxMode {
     SharedAll,
 }
 
-pub struct NodeConfig<M, N> {
-    pub clock_source: ClockSource,
-    pub baud_rate: BitTimingConfig,
-    pub fast_baud_rate: FastBitTimingConfig,
-    pub transceiver_delay_offset: u8,
-    pub frame_mode: FrameMode,
-    pub tx: Option<TxConfig>,
-    pub rx: Option<RxConfig>,
-    pub message_ram: MessageRAM,
-    pub pins: Option<Pins<M, N>>,
-}
-
-// Note: the Default trait implementation must be explicitly defined because
-// the derive macro needs all generic parameters to implement Default, even
-// if it is not necessary.
-impl<M, N> Default for NodeConfig<M, N> {
-    fn default() -> Self {
-        Self {
-            clock_source: Default::default(),
-            baud_rate: Default::default(),
-            fast_baud_rate: Default::default(),
-            transceiver_delay_offset: 0,
-            frame_mode: Default::default(),
-            tx: None,
-            rx: None,
-            message_ram: Default::default(),
-            pins: None,
-        }
-    }
-}
-
+// TODO Suspicious
 const TX_BUFFER_START_ADDRESS: u32 = 0x0440u32;
 
 pub trait NodeId {
@@ -117,11 +86,18 @@ impl NodeId for Node3 {
     const INDEX: usize = 3;
 }
 
-pub struct Node<N, M> {
+// Type state of Node
+pub struct Configured;
+pub struct Configurable;
+
+pub struct Node<N, M, I: NodeId, State> {
     effects: NodeEffects<N>,
     frame_mode: FrameMode,
-    _phantom: PhantomData<M>,
     ram_base_address: u32,
+    _phantom: PhantomData<(M, I, State)>,
+
+    // TODO Not all of rx_config fields are used, keep only the ones that are used
+    rx_config: Option<RxConfig>,
 }
 
 pub enum ConfigError {
@@ -135,18 +111,17 @@ pub enum TransmitError {
 }
 
 macro_rules! impl_can_node {
-    ($ModuleReg:ty, $NodeReg:path) => {
-        impl Node<$NodeReg, $ModuleReg> {
-            /// Only a module can create a node. This function is only accessible from within this crate.
-            pub(super) fn new<I>(
-                module: &mut Module<$ModuleReg, can_module::Enabled>,
+    ($ModuleReg:ty, $NodeReg:path, $ModuleId: ty) => {
+        // Methods only valid on a configurable node
+        impl<I: NodeId> Node<$NodeReg, $ModuleReg, I, Configurable> {
+            /// Only a module can create a self. This function is only accessible from within this crate.
+            pub(super) fn new(
+                module: &mut Module<$ModuleId, $ModuleReg, can_module::Enabled>,
                 node_id: I,
-                config: NodeConfig<$ModuleReg, I>,
-            ) -> Result<Node<$NodeReg, $ModuleReg>, ConfigError>
-            where
-                I: NodeId,
-            {
+                config: NodeConfig,
+            ) -> Result<Node<$NodeReg, $ModuleReg, I, Configurable>, ConfigError> {
                 let node_index = node_id.as_index();
+                #[allow(clippy::indexing_slicing)]
                 let node_reg = module.registers().n()[node_index];
                 let effects = NodeEffects::<$NodeReg>::new(node_reg);
                 let clock_select = ClockSelect::from(node_id);
@@ -159,7 +134,8 @@ macro_rules! impl_can_node {
                     effects,
                     _phantom: PhantomData,
                     frame_mode: config.frame_mode,
-                    ram_base_address: module.ram_base_address() as u32,
+                    ram_base_address: module.ram_base_address(),
+                    rx_config: None,
                 };
 
                 node.effects.enable_configuration_change();
@@ -177,107 +153,174 @@ macro_rules! impl_can_node {
                         .set_transceiver_delay_compensation_offset(config.transceiver_delay_offset);
                 }
 
-                // transmit frame configuration
-                if let Some(tx_config) = &config.tx {
-                    node.set_tx_buffer_data_field_size(tx_config.buffer_data_field_size);
-                    node.effects
-                        .set_tx_buffer_start_address(config.message_ram.tx_buffers_start_address);
-
-                    let mode = tx_config.mode;
-
-                    match mode {
-                        TxMode::DedicatedBuffers | TxMode::SharedFifo | TxMode::SharedQueue => {
-                            node.effects.set_dedicated_tx_buffers_number(
-                                tx_config.dedicated_tx_buffers_number,
-                            );
-                            if let TxMode::SharedFifo | TxMode::SharedQueue = mode {
-                                if let TxMode::SharedFifo = mode {
-                                    node.set_transmit_fifo_queue_mode(TxMode::Fifo);
-                                }
-                                if let TxMode::SharedQueue = mode {
-                                    node.set_transmit_fifo_queue_mode(TxMode::Queue);
-                                }
-                                node.effects
-                                    .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
-                            }
-                            for id in
-                                0..tx_config.dedicated_tx_buffers_number + tx_config.fifo_queue_size
-                            {
-                                if let Ok(tx_buffer_id) = TxBufferId::try_from(id) {
-                                    node.effects
-                                        .enable_tx_buffer_transmission_interrupt(tx_buffer_id);
-                                }
-                            }
-                        }
-                        TxMode::Fifo | TxMode::Queue => {
-                            node.set_transmit_fifo_queue_mode(mode);
-                            node.effects
-                                .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
-                            for id in 0..tx_config.fifo_queue_size {
-                                if let Ok(tx_buffer_id) = TxBufferId::try_from(id) {
-                                    node.effects
-                                        .enable_tx_buffer_transmission_interrupt(tx_buffer_id);
-                                }
-                            }
-                        }
-                    }
-
-                    if (1..=32).contains(&tx_config.event_fifo_size) {
-                        node.effects.set_tx_event_fifo_start_address(
-                            config.message_ram.tx_event_fifo_start_address,
-                        );
-                        node.effects
-                            .set_tx_event_fifo_size(tx_config.event_fifo_size);
-                    } else {
-                        crate::log::error!(
-                            "Invalid event fifo size: {}",
-                            tx_config.event_fifo_size
-                        );
-                    }
-
-                    node.set_frame_mode(config.frame_mode);
-                }
-
-                if let Some(_rx_config) = &config.rx {
-                    // TODO Configure rx
-                }
-
-                // TODO Interrupt from config
-                node.set_interrupt(
-                    InterruptGroup::Rxf0n,
-                    Interrupt::RxFifo0newMessage,
-                    InterruptLine(1),
-                    2,
-                    Tos::Cpu0,
-                );
-
-                if let Some(pins) = &config.pins {
-                    node.connect_pin_rx(
-                        &pins.rx,
-                        InputMode::PULL_UP,
-                        PadDriver::CmosAutomotiveSpeed3,
-                    );
-                    node.connect_pin_tx(
-                        &pins.tx,
-                        OutputMode::PUSH_PULL,
-                        PadDriver::CmosAutomotiveSpeed3,
-                    );
-                }
-
-                node.effects.disable_configuration_change();
-
                 Ok(node)
             }
 
-            fn set_rx_fifo0(&self, data: FifoData) {
+            pub fn lock_configuration(self) -> Node<$NodeReg, $ModuleReg, I, Configured> {
+                self.effects.disable_configuration_change();
+
+                Node {
+                    effects: self.effects,
+                    _phantom: PhantomData,
+                    frame_mode: self.frame_mode,
+                    ram_base_address: self.ram_base_address,
+                    rx_config: self.rx_config,
+                }
+            }
+
+            pub fn setup_tx(&self, tx_config: &TxConfig) {
+                self.set_tx_buffer_data_field_size(tx_config.buffer_data_field_size);
                 self.effects
-                    .set_rx_fifo0_data_field_size(data.field_size.to_esci_register_value());
+                    .set_tx_buffer_start_address(tx_config.tx_buffers_start_address);
+
+                let mode = tx_config.mode;
+
+                match mode {
+                    TxMode::DedicatedBuffers | TxMode::SharedFifo | TxMode::SharedQueue => {
+                        self.effects
+                            .set_dedicated_tx_buffers_number(tx_config.dedicated_tx_buffers_number);
+                        if let TxMode::SharedFifo | TxMode::SharedQueue = mode {
+                            if let TxMode::SharedFifo = mode {
+                                self.set_transmit_fifo_queue_mode(TxMode::Fifo);
+                            }
+                            if let TxMode::SharedQueue = mode {
+                                self.set_transmit_fifo_queue_mode(TxMode::Queue);
+                            }
+                            self.effects
+                                .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
+                        }
+                        for id in
+                            0..tx_config.dedicated_tx_buffers_number + tx_config.fifo_queue_size
+                        {
+                            if let Ok(tx_buffer_id) = TxBufferId::try_from(id) {
+                                self.effects
+                                    .enable_tx_buffer_transmission_interrupt(tx_buffer_id);
+                            }
+                        }
+                    }
+                    TxMode::Fifo | TxMode::Queue => {
+                        self.set_transmit_fifo_queue_mode(mode);
+                        self.effects
+                            .set_transmit_fifo_queue_size(tx_config.fifo_queue_size);
+                        for id in 0..tx_config.fifo_queue_size {
+                            if let Ok(tx_buffer_id) = TxBufferId::try_from(id) {
+                                self.effects
+                                    .enable_tx_buffer_transmission_interrupt(tx_buffer_id);
+                            }
+                        }
+                    }
+                }
+
+                if (1..=32).contains(&tx_config.event_fifo_size) {
+                    self.effects
+                        .set_tx_event_fifo_start_address(tx_config.tx_event_fifo_start_address);
+                    self.effects
+                        .set_tx_event_fifo_size(tx_config.event_fifo_size);
+                } else {
+                    crate::log::error!("Invalid event fifo size: {}", tx_config.event_fifo_size);
+                }
+
+                self.set_frame_mode(self.frame_mode);
+            }
+
+            pub fn setup_rx(&mut self, rx_config: RxConfig) {
+                self.rx_config = Some(rx_config);
+
+                let mode = rx_config.mode;
+
+                match mode {
+                    RxMode::DedicatedBuffers
+                    | RxMode::SharedFifo0
+                    | RxMode::SharedFifo1
+                    | RxMode::SharedAll => {
+                        self.set_rx_buffer_data_field_size(rx_config.buffer_data_field_size);
+                        self.effects
+                            .set_rx_buffer_start_address(rx_config.rx_buffers_start_address);
+
+                        if let RxMode::SharedFifo0 | RxMode::SharedAll = mode {
+                            self.set_rx_fifo0(FifoData {
+                                field_size: rx_config.fifo0_data_field_size,
+                                operation_mode: rx_config.fifo0_operating_mode,
+                                watermark_level: rx_config.fifo0_watermark_level,
+                                size: rx_config.fifo0_size,
+                                start_address: rx_config.rx_fifo0_start_address,
+                            });
+                        }
+                        if let RxMode::SharedFifo1 | RxMode::SharedAll = mode {
+                            self.set_rx_fifo1(FifoData {
+                                field_size: rx_config.fifo1_data_field_size,
+                                operation_mode: rx_config.fifo1_operating_mode,
+                                watermark_level: rx_config.fifo1_watermark_level,
+                                size: rx_config.fifo1_size,
+                                start_address: rx_config.rx_fifo1_start_address,
+                            });
+                        }
+                    }
+                    RxMode::Fifo0 => {
+                        self.set_rx_fifo0(FifoData {
+                            field_size: rx_config.fifo0_data_field_size,
+                            operation_mode: rx_config.fifo0_operating_mode,
+                            watermark_level: rx_config.fifo0_watermark_level,
+                            size: rx_config.fifo0_size,
+                            start_address: rx_config.rx_fifo0_start_address,
+                        });
+                    }
+                    RxMode::Fifo1 => {
+                        self.set_rx_fifo1(FifoData {
+                            field_size: rx_config.fifo1_data_field_size,
+                            operation_mode: rx_config.fifo1_operating_mode,
+                            watermark_level: rx_config.fifo1_watermark_level,
+                            size: rx_config.fifo1_size,
+                            start_address: rx_config.rx_fifo1_start_address,
+                        });
+                    }
+                }
+
+                self.set_frame_mode(self.frame_mode);
+            }
+
+            // TODO I think this should accept pins as provided by gpio module
+            pub fn setup_pins(&self, pins: &Pins<$ModuleId, I>) {
+                self.connect_pin_rx(
+                    &pins.rx,
+                    InputMode::PULL_UP,
+                    PadDriver::CmosAutomotiveSpeed3,
+                );
+                self.connect_pin_tx(
+                    &pins.tx,
+                    OutputMode::PUSH_PULL,
+                    PadDriver::CmosAutomotiveSpeed3,
+                );
+            }
+
+            pub fn setup_interrupt(&self, interrupt: &NodeInterruptConfig) {
+                self.set_interrupt(
+                    interrupt.interrupt_group,
+                    interrupt.interrupt,
+                    interrupt.line,
+                    interrupt.priority,
+                    interrupt.tos,
+                );
+            }
+
+            fn set_rx_fifo0(&self, data: FifoData) {
+                self.effects.set_rx_fifo0_data_field_size(data.field_size);
                 self.effects.set_rx_fifo0_start_address(data.start_address);
                 self.effects.set_rx_fifo0_size(data.size);
                 self.effects
                     .set_rx_fifo0_operating_mode(data.operation_mode);
                 self.effects
                     .set_rx_fifo0_watermark_level(data.watermark_level);
+            }
+
+            fn set_rx_fifo1(&self, data: FifoData) {
+                self.effects.set_rx_fifo1_data_field_size(data.field_size);
+                self.effects.set_rx_fifo1_start_address(data.start_address);
+                self.effects.set_rx_fifo1_size(data.size);
+                self.effects
+                    .set_rx_fifo1_operating_mode(data.operation_mode);
+                self.effects
+                    .set_rx_fifo1_watermark_level(data.watermark_level);
             }
 
             fn set_inner_tx_buffers(&self, dedicated: DedicatedData) {
@@ -344,9 +387,14 @@ macro_rules! impl_can_node {
             }
 
             #[inline]
-            pub fn set_tx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
+            fn set_tx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
                 self.effects
                     .set_tx_buffer_data_field_size(data_field_size.to_esci_register_value());
+            }
+
+            #[inline]
+            fn set_rx_buffer_data_field_size(&self, data_field_size: DataFieldSize) {
+                self.effects.set_rx_buffer_data_field_size(data_field_size);
             }
 
             fn set_frame_mode(&self, frame_mode: FrameMode) {
@@ -359,65 +407,38 @@ macro_rules! impl_can_node {
                 self.effects.set_frame_mode(fdoe, brse);
             }
 
-            // FIXME Fix set_interrupt. Broken after update of pac (SRC is missing)
             fn set_interrupt(
                 &self,
                 interrupt_group: InterruptGroup,
                 interrupt: Interrupt,
                 line: InterruptLine,
-                _priority: Priority,
-                _tos: Tos,
+                priority: Priority,
+                tos: Tos,
             ) {
                 self.set_group_interrupt_line(interrupt_group, line);
 
-                // let src = tc37x_pac::SRC;
-                //
-                // use crate::pac::{Reg, RW};
-                //
-                // let can_int: Reg<Can0Int0, RW> = match (self.module.id(), line) {
-                //     // TODO Add other lines and can modules
-                //     (ModuleId::Can0, InterruptLine(0)) => unsafe { transmute(src.can0int0()) },
-                //     (ModuleId::Can0, InterruptLine(1)) => unsafe { transmute(src.can0int1()) },
-                //     (ModuleId::Can1, InterruptLine(0)) => unsafe { transmute(src.can1int0()) },
-                //     (ModuleId::Can1, InterruptLine(1)) => unsafe { transmute(src.can1int1()) },
-                //     _ => unreachable!(),
-                // };
-                //
-                // let priority = priority;
-                // let tos = tos as u8;
-
-                // Set priority and type of service
-                // unsafe { can_int.modify(|r| r.srpn().set(priority).tos().set(tos)) };
-
-                // Clear request
-                // unsafe { can_int.modify(|r| r.clrr().set(true)) };
-
-                // Enable service request
-                // unsafe { can_int.modify(|r| r.sre().set(true)) };
+                <$ModuleId>::service_request(line).enable(priority, tos);
 
                 // Enable interrupt
                 self.effects.enable_interrupt(interrupt);
             }
 
-            fn set_group_interrupt_line(
-                &self,
-                interrupt_group: InterruptGroup,
-                interrupt_line: InterruptLine,
-            ) {
-                let line = interrupt_line.0 as u32;
+            fn set_group_interrupt_line(&self, group: InterruptGroup, line: InterruptLine) {
+                let line = u32::from(u8::from(line));
+                let group = u32::from(u8::from(group));
 
-                if interrupt_group <= InterruptGroup::Loi {
-                    let group = interrupt_group as u32 * 4;
+                if group < 8 {
+                    let group = group * 4;
                     self.effects.set_interrupt_routing_group_1(line, group);
                 } else {
-                    let group = (interrupt_group as u32 % 8) * 4;
+                    let group = (group % 8) * 4;
                     self.effects.set_interrupt_routing_group_2(line, group);
                 }
             }
 
-            fn connect_pin_rx<NodeId>(
+            fn connect_pin_rx(
                 &self,
-                rxd: &RxdIn<$ModuleReg, NodeId>,
+                rxd: &RxdIn<$ModuleId, I>,
                 mode: InputMode,
                 pad_driver: PadDriver,
             ) {
@@ -427,9 +448,9 @@ macro_rules! impl_can_node {
                 self.effects.connect_pin_rx(rxd.select);
             }
 
-            fn connect_pin_tx<NodeId>(
+            fn connect_pin_tx(
                 &self,
-                txd: &TxdOut<$ModuleReg, NodeId>,
+                txd: &TxdOut<$ModuleId, I>,
                 mode: OutputMode,
                 pad_driver: PadDriver,
             ) {
@@ -438,13 +459,73 @@ macro_rules! impl_can_node {
                 port.set_pin_pad_driver(txd.pin_index, pad_driver);
                 port.set_pin_low(txd.pin_index);
             }
+        }
+
+        // Methods only valid on a configured node
+        impl<I: NodeId> Node<$NodeReg, $ModuleReg, I, Configured> {
+            // TODO This does not feel to be the right place for this function
+            pub fn clear_interrupt_flag(&self, interrupt: Interrupt) {
+                self.effects.clear_interrupt_flag(interrupt);
+            }
 
             pub fn transmit(&self, frame: &Frame) -> Result<(), TransmitError> {
                 let buffer_id = self.get_tx_fifo_queue_put_index();
                 self.transmit_inner(buffer_id, frame.id, false, false, false, frame.data)
             }
 
-            pub fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
+            pub fn receive(&self, from: ReadFrom, data: &mut [u8]) -> Option<RxMessage> {
+                let Some(rx_config) = self.rx_config else {
+                    return None;
+                };
+
+                let buffer_id = match from {
+                    ReadFrom::RxFifo0 => self.effects.get_rx_fifo0_get_index(),
+                    ReadFrom::RxFifo1 => self.effects.get_rx_fifo1_get_index(),
+                    ReadFrom::Buffer(id) => id,
+                };
+
+                let rx_buf_elem = self.effects.get_rx_element_address(
+                    self.ram_base_address,
+                    match from {
+                        ReadFrom::RxFifo0 => rx_config.rx_fifo0_start_address,
+                        ReadFrom::RxFifo1 => rx_config.rx_fifo1_start_address,
+                        ReadFrom::Buffer(_) => rx_config.rx_buffers_start_address,
+                    },
+                    from,
+                    buffer_id,
+                );
+
+                // info!("read message on buffer_id: {}", buffer_id.0);
+                // info!("rx_buf_elem at: {:x}", rx_buf_elem.get_ptr());
+
+                let id = MessageId {
+                    data: rx_buf_elem.get_message_id(),
+                    length: rx_buf_elem.get_message_id_length(),
+                };
+
+                let data_length_code = rx_buf_elem.get_data_length();
+                let frame_mode = rx_buf_elem.get_frame_mode();
+
+                rx_buf_elem.read_data(data_length_code, data.as_mut_ptr());
+
+                match from {
+                    ReadFrom::RxFifo0 => self.effects.set_rx_fifo0_acknowledge_index(buffer_id),
+                    ReadFrom::RxFifo1 => self.effects.set_rx_fifo1_acknowledge_index(buffer_id),
+                    ReadFrom::Buffer(_) => (),
+                }
+
+                self.effects.clear_rx_buffer_new_data_flag(buffer_id);
+
+                Some(RxMessage {
+                    id,
+                    data_length_code,
+                    frame_mode,
+                    buffer_id,
+                    from,
+                })
+            }
+
+            fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
                 let id = self.effects.get_tx_fifo_queue_put_index() & 0x1F;
                 // SAFETY The value is in range because it is read from a register and masked with 0x1F
                 unsafe { TxBufferId::try_from(id).unwrap_unchecked() }
@@ -493,22 +574,8 @@ macro_rules! impl_can_node {
 
                 Ok(())
             }
-        }
 
-        // IfxLld_Can_Std_Tx_Element_Functions
-        impl Node<$NodeReg, $ModuleReg> {
-            #[inline]
-            pub fn is_tx_buffer_cancellation_finished(&self, tx_buffer_id: TxBufferId) -> bool {
-                self.is_tx_buffer_transmission_occured(tx_buffer_id)
-            }
-
-            #[inline]
-            pub fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: TxBufferId) -> bool {
-                self.effects
-                    .is_tx_buffer_transmission_occured(tx_buffer_id.into())
-            }
-
-            pub fn get_tx_element_address(
+            fn get_tx_element_address(
                 &self,
                 ram_base_address: u32,
                 buffer_number: TxBufferId,
@@ -523,12 +590,33 @@ macro_rules! impl_can_node {
 
                 Tx::new(tx_buffer_element_address as *mut u8)
             }
+
+            // TODO Untested, example missing
+            #[inline]
+            fn is_tx_buffer_cancellation_finished(&self, tx_buffer_id: TxBufferId) -> bool {
+                self.is_tx_buffer_transmission_occured(tx_buffer_id)
+            }
+
+            // TODO Untested, example missing
+            #[inline]
+            fn is_tx_buffer_transmission_occured(&self, tx_buffer_id: TxBufferId) -> bool {
+                self.effects
+                    .is_tx_buffer_transmission_occured(tx_buffer_id.into())
+            }
         }
     };
 }
 
-impl_can_node!(crate::pac::can0::Can0, crate::pac::can0::N);
-impl_can_node!(crate::pac::can1::Can1, crate::pac::can1::N);
+impl_can_node!(
+    crate::pac::can0::Can0,
+    crate::pac::can0::N,
+    crate::can::Module0
+);
+impl_can_node!(
+    crate::pac::can1::Can1,
+    crate::pac::can1::N,
+    crate::can::Module1
+);
 
 #[derive(Clone, Copy)]
 pub struct FifoData {
@@ -580,6 +668,7 @@ pub struct DedicatedData {
     pub start_address: u16,
 }
 
+#[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum InterruptGroup {
     Tefifo,
@@ -598,6 +687,12 @@ pub enum InterruptGroup {
     Reti,
     Traq,
     Traco,
+}
+
+impl From<InterruptGroup> for u8 {
+    fn from(value: InterruptGroup) -> Self {
+        value as u8
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -622,7 +717,9 @@ pub enum Interrupt {
     MessageRamaccessFailure,
     TimeoutOccurred,
     MessageStoredToDedicatedRxBuffer,
+    // TODO: reserved
     BitErrorCorrected,
+    // TODO: reserved
     BitErrorUncorrected,
     ErrorLoggingOverflow,
     ErrorPassive,
@@ -634,9 +731,33 @@ pub enum Interrupt {
     AccessToReservedAddress,
 }
 
-#[repr(transparent)]
+#[repr(u8)]
 #[derive(PartialEq, PartialOrd, Clone, Copy, Debug, Default)]
-pub struct InterruptLine(pub u8);
+pub enum InterruptLine {
+    #[default]
+    Line0,
+    Line1,
+    Line2,
+    Line3,
+    Line4,
+    Line5,
+    Line6,
+    Line7,
+    Line8,
+    Line9,
+    Line10,
+    Line11,
+    Line12,
+    Line13,
+    Line14,
+    Line15,
+}
+
+impl From<InterruptLine> for u8 {
+    fn from(value: InterruptLine) -> Self {
+        value as u8
+    }
+}
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub enum Tos {
@@ -645,6 +766,17 @@ pub enum Tos {
     Dma,
     Cpu1,
     Cpu2,
+}
+
+impl From<Tos> for u8 {
+    fn from(value: Tos) -> Self {
+        match value {
+            Tos::Cpu0 => 0,
+            Tos::Dma => 1,
+            Tos::Cpu1 => 2,
+            Tos::Cpu2 => 3,
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -679,7 +811,7 @@ pub enum PadDriver {
     Ttl3v3speed4 = 15,
 }
 
-pub struct Port {
+struct Port {
     inner: tc37x_pac::port_00::Port00,
 }
 
@@ -712,31 +844,30 @@ enum State {
     Toggled = (1 << 16) | 1,
 }
 
+// TODO Is this needed? Can we get rid of it? Seems to be a duplicate of gpio
 impl Port {
-    pub fn new(port: PortNumber) -> Self {
+    fn new(port: PortNumber) -> Self {
         use tc37x_pac::port_00::Port00;
         use tc37x_pac::*;
 
-        let inner: Port00 = unsafe {
-            match port {
-                PortNumber::_00 => PORT_00,
-                PortNumber::_01 => transmute(PORT_01),
-                PortNumber::_02 => transmute(PORT_02),
-                PortNumber::_10 => transmute(PORT_10),
-                PortNumber::_11 => transmute(PORT_11),
-                PortNumber::_12 => transmute(PORT_12),
-                PortNumber::_13 => transmute(PORT_13),
-                PortNumber::_14 => transmute(PORT_14),
-                PortNumber::_15 => transmute(PORT_15),
-                PortNumber::_20 => transmute(PORT_20),
-                PortNumber::_21 => transmute(PORT_21),
-                PortNumber::_22 => transmute(PORT_22),
-                PortNumber::_23 => transmute(PORT_23),
-                PortNumber::_32 => transmute(PORT_32),
-                PortNumber::_33 => transmute(PORT_33),
-                PortNumber::_34 => transmute(PORT_34),
-                PortNumber::_40 => transmute(PORT_40),
-            }
+        let inner: Port00 = match port {
+            PortNumber::_00 => PORT_00,
+            PortNumber::_01 => unsafe { transmute(PORT_01) },
+            PortNumber::_02 => unsafe { transmute(PORT_02) },
+            PortNumber::_10 => unsafe { transmute(PORT_10) },
+            PortNumber::_11 => unsafe { transmute(PORT_11) },
+            PortNumber::_12 => unsafe { transmute(PORT_12) },
+            PortNumber::_13 => unsafe { transmute(PORT_13) },
+            PortNumber::_14 => unsafe { transmute(PORT_14) },
+            PortNumber::_15 => unsafe { transmute(PORT_15) },
+            PortNumber::_20 => unsafe { transmute(PORT_20) },
+            PortNumber::_21 => unsafe { transmute(PORT_21) },
+            PortNumber::_22 => unsafe { transmute(PORT_22) },
+            PortNumber::_23 => unsafe { transmute(PORT_23) },
+            PortNumber::_32 => unsafe { transmute(PORT_32) },
+            PortNumber::_33 => unsafe { transmute(PORT_33) },
+            PortNumber::_34 => unsafe { transmute(PORT_34) },
+            PortNumber::_40 => unsafe { transmute(PORT_40) },
         };
         Self { inner }
     }
@@ -755,10 +886,6 @@ impl Port {
         self.set_pin_state(index, State::Toggled)
     }
 
-    fn set_pin_high(&self, index: u8) {
-        self.set_pin_state(index, State::High)
-    }
-
     fn set_pin_low(&self, index: u8) {
         self.set_pin_state(index, State::Low)
     }
@@ -775,8 +902,10 @@ impl Port {
         let ioc_index = index / 4;
         let shift = (index & 0x3) * 8;
 
-        let is_supervisor =
-            unsafe { transmute::<_, usize>(self.inner) == transmute(crate::pac::PORT_40) };
+        // TODO This unsafe code could be made safe by comparing the address (usize) of the port if only self.inner.0 was public
+        let is_supervisor = unsafe { transmute::<_, usize>(self.inner) }
+            == unsafe { transmute(crate::pac::PORT_40) };
+
         if is_supervisor {
             wdt_call::call_without_cpu_endinit(|| unsafe {
                 self.inner.pdisc().modify(|mut r| {
@@ -786,11 +915,13 @@ impl Port {
             });
         }
 
-        let iocr: crate::pac::Reg<crate::pac::port_00::Iocr0, crate::pac::RW> = unsafe {
+        // TODO Can we do this without transmute?
+        // TODO Use change_pin_mode_port_pin from gpio module instead?
+        let iocr: crate::pac::Reg<crate::pac::port_00::Iocr0, crate::pac::RW> = {
             let iocr0 = self.inner.iocr0();
-            let addr: *mut u32 = transmute(iocr0);
-            let addr = addr.add(ioc_index as _);
-            transmute(addr)
+            let addr: *mut u32 = unsafe { transmute(iocr0) };
+            let addr = unsafe { addr.add(ioc_index as usize) };
+            unsafe { transmute(addr) }
         };
 
         unsafe {
@@ -805,11 +936,11 @@ impl Port {
     fn set_pin_pad_driver(&self, index: u8, driver: PadDriver) {
         let pdr_index = index / 8;
         let shift = (index & 0x7) * 4;
-        let pdr: crate::pac::Reg<crate::pac::port_00::Pdr0, crate::pac::RW> = unsafe {
+        let pdr: crate::pac::Reg<crate::pac::port_00::Pdr0, crate::pac::RW> = {
             let pdr0 = self.inner.pdr0();
-            let addr: *mut u32 = core::mem::transmute(pdr0);
-            let addr = addr.add(pdr_index as _);
-            core::mem::transmute(addr)
+            let addr: *mut u32 = unsafe { transmute(pdr0) };
+            let addr = unsafe { addr.add(pdr_index as usize) };
+            unsafe { transmute(addr) }
         };
 
         wdt_call::call_without_cpu_endinit(|| unsafe {
@@ -917,14 +1048,14 @@ impl From<RxSel> for u8 {
 }
 
 #[derive(Clone, Copy)]
-pub struct TxdOut<M, N> {
+pub struct TxdOut<M: ModuleId, N: NodeId> {
     port: PortNumber,
     pin_index: u8,
     select: OutputIdx,
     _phantom: PhantomData<(M, N)>,
 }
 
-impl<M, N> TxdOut<M, N> {
+impl<M: ModuleId, N: NodeId> TxdOut<M, N> {
     pub(crate) const fn new(port: PortNumber, pin_index: u8, select: OutputIdx) -> Self {
         Self {
             port,
@@ -935,8 +1066,6 @@ impl<M, N> TxdOut<M, N> {
     }
 }
 
-pub type Priority = u8;
-
 #[derive(Clone, Copy)]
 pub struct TxConfig {
     pub mode: TxMode,
@@ -944,40 +1073,32 @@ pub struct TxConfig {
     pub fifo_queue_size: u8,
     pub buffer_data_field_size: DataFieldSize,
     pub event_fifo_size: u8,
-}
-
-#[derive(Clone, Copy)]
-pub struct RxConfig {
-    // TODO
-}
-
-#[derive(Clone, Copy)]
-pub struct Pins<M, N> {
-    pub tx: TxdOut<M, N>,
-    pub rx: RxdIn<M, N>,
-}
-
-#[derive(Clone, Copy)]
-pub struct MessageRAM {
-    pub standard_filter_list_start_address: u16,
-    pub extended_filter_list_start_address: u16,
-    pub rx_fifo0_start_address: u16,
-    pub rx_fifo1_start_address: u16,
-    pub rx_buffers_start_address: u16,
     pub tx_event_fifo_start_address: u16,
     pub tx_buffers_start_address: u16,
 }
 
-impl Default for MessageRAM {
-    fn default() -> Self {
-        Self {
-            standard_filter_list_start_address: 0x0,
-            extended_filter_list_start_address: 0x80,
-            rx_fifo0_start_address: 0x100,
-            rx_fifo1_start_address: 0x200,
-            rx_buffers_start_address: 0x300,
-            tx_event_fifo_start_address: 0x400,
-            tx_buffers_start_address: 0x440,
-        }
-    }
+//     pub standard_filter_list_start_address: u16,
+//     pub extended_filter_list_start_address: u16,
+
+#[derive(Clone, Copy)]
+pub struct RxConfig {
+    pub mode: RxMode,
+    pub buffer_data_field_size: DataFieldSize,
+    pub fifo0_data_field_size: DataFieldSize,
+    pub fifo1_data_field_size: DataFieldSize,
+    pub fifo0_operating_mode: RxFifoMode,
+    pub fifo1_operating_mode: RxFifoMode,
+    pub fifo0_watermark_level: u8,
+    pub fifo1_watermark_level: u8,
+    pub fifo0_size: u8,
+    pub fifo1_size: u8,
+    pub rx_fifo0_start_address: u16,
+    pub rx_fifo1_start_address: u16,
+    pub rx_buffers_start_address: u16,
+}
+
+#[derive(Clone, Copy)]
+pub struct Pins<M: ModuleId, N: NodeId> {
+    pub tx: TxdOut<M, N>,
+    pub rx: RxdIn<M, N>,
 }

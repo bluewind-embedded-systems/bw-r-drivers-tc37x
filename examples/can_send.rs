@@ -9,6 +9,7 @@ tc37x_rt::entry!(main);
 
 use core::time::Duration;
 use embedded_can::ExtendedId;
+use tc37x_driver::can::config::NodeInterruptConfig;
 use tc37x_driver::can::pin_map::*;
 use tc37x_driver::can::*;
 use tc37x_driver::cpu::asm::enable_interrupts;
@@ -18,67 +19,79 @@ use tc37x_driver::log::info;
 use tc37x_driver::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
 use tc37x_driver::{pac, ssw};
 use tc37x_pac::can0::{Can0, N as Can0Node};
-use tc37x_pac::can1::{Can1, N as Can1Node};
+// use tc37x_pac::can1::{Can1, N as Can1Node};
 use tc37x_rt::{isr::load_interrupt_table, post_init, pre_init};
 
-fn setup_can0() -> Option<Node<Can0Node, Can0>> {
+pub static CAN0_NODE0_NEW_MSG: AtomicBool = AtomicBool::new(false);
+
+#[no_mangle]
+pub extern "C" fn __INTERRUPT_HANDLER_2() {
+    CAN0_NODE0_NEW_MSG.store(true, Ordering::SeqCst);
+}
+
+fn setup_can0() -> Option<Node<Can0Node, Can0, Node0, Configured>> {
     let can_module = Module::new(Module0);
     let mut can_module = can_module.enable();
 
-    let mut cfg = NodeConfig::default();
+    let cfg = NodeConfig {
+        baud_rate: BitTimingConfig::Auto(AutoBitTiming {
+            baud_rate: 1_000_000,
+            sample_point: 8_000,
+            sync_jump_width: 3,
+        }),
+        ..Default::default()
+    };
 
-    cfg.baud_rate = BitTimingConfig::Auto(AutoBitTiming {
-        baud_rate: 1_000_000,
-        sample_point: 8_000,
-        sync_jump_width: 3,
-    });
+    let mut node = can_module.take_node(Node0, cfg)?;
 
-    cfg.tx = Some(TxConfig {
+    node.setup_tx(&TxConfig {
         mode: TxMode::DedicatedBuffers,
         dedicated_tx_buffers_number: 2,
         fifo_queue_size: 0,
         buffer_data_field_size: DataFieldSize::_8,
         event_fifo_size: 1,
+        tx_event_fifo_start_address: 0x400,
+        tx_buffers_start_address: 0x440,
     });
 
-    // TODO Configure rx parameters
+    node.setup_rx(RxConfig {
+        mode: RxMode::SharedFifo0,
+        buffer_data_field_size: DataFieldSize::_8,
+        fifo0_data_field_size: DataFieldSize::_8,
+        fifo1_data_field_size: DataFieldSize::_8,
+        fifo0_operating_mode: RxFifoMode::Blocking,
+        fifo1_operating_mode: RxFifoMode::Blocking,
+        fifo0_watermark_level: 0,
+        fifo1_watermark_level: 0,
+        fifo0_size: 4,
+        fifo1_size: 0,
+        rx_fifo0_start_address: 0x100,
+        rx_fifo1_start_address: 0x200,
+        rx_buffers_start_address: 0x300,
+    });
 
-    cfg.pins = Some(Pins {
+    // TODO Can we use gpio for this?
+    {
+        let gpio20 = pac::PORT_20.split();
+        let _tx = gpio20.p20_8;
+        let _rx = gpio20.p20_7;
+        // node.setup_pins(tx, rx);
+    }
+
+    node.setup_pins(&Pins {
         tx: PIN_TX_0_0_P20_8,
         rx: PIN_RX_0_0_P20_7,
     });
 
-    can_module.take_node(Node0, cfg)
-}
-
-fn setup_can1() -> Option<Node<Can1Node, Can1>> {
-    let can_module = Module::new(Module1);
-    let mut can_module = can_module.enable();
-
-    let mut cfg = NodeConfig::default();
-
-    cfg.baud_rate = BitTimingConfig::Auto(AutoBitTiming {
-        baud_rate: 1_000_000,
-        sample_point: 8_000,
-        sync_jump_width: 3,
+    node.setup_interrupt(&NodeInterruptConfig {
+        interrupt_group: InterruptGroup::Rxf0n,
+        interrupt: Interrupt::RxFifo0newMessage,
+        line: InterruptLine::Line1,
+        priority: Priority::try_from(2).unwrap(),
+        tos: Tos::Cpu0,
     });
 
-    cfg.tx = Some(TxConfig {
-        mode: TxMode::DedicatedBuffers,
-        dedicated_tx_buffers_number: 2,
-        fifo_queue_size: 0,
-        buffer_data_field_size: DataFieldSize::_8,
-        event_fifo_size: 1,
-    });
-
-    // TODO Configure rx parameters
-
-    cfg.pins = Some(Pins {
-        tx: PIN_TX_1_0_P00_0,
-        rx: PIN_RX_1_0_P13_1,
-    });
-
-    can_module.take_node(Node0, cfg)
+    Some(node.lock_configuration())
 }
 
 /// Initialize the STB pin for the CAN transceiver.
@@ -96,11 +109,6 @@ fn main() -> ! {
     env_logger::init();
 
     info!("Start example: can_send");
-
-    if let Err(_) = ssw::init_software() {
-        info!("Error in ssw init");
-        loop {}
-    }
 
     info!("Enable interrupts");
     enable_interrupts();
@@ -121,14 +129,6 @@ fn main() -> ! {
         }
     };
 
-    let can1 = match setup_can1() {
-        Some(can) => can,
-        None => {
-            info!("Can initialization error");
-            loop {}
-        }
-    };
-
     info!("Define a message to send");
     let tx_msg_id: MessageId = {
         let id = 0x0CFE6E00;
@@ -138,10 +138,9 @@ fn main() -> ! {
 
     info!("Allocate a buffer for the message data");
     let mut tx_msg_data: [u8; 8] = [0, 1, 2, 3, 4, 5, 6, 7];
+    let mut rx_msg_data: [u8; 8] = Default::default();
 
     loop {
-        led1.set_high();
-
         // Transmit a different message each time (changing the first byte)
         tx_msg_data[0] = tx_msg_data[0].wrapping_add(1);
 
@@ -151,19 +150,34 @@ fn main() -> ! {
             info!("Cannot send frame");
         }
 
-        if can1.transmit(&tx_frame).is_err() {
-            info!("Cannot send frame");
-        }
+        // if can1.transmit(&tx_frame).is_err() {
+        //     info!("Cannot send frame");
+        // }
 
+        led1.set_high();
         wait_nop(Duration::from_millis(100));
         led1.set_low();
         wait_nop(Duration::from_millis(900));
+
+        let can0_node0_received = CAN0_NODE0_NEW_MSG.load(Ordering::SeqCst);
+        if can0_node0_received {
+            info!("msg received");
+            CAN0_NODE0_NEW_MSG.store(false, Ordering::SeqCst);
+
+            // TODO For symmetry, it should receive a frame, with can id too
+            can0.receive(ReadFrom::RxFifo0, &mut rx_msg_data);
+
+            tx_msg_data.copy_from_slice(&rx_msg_data);
+
+            can0.clear_interrupt_flag(Interrupt::RxFifo0newMessage);
+        }
     }
 }
 
 /// Wait for a number of cycles roughly calculated from a duration.
+// TODO Are we sure we want to publish this function?
 #[inline(always)]
-pub fn wait_nop(period: Duration) {
+fn wait_nop(period: Duration) {
     #[cfg(target_arch = "tricore")]
     {
         use tc37x_driver::util::wait_nop_cycles;
@@ -187,6 +201,11 @@ fn pre_init_fn() {
 
 post_init!(post_init_fn);
 fn post_init_fn() {
+    if let Err(_) = ssw::init_clock() {
+        info!("Error in ssw init");
+        loop {}
+    }
+
     load_interrupt_table();
 }
 
@@ -199,7 +218,10 @@ fn panic(panic: &core::panic::PanicInfo<'_>) -> ! {
 }
 
 use core::arch::asm;
+use core::sync::atomic::{AtomicBool, Ordering};
 use critical_section::RawRestoreState;
+use tc37x_driver::can::msg::ReadFrom;
+use tc37x_driver::cpu::Priority;
 
 struct Section;
 

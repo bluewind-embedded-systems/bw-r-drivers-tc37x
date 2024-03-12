@@ -1,3 +1,6 @@
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
+
 //! General Purpose Input / Output
 //!
 //! The GPIO pins are organised into groups of 16 pins which can be accessed through the
@@ -62,7 +65,7 @@
 
 use core::fmt;
 use core::marker::PhantomData;
-//use std::ops::Deref;
+use core::mem::transmute;
 
 pub use embedded_hal::digital::PinState;
 use tc37x_pac::RegisterValue;
@@ -389,28 +392,42 @@ where
             Pull::Down => 0b01,
         };
 
-        unsafe {
-            let port = (*Gpio::<P>::ptr());
+        let port = unsafe { (*Gpio::<P>::ptr()) };
 
-            match N {
-                0 => port.iocr0().modify_atomic(|r| r.pc0().set(mode)),
-                1 => port.iocr0().modify_atomic(|r| r.pc1().set(mode)),
-                2 => port.iocr0().modify_atomic(|r| r.pc2().set(mode)),
-                3 => port.iocr0().modify_atomic(|r| r.pc3().set(mode)),
-                4 => port.iocr4().modify_atomic(|r| r.pc4().set(mode)),
-                5 => port.iocr4().modify_atomic(|r| r.pc5().set(mode)),
-                6 => port.iocr4().modify_atomic(|r| r.pc6().set(mode)),
-                7 => port.iocr4().modify_atomic(|r| r.pc7().set(mode)),
-                8 => port.iocr8().modify_atomic(|r| r.pc8().set(mode)),
-                9 => port.iocr8().modify_atomic(|r| r.pc9().set(mode)),
-                10 => port.iocr8().modify_atomic(|r| r.pc10().set(mode)),
-                11 => port.iocr8().modify_atomic(|r| r.pc11().set(mode)),
-                12 => port.iocr12().modify_atomic(|r| r.pc12().set(mode)),
-                13 => port.iocr12().modify_atomic(|r| r.pc13().set(mode)),
-                14 => port.iocr12().modify_atomic(|r| r.pc14().set(mode)),
-                15 => port.iocr12().modify_atomic(|r| r.pc15().set(mode)),
-                _ => unimplemented!(),
-            }
+        match N {
+            // SAFETY: mode is in range [0, 3)
+            0 => unsafe { port.iocr0().modify_atomic(|r| r.pc0().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
+            1 => unsafe { port.iocr0().modify_atomic(|r| r.pc1().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
+            2 => unsafe { port.iocr0().modify_atomic(|r| r.pc2().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
+            3 => unsafe { port.iocr0().modify_atomic(|r| r.pc3().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
+            4 => unsafe { port.iocr4().modify_atomic(|r| r.pc4().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
+            5 => unsafe { port.iocr4().modify_atomic(|r| r.pc5().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
+            6 => unsafe { port.iocr4().modify_atomic(|r| r.pc6().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
+            7 => unsafe { port.iocr4().modify_atomic(|r| r.pc7().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
+            8 => unsafe { port.iocr8().modify_atomic(|r| r.pc8().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
+            9 => unsafe { port.iocr8().modify_atomic(|r| r.pc9().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
+            10 => unsafe { port.iocr8().modify_atomic(|r| r.pc10().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
+            11 => unsafe { port.iocr8().modify_atomic(|r| r.pc11().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
+            12 => unsafe { port.iocr12().modify_atomic(|r| r.pc12().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
+            13 => unsafe { port.iocr12().modify_atomic(|r| r.pc13().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
+            14 => unsafe { port.iocr12().modify_atomic(|r| r.pc14().set(mode)) },
+            // SAFETY: mode is in range [0, 3)
+            15 => unsafe { port.iocr12().modify_atomic(|r| r.pc15().set(mode)) },
+            _ => unimplemented!(),
         }
     }
 
@@ -650,30 +667,27 @@ impl<const P: PortIndex> Gpio<P> {
         // The logic relies on the following assumptions:
         // - PORT_00 register are available on all chips
         // - all PORT register blocks have the same layout
-        unsafe {
-            // TODO (annabo) load automatically from pac file `port_##.rs`
-            // TODO (alepez) Check why clippy says this transmute is useless.
-            #[allow(clippy::useless_transmute)]
-            match P {
-                0 => core::mem::transmute(&crate::pac::PORT_00),
-                1 => core::mem::transmute(&crate::pac::PORT_01),
-                2 => core::mem::transmute(&crate::pac::PORT_02),
-                10 => core::mem::transmute(&crate::pac::PORT_10),
-                11 => core::mem::transmute(&crate::pac::PORT_11),
-                12 => core::mem::transmute(&crate::pac::PORT_12),
-                13 => core::mem::transmute(&crate::pac::PORT_13),
-                14 => core::mem::transmute(&crate::pac::PORT_14),
-                15 => core::mem::transmute(&crate::pac::PORT_15),
-                20 => core::mem::transmute(&crate::pac::PORT_20),
-                21 => core::mem::transmute(&crate::pac::PORT_21),
-                22 => core::mem::transmute(&crate::pac::PORT_22),
-                23 => core::mem::transmute(&crate::pac::PORT_23),
-                32 => core::mem::transmute(&crate::pac::PORT_32),
-                33 => core::mem::transmute(&crate::pac::PORT_33),
-                34 => core::mem::transmute(&crate::pac::PORT_34),
-                40 => core::mem::transmute(&crate::pac::PORT_40),
-                _ => panic!("Unknown GPIO port"),
-            }
+        // TODO (annabo) load automatically from pac file `port_##.rs`
+        #[allow(clippy::useless_transmute)]
+        match P {
+            0 => unsafe { transmute(&crate::pac::PORT_00) },
+            1 => unsafe { transmute(&crate::pac::PORT_01) },
+            2 => unsafe { transmute(&crate::pac::PORT_02) },
+            10 => unsafe { transmute(&crate::pac::PORT_10) },
+            11 => unsafe { transmute(&crate::pac::PORT_11) },
+            12 => unsafe { transmute(&crate::pac::PORT_12) },
+            13 => unsafe { transmute(&crate::pac::PORT_13) },
+            14 => unsafe { transmute(&crate::pac::PORT_14) },
+            15 => unsafe { transmute(&crate::pac::PORT_15) },
+            20 => unsafe { transmute(&crate::pac::PORT_20) },
+            21 => unsafe { transmute(&crate::pac::PORT_21) },
+            22 => unsafe { transmute(&crate::pac::PORT_22) },
+            23 => unsafe { transmute(&crate::pac::PORT_23) },
+            32 => unsafe { transmute(&crate::pac::PORT_32) },
+            33 => unsafe { transmute(&crate::pac::PORT_33) },
+            34 => unsafe { transmute(&crate::pac::PORT_34) },
+            40 => unsafe { transmute(&crate::pac::PORT_40) },
+            _ => panic!("Unknown GPIO port"),
         }
     }
 }
@@ -708,6 +722,7 @@ pub(crate) fn pin_set_state(port: &AnyPort, pin: PinId, state: PinState) {
     // we directly set the bits in OMR register.
     let (pclx, psx) = pcl_ps_from_state(state);
     let raw = pcl_ps_bits(pclx, psx, pin.0.into());
+    // SAFETY: each bit in OMR is W0, init will set every bit to 0 (no operation) and then apply the closure
     unsafe {
         port.omr().init(|mut r| r.set_raw(raw));
     }
@@ -719,6 +734,7 @@ pub(crate) fn pin_toggle_state(port: &AnyPort, pin: PinId) {
     // Instead of setting PCLx and PSx (where x is the pin number)
     // we directly set the bits in OMR register.
     let raw = pcl_ps_bits(1, 1, pin.0.into());
+    // SAFETY: each bit in OMR is W0, init will set every bit to 0 (no operation) and then apply the closure
     unsafe {
         port.omr().init(|mut r| r.set_raw(raw));
     }
@@ -726,52 +742,89 @@ pub(crate) fn pin_toggle_state(port: &AnyPort, pin: PinId) {
 
 #[inline(always)]
 pub(crate) fn pin_input_is_high(port: &AnyPort, pin: PinId) -> bool {
-    unsafe {
-        match pin.0 {
-            0 => port.r#in().read().p0().get().0 == 1,
-            1 => port.r#in().read().p1().get().0 == 1,
-            2 => port.r#in().read().p2().get().0 == 1,
-            3 => port.r#in().read().p3().get().0 == 1,
-            4 => port.r#in().read().p4().get().0 == 1,
-            5 => port.r#in().read().p5().get().0 == 1,
-            6 => port.r#in().read().p6().get().0 == 1,
-            7 => port.r#in().read().p7().get().0 == 1,
-            8 => port.r#in().read().p8().get().0 == 1,
-            9 => port.r#in().read().p9().get().0 == 1,
-            10 => port.r#in().read().p10().get().0 == 1,
-            11 => port.r#in().read().p11().get().0 == 1,
-            12 => port.r#in().read().p12().get().0 == 1,
-            13 => port.r#in().read().p13().get().0 == 1,
-            14 => port.r#in().read().p14().get().0 == 1,
-            15 => port.r#in().read().p15().get().0 == 1,
-            _ => unreachable!(),
+    match pin.0 {
+        // SAFETY: each bit of IN is at least R
+        0 => unsafe { port.r#in().read().p0().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
+        1 => unsafe { port.r#in().read().p1().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
+        2 => unsafe { port.r#in().read().p2().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
+        3 => unsafe { port.r#in().read().p3().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
+        4 => unsafe { port.r#in().read().p4().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
+        5 => unsafe { port.r#in().read().p5().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
+        6 => unsafe { port.r#in().read().p6().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
+        7 => unsafe { port.r#in().read().p7().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
+        8 => unsafe { port.r#in().read().p8().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
+        9 => unsafe { port.r#in().read().p9().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
+        10 => unsafe { port.r#in().read().p10().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
+        11 => unsafe { port.r#in().read().p11().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
+        12 => unsafe { port.r#in().read().p12().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
+        13 => unsafe { port.r#in().read().p13().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
+        14 => unsafe { port.r#in().read().p14().get().0 == 1 },
+        // SAFETY: each bit of IN is at least R
+        15 => unsafe { port.r#in().read().p15().get().0 == 1 },
+        _ => {
+            // Just return false for invalid pin numbers
+            // TODO (alepez) should we panic here?
+            false
         }
     }
 }
 
 #[inline(always)]
 pub(crate) fn pin_output_is_high(port: &AnyPort, pin: PinId) -> bool {
-    unsafe {
-        match pin.0 {
-            0 => port.out().read().p0().get().0 == 1,
-            1 => port.out().read().p1().get().0 == 1,
-            2 => port.out().read().p2().get().0 == 1,
-            3 => port.out().read().p3().get().0 == 1,
-            4 => port.out().read().p4().get().0 == 1,
-            5 => port.out().read().p5().get().0 == 1,
-            6 => port.out().read().p6().get().0 == 1,
-            7 => port.out().read().p7().get().0 == 1,
-            8 => port.out().read().p8().get().0 == 1,
-            9 => port.out().read().p9().get().0 == 1,
-            10 => port.out().read().p10().get().0 == 1,
-            11 => port.out().read().p11().get().0 == 1,
-            12 => port.out().read().p12().get().0 == 1,
-            13 => port.out().read().p13().get().0 == 1,
-            14 => port.out().read().p14().get().0 == 1,
-            15 => port.out().read().p15().get().0 == 1,
-            _ => unreachable!(),
+    match pin.0 {
+        // SAFETY: each bit of OUT is at least R
+        0 => unsafe { port.out().read().p0().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
+        1 => unsafe { port.out().read().p1().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
+        2 => unsafe { port.out().read().p2().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
+        3 => unsafe { port.out().read().p3().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
+        4 => unsafe { port.out().read().p4().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
+        5 => unsafe { port.out().read().p5().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
+        6 => unsafe { port.out().read().p6().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
+        7 => unsafe { port.out().read().p7().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
+        8 => unsafe { port.out().read().p8().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
+        9 => unsafe { port.out().read().p9().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
+        10 => unsafe { port.out().read().p10().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
+        11 => unsafe { port.out().read().p11().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
+        12 => unsafe { port.out().read().p12().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
+        13 => unsafe { port.out().read().p13().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
+        14 => unsafe { port.out().read().p14().get().0 == 1 },
+        // SAFETY: each bit of OUT is at least R
+        15 => unsafe { port.out().read().p15().get().0 == 1 },
+        _ => {
+            // Just return false for invalid pin numbers
+            // TODO (alepez) should we panic here?
+            false
         }
     }
 }
 
+// TODO This is not type safe
 type AnyPort = crate::pac::port_00::Port00;

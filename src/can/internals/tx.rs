@@ -1,35 +1,36 @@
-use crate::can::msg::{MessageId, MessageIdLenght, TxBufferId};
-use crate::can::{can_node::FrameMode, frame::DataLenghtCode, reg};
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
 
-pub struct Tx {
+use crate::can::msg::{MessageId, MessageIdLenght, TxBufferId};
+use crate::can::{frame::DataLenghtCode, reg, FrameMode};
+use core::mem::transmute;
+
+pub(crate) struct Tx {
     inner: reg::TxMsg,
 }
 
 impl Tx {
-    pub fn new(ptr: *mut u8) -> Self {
+    pub(crate) fn new(ptr: *mut u8) -> Self {
         Self {
-            inner: unsafe { core::mem::transmute(ptr) },
+            inner: unsafe { transmute(ptr) },
         }
-    }
-
-    pub fn get_ptr(&self) -> *const u8 {
-        unsafe { core::mem::transmute(self.inner) }
     }
 }
 
 impl Tx {
     #[inline]
-    pub fn set_frame_mode_req(&self, frame_mode: FrameMode) {
+    pub(crate) fn set_frame_mode_req(&self, frame_mode: FrameMode) {
         let (fdf, brs) = match frame_mode {
             FrameMode::Standard => (false, false),
             FrameMode::FdLong => (true, false),
             FrameMode::FdLongAndFast => (true, true),
         };
+        // SAFETY: bits 15:0 and 22 are written with 0, fdf and brs are in range [0, 1]
         unsafe { self.inner.t1().modify(|r| r.fdf().set(fdf).brs().set(brs)) };
     }
 
     #[inline]
-    pub fn set_msg_id(&self, message_id: MessageId) {
+    pub(crate) fn set_msg_id(&self, message_id: MessageId) {
         let shift = if message_id.length == MessageIdLenght::Standard {
             18
         } else {
@@ -47,26 +48,31 @@ impl Tx {
     }
 
     #[inline]
-    pub fn set_tx_event_fifo_ctrl(&self, enable: bool) {
+    pub(crate) fn set_tx_event_fifo_ctrl(&self, enable: bool) {
+        // SAFETY: bits 15:0 and 22 are written with 0, enable is in range [0, 1]
         unsafe { self.inner.t1().modify(|r| r.efc().set(enable)) };
     }
 
-    pub fn set_message_marker(&self, buffer_id: TxBufferId) {
+    pub(crate) fn set_message_marker(&self, buffer_id: TxBufferId) {
+        // SAFETY: bits 15:0 and 22 are written with 0, buffer_id is in range [0, 2^8)
         unsafe { self.inner.t1().modify(|r| r.mm().set(buffer_id.into())) };
     }
 
     #[inline]
-    pub fn set_remote_transmit_req(&self, enable: bool) {
+    pub(crate) fn set_remote_transmit_req(&self, enable: bool) {
+        // SAFETY: enable is in range [0, 1]
         unsafe { self.inner.t0().modify(|r| r.rtr().set(enable)) };
     }
 
     #[inline]
-    pub fn set_err_state_indicator(&self, enable: bool) {
+    pub(crate) fn set_err_state_indicator(&self, enable: bool) {
+        // SAFETY: enable is in range [0, 1]
         unsafe { self.inner.t0().modify(|r| r.esi().set(enable)) };
     }
 
     #[inline]
-    pub fn set_data_length(&self, data_length_code: DataLenghtCode) {
+    pub(crate) fn set_data_length(&self, data_length_code: DataLenghtCode) {
+        // SAFETY: bits 15:0 and 22 are written with 0, data_length_code takes only allowed values
         unsafe {
             self.inner
                 .t1()
@@ -74,10 +80,10 @@ impl Tx {
         };
     }
 
-    pub fn write_tx_buf_data(&self, data_length_code: DataLenghtCode, data: *const u8) {
-        let destination_address = self.inner.db().ptr() as _;
+    pub(crate) fn write_tx_buf_data(&self, data_length_code: DataLenghtCode, data: *const u8) {
+        let destination_address = self.inner.db().ptr() as *mut u8;
         let length = data_length_code.to_length();
 
-        unsafe { core::ptr::copy_nonoverlapping(data, destination_address, length as _) };
+        unsafe { core::ptr::copy_nonoverlapping(data, destination_address, length) };
     }
 }

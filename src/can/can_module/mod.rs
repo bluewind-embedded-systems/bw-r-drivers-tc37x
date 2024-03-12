@@ -1,5 +1,6 @@
-use super::can_node::{Node, NodeConfig};
+mod service_request;
 
+use super::can_node::{Node, NodeConfig};
 use crate::can::NodeId;
 use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
@@ -14,14 +15,11 @@ impl ModuleId for Module0 {}
 pub struct Module1;
 impl ModuleId for Module1 {}
 
-#[derive(Default)]
-pub struct ModuleConfig {}
-
 // Type states for Module
 pub struct Disabled;
 pub struct Enabled;
 
-pub struct Module<ModuleId, Reg, State = Disabled> {
+pub struct Module<ModuleId, Reg, State> {
     nodes_taken: [bool; 4],
     _phantom: PhantomData<(ModuleId, Reg, State)>,
 }
@@ -37,43 +35,49 @@ impl<ModuleId, Reg> Module<ModuleId, Reg, Disabled> {
 }
 
 macro_rules! impl_can_module {
-    ($reg:path, $($m:ident)::+, $Reg:ty, $id: ty) => {
-        impl Module<$id, $Reg, Disabled> {
+    ($module_reg:path, $($m:ident)::+, $ModuleReg:ty, $ModuleId: ty) => {
+        impl Module<$ModuleId, $ModuleReg, Disabled> {
             fn is_enabled(&self) -> bool {
-                !unsafe { $reg.clc().read() }.diss().get()
+                // SAFETY: DISS is a RH bit
+                !unsafe { $module_reg.clc().read() }.diss().get()
             }
 
             /// Enable the CAN module
-            pub fn enable(self) -> Module<$Reg, Enabled> {
+            pub fn enable(self) -> Module<$ModuleId, $ModuleReg, Enabled> {
                 scu::wdt::clear_cpu_endinit_inline();
 
-                unsafe { $reg.clc().modify_atomic(|r| r.disr().set(false)) };
+                // SAFETY: DISR is a RW bit, bits 2 and 31:4 are written with 0
+                unsafe { $module_reg.clc().modify_atomic(|r| r.disr().set(false)) };
                 while !self.is_enabled() {}
 
                 scu::wdt::set_cpu_endinit_inline();
 
-                Module::<$Reg, Enabled> {
+                Module::<$ModuleId, $ModuleReg, Enabled> {
                     nodes_taken: [false; 4],
                     _phantom: PhantomData,
                 }
             }
         }
 
-        impl Module<$Reg, Enabled> {
+        impl Module<$ModuleId, $ModuleReg, Enabled> {
+            // TODO interrupts should be nested into cfg
             /// Take ownership of a CAN node and configure it
-            pub fn take_node<I>(&mut self, node_id: I, cfg: NodeConfig<$Reg, I>) -> Option<Node<$($m)::+::N, $Reg>> where I: NodeId {
+            pub fn take_node<I>(&mut self, node_id: I, config: NodeConfig) -> Option<Node<$($m)::+::N, $ModuleReg, I, crate::can::can_node::Configurable>> where I: NodeId {
                 let node_index = node_id.as_index();
 
+                #[allow(clippy::indexing_slicing)]
+                let flag : &mut bool = &mut self.nodes_taken[node_index];
+
                 // Check if node is already taken, return None if it is
-                if self.nodes_taken[node_index] {
+                if *flag {
                     return None;
                 }
 
                 // Mark node as taken
-                self.nodes_taken[node_index] = true;
+                *flag = true;
 
                 // Create node
-                Node::<$($m)::+::N, $Reg>::new(self, node_id, cfg).ok()
+                Node::<$($m)::+::N, $ModuleReg, I, crate::can::can_node::Configurable>::new(self, node_id, config).ok()
             }
 
             pub(crate) fn set_clock_source(
@@ -83,7 +87,8 @@ macro_rules! impl_can_module {
             ) -> Result<(), ()> {
                 use $($m)::+::mcr::{Ccce, Ci, Clksel0, Clksel1, Clksel2, Clksel3};
 
-                let mcr = self.read_mcr();
+                // SAFETY: Entire MCR register is readable
+                let mcr = unsafe { $module_reg.mcr().read() };
 
                 // Enable CCCE and CI
                 let mcr = mcr
@@ -91,7 +96,9 @@ macro_rules! impl_can_module {
                     .set($($m)::+::mcr::Ccce::CONST_11)
                     .ci()
                     .set($($m)::+::mcr::Ci::CONST_11);
-                self.write_mcr(mcr);
+
+                // SAFETY: CCCE and CI are RW bits, bits 23:8 are written with 0
+                unsafe { $module_reg.mcr().write(mcr) }
 
                 // Select clock
                 let clock_source: u8 = clock_source.into();
@@ -104,18 +111,21 @@ macro_rules! impl_can_module {
                     _ => unreachable!(),
                 };
 
-                self.write_mcr(mcr);
+                // SAFETY: CLKSELx are 2 bits fields, clock_source is in range [1,3], bits 23:8 are written with 0
+                unsafe { $module_reg.mcr().write(mcr) }
 
                 // Disable CCCE and CI
                 let mcr = mcr.ccce().set(Ccce::CONST_00).ci().set(Ci::CONST_00);
-                self.write_mcr(mcr);
+                // SAFETY: CCCE and CI are RW bits, bits 23:8 are written with 0
+                unsafe { $module_reg.mcr().write(mcr) }
 
                 // TODO Is this enough or we need to wait until actual_clock_source == clock_source
                 // Wait for clock switch
                  wait_nop_cycles(10);
 
                 // Check if clock switch was successful
-                let mcr = self.read_mcr();
+                // SAFETY: Entire MCR register is readable
+                let mcr = unsafe { $module_reg.mcr().read() };
 
                 let actual_clock_source = match clock_select.0 {
                     0 => mcr.clksel0().get().0,
@@ -132,20 +142,12 @@ macro_rules! impl_can_module {
                 Ok(())
             }
 
-            pub(crate) fn registers(&self) -> &$Reg {
-                &$reg
+            pub(crate) fn registers(&self) -> &$ModuleReg {
+                &$module_reg
             }
 
-            fn read_mcr(&self) -> $($m)::+::Mcr {
-                unsafe { $reg.mcr().read() }
-            }
-
-            fn write_mcr(&self, mcr: $($m)::+::Mcr) {
-                unsafe { $reg.mcr().write(mcr) }
-            }
-
-            pub(crate) fn ram_base_address(&self) -> usize {
-                $reg.0 as usize
+            pub(crate) fn ram_base_address(&self) -> u32 {
+                $module_reg.0 as u32
             }
         }
     };

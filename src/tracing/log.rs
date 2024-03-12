@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used)]
+
 use crate::tracing::{LoadModifyStoreEntry, ReadEntry, ReportEntry, WriteEntry};
 use std::any::Any;
 use std::collections::{HashMap, VecDeque};
@@ -39,7 +41,7 @@ impl Report {
     pub fn new() -> Self {
         let data = Arc::new(Mutex::new(SharedData::default()));
         let reporter = Reporter {
-            shared_data: data.clone(),
+            shared_data: Arc::clone(&data),
         };
         let guard = TraceGuard::new(reporter);
         Self {

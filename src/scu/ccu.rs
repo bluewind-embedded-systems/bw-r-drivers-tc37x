@@ -1,6 +1,9 @@
 #![allow(clippy::identity_op)]
 #![allow(clippy::eq_op)]
 #![allow(clippy::result_unit_err)]
+#![allow(clippy::float_arithmetic)]
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
 
 use super::wdt;
 use crate::log::debug;
@@ -22,11 +25,11 @@ pub enum InitError {
     ThrottleSysPllClockInline,
 }
 
-pub fn init(config: &Config) -> Result<(), InitError> {
-    configure_ccu_initial_step(config).map_err(|_| InitError::ConfigureCCUInitialStep)?;
-    modulation_init(config).map_err(|_| InitError::ModulationInit)?;
-    distribute_clock_inline(config).map_err(|_| InitError::DistributeClockInline)?;
-    throttle_sys_pll_clock_inline(config).map_err(|_| InitError::ThrottleSysPllClockInline)?;
+pub(crate) fn init(config: &Config) -> Result<(), InitError> {
+    configure_ccu_initial_step(config).map_err(|()| InitError::ConfigureCCUInitialStep)?;
+    modulation_init(config).map_err(|()| InitError::ModulationInit)?;
+    distribute_clock_inline(config).map_err(|()| InitError::DistributeClockInline)?;
+    throttle_sys_pll_clock_inline(config).map_err(|()| InitError::ThrottleSysPllClockInline)?;
     Ok(())
 }
 
@@ -79,13 +82,13 @@ fn set_pll_power(
     })
 }
 
-pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
+pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
+    // TODO Should be an enum variant in the pac crate
+    const CLKSEL_BACKUP: u8 = 0;
+
     wdt::clear_safety_endinit_inline();
 
     wait_ccucon0_lock()?;
-
-    // TODO Should be an enum variant in the pac crate
-    const CLKSEL_BACKUP: u8 = 0;
 
     // TODO Explain this
     unsafe {
@@ -175,12 +178,14 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     unsafe {
         SCU.syspllcon1()
             .modify(|r| r.k2div().set(plls_params.sys_pll.k2_divider));
+    }
 
+    unsafe {
         SCU.perpllcon1().modify(|r| {
             r.k2div()
                 .set(plls_params.per_pll.k2_divider)
                 .k3div()
-                .set(plls_params.per_pll.k3_divider.into())
+                .set(plls_params.per_pll.k3_divider)
         })
     };
 
@@ -234,7 +239,7 @@ pub fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     Ok(())
 }
 
-pub fn modulation_init(config: &Config) -> Result<(), ()> {
+pub(crate) fn modulation_init(config: &Config) -> Result<(), ()> {
     if let ModulationEn::Enabled = config.modulation.enable {
         let rgain_p = calc_rgain_parameters(config.modulation.amp);
 
@@ -263,11 +268,13 @@ pub struct RGainValues {
 fn calc_rgain_parameters(modamp: ModulationAmplitude) -> RGainValues {
     const MA_PERCENT: [f32; 6] = [0.5, 1.0, 1.25, 1.5, 2.0, 2.5];
 
+    #[allow(clippy::indexing_slicing)]
     let mod_amp = MA_PERCENT[modamp as usize];
+
     let fosc_hz = get_osc_frequency();
     let syspllcon0 = unsafe { SCU.syspllcon0().read() };
-    let fdco_hz =
-        (fosc_hz * (syspllcon0.ndiv().get() as f32 + 1.0)) / (syspllcon0.pdiv().get() as f32 + 1.0);
+    let fdco_hz = (fosc_hz * (f32::from(syspllcon0.ndiv().get()) + 1.0))
+        / (f32::from(syspllcon0.pdiv().get()) + 1.0);
 
     let rgain_nom = 2.0 * (mod_amp / 100.0) * (fdco_hz / 3600000.0);
     let rgain_hex = ((rgain_nom * 32.0) + 0.5) as u16;
@@ -278,7 +285,7 @@ fn calc_rgain_parameters(modamp: ModulationAmplitude) -> RGainValues {
     }
 }
 
-pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
+pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     wdt::clear_safety_endinit_inline();
 
     // CCUCON0 config
@@ -423,20 +430,18 @@ pub fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     Ok(())
 }
 
-pub fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
+pub(crate) fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
     for pll_step_count in 0..config.sys_pll_throttle.len() {
         wdt::clear_safety_endinit_inline();
 
         wait_cond(PLL_KRDY_TIMEOUT_COUNT, || {
-            !(unsafe { SCU.syspllstat().read() }.k2rdy().get().0 == 1)
+            unsafe { SCU.syspllstat().read() }.k2rdy().get().0 != 1
         })?;
 
-        unsafe {
-            SCU.syspllcon1().modify(|r| {
-                r.k2div()
-                    .set(config.sys_pll_throttle[pll_step_count].k2_step)
-            })
-        };
+        #[allow(clippy::indexing_slicing)]
+        let k2div = config.sys_pll_throttle[pll_step_count].k2_step;
+
+        unsafe { SCU.syspllcon1().modify(|r| r.k2div().set(k2div)) };
 
         wdt::set_safety_endinit_inline();
     }
@@ -445,7 +450,7 @@ pub fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
 
 /// Wait until cond return true or timeout
 #[inline]
-pub fn wait_cond(timeout_cycle_count: usize, cond: impl Fn() -> bool) -> Result<(), ()> {
+pub(crate) fn wait_cond(timeout_cycle_count: usize, cond: impl Fn() -> bool) -> Result<(), ()> {
     let mut timeout_cycle_count = timeout_cycle_count;
     while cond() {
         timeout_cycle_count -= 1;
@@ -463,7 +468,7 @@ const XTAL_FREQUENCY: u32 = 20_000_000;
 const SYSCLK_FREQUENCY: u32 = 20_000_000;
 
 #[inline]
-pub fn get_osc_frequency() -> f32 {
+pub(crate) fn get_osc_frequency() -> f32 {
     let f = match unsafe { SCU.syspllcon0().read() }.insel().get() {
         scu::syspllcon0::Insel::CONST_00 => EVR_OSC_FREQUENCY,
         scu::syspllcon0::Insel::CONST_11 => XTAL_FREQUENCY,
@@ -473,37 +478,38 @@ pub fn get_osc_frequency() -> f32 {
     f as f32
 }
 
-pub fn get_pll_frequency() -> u32 {
+pub(crate) fn get_pll_frequency() -> u32 {
     let osc_freq = get_osc_frequency();
     let syspllcon0 = unsafe { SCU.syspllcon0().read() };
     let syspllcon1 = unsafe { SCU.syspllcon1().read() };
-    let f = (osc_freq * (syspllcon0.ndiv().get() + 1) as f32)
-        / ((syspllcon1.k2div().get() + 1) * (syspllcon0.pdiv().get() + 1)) as f32;
+    let f = (osc_freq * f32::from(syspllcon0.ndiv().get() + 1))
+        / f32::from((syspllcon1.k2div().get() + 1) * (syspllcon0.pdiv().get() + 1));
     f as u32
 }
 
-pub fn get_per_pll_frequency1() -> u32 {
+pub(crate) fn get_per_pll_frequency1() -> u32 {
     let osc_freq = get_osc_frequency();
     let perpllcon0 = unsafe { SCU.perpllcon0().read() };
     let perpllcon1 = unsafe { SCU.perpllcon1().read() };
-    let f = (osc_freq * (perpllcon0.ndiv().get() + 1) as f32)
-        / ((perpllcon0.pdiv().get() + 1) * (perpllcon1.k2div().get() + 1)) as f32;
+    let f = (osc_freq * f32::from(perpllcon0.ndiv().get() + 1))
+        / f32::from((perpllcon0.pdiv().get() + 1) * (perpllcon1.k2div().get() + 1));
     f as u32
 }
 
-pub fn get_per_pll_frequency2() -> u32 {
+pub(crate) fn get_per_pll_frequency2() -> u32 {
     let osc_freq = get_osc_frequency();
     let perpllcon0 = unsafe { SCU.perpllcon0().read() };
     let perpllcon1 = unsafe { SCU.perpllcon1().read() };
 
-    let multiplier = if !(perpllcon0.divby().get().0 == 1) {
-        1.6
-    } else {
+    let multiplier = if perpllcon0.divby().get().0 == 1 {
         2.0
+    } else {
+        1.6
     };
-    let f = (osc_freq * (perpllcon0.ndiv().get() + 1) as f32)
-        / ((perpllcon0.pdiv().get() + 1) as f32
-            * (perpllcon1.k2div().get() + 1) as f32
+
+    let f = (osc_freq * f32::from(perpllcon0.ndiv().get() + 1))
+        / (f32::from(perpllcon0.pdiv().get() + 1)
+            * f32::from(perpllcon1.k2div().get() + 1)
             * multiplier);
     f as u32
 }
@@ -582,7 +588,6 @@ pub enum ModulationAmplitude {
     _1p5,
     _2p0,
     _2p5,
-    Count,
 }
 
 pub struct ModulationConfig {
@@ -701,26 +706,27 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
 };
 
 pub(crate) fn get_mcan_frequency() -> u32 {
+    const CLKSELMCAN_USEMCANI: scu::ccucon1::Clkselmcan = scu::ccucon1::Clkselmcan::CONST_11;
+    const CLKSELMCAN_USEOSCILLATOR: scu::ccucon1::Clkselmcan = scu::ccucon1::Clkselmcan::CONST_22;
+    const MCANDIV_STOPPED: scu::ccucon1::Mcandiv = scu::ccucon1::Mcandiv::CONST_00;
+
+    // SAFETY: each bit of CCUCON1 is at least R
     let ccucon1 = unsafe { SCU.ccucon1().read() };
     let clkselmcan = ccucon1.clkselmcan().get();
     let mcandiv = ccucon1.mcandiv().get();
 
     //info!("clkselmcan: {}, mcandiv: {}", clkselmcan, mcandiv);
 
-    const CLKSELMCAN_USEMCANI: scu::ccucon1::Clkselmcan = scu::ccucon1::Clkselmcan::CONST_11;
-    const CLKSELMCAN_USEOSCILLATOR: scu::ccucon1::Clkselmcan = scu::ccucon1::Clkselmcan::CONST_22;
-    const MCANDIV_STOPPED: scu::ccucon1::Mcandiv = scu::ccucon1::Mcandiv::CONST_00;
-
     match clkselmcan {
         CLKSELMCAN_USEMCANI => {
             let source = get_source_frequency(1);
             debug!("source: {}", source);
-            if mcandiv != MCANDIV_STOPPED {
+            if mcandiv == MCANDIV_STOPPED {
+                source
+            } else {
                 let div: u64 = mcandiv.into();
                 let div: u32 = div as u32;
                 source / div
-            } else {
-                source
             }
         }
         CLKSELMCAN_USEOSCILLATOR => get_osc0_frequency(),
@@ -732,6 +738,7 @@ fn get_source_frequency(source: u32) -> u32 {
     const CLKSEL_BACKUP: scu::ccucon0::Clksel = scu::ccucon0::Clksel::CONST_00;
     const CLKSEL_PLL: scu::ccucon0::Clksel = scu::ccucon0::Clksel::CONST_11;
 
+    // SAFETY: each bit of CCUCON0 is at least R
     let clksel = unsafe { SCU.ccucon0().read() }.clksel().get();
     //info!("clksel: {}", clksel);
 
@@ -741,6 +748,7 @@ fn get_source_frequency(source: u32) -> u32 {
             0 => get_pll_frequency(),
             1 => {
                 let source_freq = get_per_pll_frequency1();
+                // SAFETY: each bit of CCUCON1 is at least R
                 let ccucon1 = unsafe { SCU.ccucon1().read() };
                 if ccucon1.pll1divdis().get() == scu::ccucon1::Pll1Divdis::CONST_11 {
                     source_freq
@@ -759,6 +767,6 @@ fn get_evr_frequency() -> u32 {
     EVR_OSC_FREQUENCY
 }
 
-pub fn get_osc0_frequency() -> u32 {
+pub(crate) fn get_osc0_frequency() -> u32 {
     XTAL_FREQUENCY
 }

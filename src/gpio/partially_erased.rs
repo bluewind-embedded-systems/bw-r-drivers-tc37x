@@ -1,3 +1,6 @@
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
+
 use super::*;
 
 pub use PartiallyErasedPin as PEPin;

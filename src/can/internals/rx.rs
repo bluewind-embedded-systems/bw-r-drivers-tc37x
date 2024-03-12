@@ -1,33 +1,29 @@
+// TODO Remove this once the code is stable
+#![allow(clippy::undocumented_unsafe_blocks)]
+
 use crate::can::msg::MessageIdLenght;
-use crate::can::{
-    can_node::FrameMode,
-    frame::DataLenghtCode,
-    //types::{DataLenghtCode, FrameMode, MessageIdLenght},
-    reg,
-};
+use crate::can::{frame::DataLenghtCode, reg, FrameMode};
 use crate::log::debug;
+use core::mem::transmute;
 
 // create RxMsg using pac structure and unsafe transmute
 
-pub struct Rx {
+pub(crate) struct Rx {
     inner: reg::RxMsg,
 }
 
 impl Rx {
-    pub fn new(ptr: *mut u8) -> Self {
+    pub(crate) fn new(ptr: *mut u8) -> Self {
         Self {
-            inner: unsafe { core::mem::transmute(ptr) },
+            inner: unsafe { transmute(ptr) },
         }
-    }
-
-    pub fn get_ptr(&self) -> *mut u8 {
-        unsafe { core::mem::transmute(self.inner) }
     }
 }
 
 impl Rx {
     #[inline]
-    pub fn get_message_id(&self) -> u32 {
+    pub(crate) fn get_message_id(&self) -> u32 {
+        // SAFETY: each bit of R0 is RWH
         let r0 = unsafe { self.inner.r0().read() };
         let message_length = if r0.xtd().get() {
             MessageIdLenght::Extended
@@ -45,7 +41,8 @@ impl Rx {
     }
 
     #[inline]
-    pub fn get_message_id_length(&self) -> MessageIdLenght {
+    pub(crate) fn get_message_id_length(&self) -> MessageIdLenght {
+        // SAFETY: each bit of R0 is RWH
         if unsafe { self.inner.r0().read() }.xtd().get() {
             MessageIdLenght::Extended
         } else {
@@ -54,13 +51,15 @@ impl Rx {
     }
 
     #[inline]
-    pub fn get_data_length(&self) -> DataLenghtCode {
+    pub(crate) fn get_data_length(&self) -> DataLenghtCode {
+        // SAFETY: each bit of R1 is RWH
         let d = unsafe { self.inner.r1().read() }.dlc().get();
         // SAFETY: d is a valid DataLenghtCode, because it is a 4 bit field
         unsafe { DataLenghtCode::try_from(d).unwrap_unchecked() }
     }
 
-    pub fn get_frame_mode(&self) -> FrameMode {
+    pub(crate) fn get_frame_mode(&self) -> FrameMode {
+        // SAFETY: each bit of R1 is RWH
         let r1 = unsafe { self.inner.r1().read() };
 
         if r1.fdf().get() {
@@ -74,12 +73,12 @@ impl Rx {
         }
     }
 
-    pub fn read_data(&self, data_length_code: DataLenghtCode, data: *mut u8) {
-        let source_address = self.inner.db().ptr() as _;
+    pub(crate) fn read_data(&self, data_length_code: DataLenghtCode, data: *mut u8) {
+        let source_address = self.inner.db().ptr() as *const u8;
         let length = data_length_code.to_length();
 
         debug!("reading {} bytes from {:x}", length, source_address);
 
-        unsafe { core::ptr::copy_nonoverlapping(source_address, data, length as _) };
+        unsafe { core::ptr::copy_nonoverlapping(source_address, data, length) };
     }
 }

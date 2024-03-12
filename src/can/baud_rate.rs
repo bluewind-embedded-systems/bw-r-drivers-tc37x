@@ -1,6 +1,8 @@
 // Many integer and float conversions are done in this file, we want to get rid of them
 // TODO #![warn(clippy::as_conversions)]
 
+#![allow(clippy::float_arithmetic)]
+
 use crate::log::info;
 // The following import is needed when f32::abs is not available (tricore toolchain)
 #[allow(unused_imports)]
@@ -72,7 +74,7 @@ pub(super) fn get_best_baud_rate(
 
     while tmp_brp <= max_brp {
         let f_quanta = module_freq / tmp_brp as f32;
-        tmp_tbaud = (f_quanta / baudrate as f32) as _;
+        tmp_tbaud = (f_quanta / baudrate as f32) as i32;
 
         if tmp_tbaud == 0 {
             // Avoid division by 0
@@ -128,7 +130,7 @@ pub(super) fn get_best_sample_point(
     // Search for best sample point
 
     // 25% tolerance in sample point as max error
-    let mut best_error = sample_point as f32 * 0.25;
+    let mut best_error = f32::from(sample_point) * 0.25;
     let max_tseg1 = tseg1_msk + 1;
     let min_tseg1 = 3;
     let max_tseg2 = tseg2_msk + 1;
@@ -143,15 +145,15 @@ pub(super) fn get_best_sample_point(
 
     for temp_tseg1 in (min_tseg1..=max_tseg1).rev() {
         let temp_sample_point = ((temp_tseg1 + 1) * 10000) / best_tbaud;
-        let error = temp_sample_point - sample_point as i32;
+        let error = temp_sample_point - i32::from(sample_point);
         let error = if error < 0 { -error } else { error };
 
-        if best_error > error as _ {
+        if best_error > error as f32 {
             best_tseg1 = temp_tseg1;
-            best_error = error as _;
+            best_error = error as f32;
         }
 
-        if temp_sample_point < sample_point as _ {
+        if temp_sample_point < i32::from(sample_point) {
             // Least possible error has already occurred
             break;
         }
@@ -180,7 +182,7 @@ pub(super) fn get_best_sjw(best_tbaud: u32, best_tseg2: u32, sync_jump_width: u1
 
     for temp_sjw in 1..=best_tseg2 {
         let temp_sync_jump_width = (temp_sjw as f32 * 10000.0) / best_tbaud as f32;
-        let error = (temp_sync_jump_width - sync_jump_width as f32).abs();
+        let error = (temp_sync_jump_width - f32::from(sync_jump_width)).abs();
 
         if best_error > error {
             best_sjw = temp_sjw;
@@ -228,7 +230,7 @@ pub(super) fn calculate_bit_timing(
 
     let (best_tseg1, best_tseg2) =
         get_best_sample_point(NBTP_NTSEG1_MSK, NBTP_NTSEG2_MSK, best.tbaud, sample_point);
-    let best_sjw = get_best_sjw(best.tbaud as _, best_tseg2 as _, sjw);
+    let best_sjw = get_best_sjw(best.tbaud as u32, best_tseg2 as u32, sjw);
 
     NominalBitTiming {
         brp: best.brp as u16 - 1,
@@ -255,7 +257,7 @@ pub(super) fn calculate_fast_bit_timing(
 
     let (best_tseg1, best_tseg2) =
         get_best_sample_point(DBTP_DTSEG1_MSK, DBTP_DTSEG2_MSK, best.tbaud, sample_point);
-    let best_sjw = get_best_sjw(best.tbaud as _, best_tseg2 as _, sjw);
+    let best_sjw = get_best_sjw(best.tbaud as u32, best_tseg2 as u32, sjw);
 
     DataBitTiming {
         brp: best.brp as u8 - 1,
