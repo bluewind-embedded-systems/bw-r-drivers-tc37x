@@ -17,11 +17,7 @@ assert_exists() {
 select_profile() {
   local profile="${1}"
 
-  assert_exists "${ROOT_DIR}/rust-toolchain.${profile}.toml"
   assert_exists "${ROOT_DIR}/.cargo/config.${profile}.toml"
-
-  cp "${ROOT_DIR}/rust-toolchain.${profile}.toml" \
-    "${ROOT_DIR}/rust-toolchain.toml"
 
   cp "${ROOT_DIR}/.cargo/config.${profile}.toml" \
      "${ROOT_DIR}/.cargo/config.toml"

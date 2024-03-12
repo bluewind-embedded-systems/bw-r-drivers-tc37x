@@ -1,8 +1,8 @@
 // TODO (alepez) Remove this warning suppression
 #![allow(unused)]
 
-mod tc37x;
-pub use tc37x::*;
+mod tc37x_io;
+pub use tc37x_io::*;
 
 macro_rules! extipin {
     ($( $(#[$attr:meta])* $PX:ident,)*) => {

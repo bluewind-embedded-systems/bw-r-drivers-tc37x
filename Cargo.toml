@@ -27,8 +27,8 @@ package = "embedded-hal"
 git = "https://github.com/rust-embedded/embedded-hal.git"
 rev = "v1.0.0-rc.1"
 
-[dependencies.tc37x-pac]
-path = "../tc37x-pac"
+[dependencies.tc37x]
+path = "../tc37x"
 features = [
     "scu",
     "smu",
@@ -37,26 +37,29 @@ features = [
     "smu",
     "can0", 
     "can1",
-    "port_00",
-    "port_01",
-    "port_02",
-    "port_10",
-    "port_11",
-    "port_12",
-    "port_13",
-    "port_14",
-    "port_15",
-    "port_20",
-    "port_21",
-    "port_22",
-    "port_23",
-    "port_32",
-    "port_33",
-    "port_34",
-    "port_40",
+    "p00",
+    "p01",
+    "p02",
+    "p10",
+    "p11",
+    "p12",
+    "p13",
+    "p14",
+    "p15",
+    "p20",
+    "p21",
+    "p22",
+    "p23",
+    "p32",
+    "p33",
+    "p34",
+    "p40",
     "can0",
     "can1",
 ]
+
+[dependencies.tc37x-rt]
+path = "../tc37x-rt"
 
 [dependencies.critical-section]
 optional = true
@@ -70,12 +73,8 @@ features = ["ron"]
 
 [dev-dependencies]
 
-[dev-dependencies.tc37x-rt]
-path = "../tc37x-rt"
-features = []
-
 [features]
 default = []
 log_with_defmt = ["dep:defmt", "dep:defmt-rtt", "dep:critical-section"]
 log_with_env_logger = ["dep:log", "dep:env_logger"]
-tracing = ["dep:insta"]
+tracing = ["dep:insta", "tc37x/tracing"]
