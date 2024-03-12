@@ -1,4 +1,4 @@
-# gpio_driver
+# tc37x-driver
 
 ## Prerequisites
 
