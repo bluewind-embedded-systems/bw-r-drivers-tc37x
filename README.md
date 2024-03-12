@@ -24,25 +24,22 @@ You should have a workspace with this setup:
 ### Build the whole project
 
 ```
-./tools/set_build_profile target # build for target
-# or
-./tools/set_build_profile host # build for host
-
-cargo build
+./tools/build_for_target # build for target
+./tools/build_for_host # build for host
 ```
-
-### Available examples
-- `bliky`to show gpio dirver basic usage
-- `can_send` to use a tc37x-litekit to transmit/receive message from/to another device. 
 
 ### Build an example
+
 ```
 ./tools/build_for_target <example> # build for target
-# or
 ./tools/build_for_host <example> # build for host
 ```
 
 ## Run
+
+### Available examples
+- `bliky`to show gpio dirver basic usage
+- `can_send` to use a tc37x-litekit to transmit/receive message from/to another device. 
 
 ### Run an example
 The file `.cargo/config.toml` is already set up to launch all examples with
