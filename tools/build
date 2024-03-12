@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && cd ../ && pwd )"
+
+main() {
+  cd "${ROOT_DIR}" || exit
+  
+  while getopts "p:e:" opt
+  do
+    case $opt in
+      p)
+        profile=$OPTARG
+        ;;
+      e)
+        example=$OPTARG
+        ;;
+    esac
+  done
+
+  if [ -z $profile ]
+  then
+    echo "Missing profile (host/target)"
+    exit
+  fi
+  
+  ./tools/set_build_profile $profile
+  if [ $profile = "host" ]
+  then
+    features="tracing"
+  else
+    features="log_with_defmt"
+  fi
+
+  echo $profile
+  echo $features
+  
+  if [ -z $example ]
+  then
+    cargo build --features=$features
+  else
+    cargo build --features=$features --example=$example
+  fi
+}
+
+main $@
