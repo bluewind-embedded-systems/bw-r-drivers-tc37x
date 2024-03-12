@@ -11,8 +11,8 @@
 #[cfg(target_arch = "tricore")]
 #[inline]
 pub(crate) fn is_application_reset() -> bool {
-    use tc37x_pac::RegisterValue;
-    use tc37x_pac::SCU;
+    use tc37x::RegisterValue;
+    use tc37x::SCU;
 
     const APP_RESET_MSK: u32 = ((0x1) << (4))
         | ((0x1) << (7))

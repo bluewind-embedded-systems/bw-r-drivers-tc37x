@@ -7,9 +7,9 @@
 //! `gpioa`, `gpiob`... modules. To get access to the pins, you first need to convert them into a
 //! HAL designed struct from the `pac` struct using the [split](trait.GpioExt.html#tymethod.split) function.
 //! ```rust
-//! use tc37x_pac::PORT_00;
+//! use tc37x::P00;
 //! use tc37x_driver::gpio::GpioExt;
-//! let mut gpio00 = PORT_00.split();
+//! let mut gpio00 = P00.split();
 //! ```
 //!
 //! This gives you a struct containing all the pins `px0..px15`.
@@ -17,9 +17,9 @@
 //! For example, to set `pa5` high, you would call
 //!
 //! ```rust
-//! use tc37x_pac::PORT_00;
+//! use tc37x::P00;
 //! use tc37x_driver::gpio::GpioExt;
-//! let mut gpio00 = PORT_00.split();
+//! let mut gpio00 = P00.split();
 //! let mut output = gpio00.p00_5.into_push_pull_output();
 //! output.set_high();
 //! ```
@@ -68,7 +68,7 @@ use core::marker::PhantomData;
 use core::mem::transmute;
 
 pub use embedded_hal::digital::PinState;
-use tc37x_pac::RegisterValue;
+use tc37x::RegisterValue;
 
 pub use convert::PinMode;
 pub use dynamic::{Dynamic, DynamicPin};
@@ -656,8 +656,8 @@ macro_rules! gpio {
 }
 use gpio;
 
-mod tc37x;
-pub use self::tc37x::*;
+mod tc37x_io;
+pub use self::tc37x_io::*;
 
 struct Gpio<const P: PortIndex>;
 
@@ -665,28 +665,28 @@ impl<const P: PortIndex> Gpio<P> {
     const fn ptr() -> *const AnyPort {
         // TODO (alepez) check if the assumptions are correct
         // The logic relies on the following assumptions:
-        // - PORT_00 register are available on all chips
+        // - P00 register are available on all chips
         // - all PORT register blocks have the same layout
         // TODO (annabo) load automatically from pac file `port_##.rs`
         #[allow(clippy::useless_transmute)]
         match P {
-            0 => unsafe { transmute(&crate::pac::PORT_00) },
-            1 => unsafe { transmute(&crate::pac::PORT_01) },
-            2 => unsafe { transmute(&crate::pac::PORT_02) },
-            10 => unsafe { transmute(&crate::pac::PORT_10) },
-            11 => unsafe { transmute(&crate::pac::PORT_11) },
-            12 => unsafe { transmute(&crate::pac::PORT_12) },
-            13 => unsafe { transmute(&crate::pac::PORT_13) },
-            14 => unsafe { transmute(&crate::pac::PORT_14) },
-            15 => unsafe { transmute(&crate::pac::PORT_15) },
-            20 => unsafe { transmute(&crate::pac::PORT_20) },
-            21 => unsafe { transmute(&crate::pac::PORT_21) },
-            22 => unsafe { transmute(&crate::pac::PORT_22) },
-            23 => unsafe { transmute(&crate::pac::PORT_23) },
-            32 => unsafe { transmute(&crate::pac::PORT_32) },
-            33 => unsafe { transmute(&crate::pac::PORT_33) },
-            34 => unsafe { transmute(&crate::pac::PORT_34) },
-            40 => unsafe { transmute(&crate::pac::PORT_40) },
+            0 => unsafe { transmute(&crate::pac::P00) },
+            1 => unsafe { transmute(&crate::pac::P01) },
+            2 => unsafe { transmute(&crate::pac::P02) },
+            10 => unsafe { transmute(&crate::pac::P10) },
+            11 => unsafe { transmute(&crate::pac::P11) },
+            12 => unsafe { transmute(&crate::pac::P12) },
+            13 => unsafe { transmute(&crate::pac::P13) },
+            14 => unsafe { transmute(&crate::pac::P14) },
+            15 => unsafe { transmute(&crate::pac::P15) },
+            20 => unsafe { transmute(&crate::pac::P20) },
+            21 => unsafe { transmute(&crate::pac::P21) },
+            22 => unsafe { transmute(&crate::pac::P22) },
+            23 => unsafe { transmute(&crate::pac::P23) },
+            32 => unsafe { transmute(&crate::pac::P32) },
+            33 => unsafe { transmute(&crate::pac::P33) },
+            34 => unsafe { transmute(&crate::pac::P34) },
+            40 => unsafe { transmute(&crate::pac::P40) },
             _ => panic!("Unknown GPIO port"),
         }
     }
@@ -744,37 +744,37 @@ pub(crate) fn pin_toggle_state(port: &AnyPort, pin: PinId) {
 pub(crate) fn pin_input_is_high(port: &AnyPort, pin: PinId) -> bool {
     match pin.0 {
         // SAFETY: each bit of IN is at least R
-        0 => unsafe { port.r#in().read().p0().get().0 == 1 },
+        0 => unsafe { port.r#in().read().p0().get() }.0 == 1,
         // SAFETY: each bit of IN is at least R
-        1 => unsafe { port.r#in().read().p1().get().0 == 1 },
+        1 => unsafe { port.r#in().read().p1().get() }.0 == 1,
         // SAFETY: each bit of IN is at least R
-        2 => unsafe { port.r#in().read().p2().get().0 == 1 },
+        2 => unsafe { port.r#in().read().p2().get() }.0 == 1,
         // SAFETY: each bit of IN is at least R
-        3 => unsafe { port.r#in().read().p3().get().0 == 1 },
+        3 => unsafe { port.r#in().read().p3().get() }.0 == 1,
         // SAFETY: each bit of IN is at least R
-        4 => unsafe { port.r#in().read().p4().get().0 == 1 },
+        4 => unsafe { port.r#in().read().p4().get() }.0 == 1,
         // SAFETY: each bit of IN is at least R
-        5 => unsafe { port.r#in().read().p5().get().0 == 1 },
+        5 => unsafe { port.r#in().read().p5().get() }.0 == 1,
         // SAFETY: each bit of IN is at least R
-        6 => unsafe { port.r#in().read().p6().get().0 == 1 },
+        6 => unsafe { port.r#in().read().p6().get() }.0 == 1,
         // SAFETY: each bit of IN is at least R
-        7 => unsafe { port.r#in().read().p7().get().0 == 1 },
+        7 => unsafe { port.r#in().read().p7().get() }.0 == 1,
         // SAFETY: each bit of IN is at least R
-        8 => unsafe { port.r#in().read().p8().get().0 == 1 },
+        8 => unsafe { port.r#in().read().p8().get() }.0 == 1,
         // SAFETY: each bit of IN is at least R
-        9 => unsafe { port.r#in().read().p9().get().0 == 1 },
+        9 => unsafe { port.r#in().read().p9().get() }.0 == 1,
         // SAFETY: each bit of IN is at least R
-        10 => unsafe { port.r#in().read().p10().get().0 == 1 },
+        10 => unsafe { port.r#in().read().p10().get() }.0 == 1,
         // SAFETY: each bit of IN is at least R
-        11 => unsafe { port.r#in().read().p11().get().0 == 1 },
+        11 => unsafe { port.r#in().read().p11().get() }.0 == 1,
         // SAFETY: each bit of IN is at least R
-        12 => unsafe { port.r#in().read().p12().get().0 == 1 },
+        12 => unsafe { port.r#in().read().p12().get() }.0 == 1,
         // SAFETY: each bit of IN is at least R
-        13 => unsafe { port.r#in().read().p13().get().0 == 1 },
+        13 => unsafe { port.r#in().read().p13().get() }.0 == 1,
         // SAFETY: each bit of IN is at least R
-        14 => unsafe { port.r#in().read().p14().get().0 == 1 },
+        14 => unsafe { port.r#in().read().p14().get() }.0 == 1,
         // SAFETY: each bit of IN is at least R
-        15 => unsafe { port.r#in().read().p15().get().0 == 1 },
+        15 => unsafe { port.r#in().read().p15().get() }.0 == 1,
         _ => {
             // Just return false for invalid pin numbers
             // TODO (alepez) should we panic here?
@@ -787,37 +787,37 @@ pub(crate) fn pin_input_is_high(port: &AnyPort, pin: PinId) -> bool {
 pub(crate) fn pin_output_is_high(port: &AnyPort, pin: PinId) -> bool {
     match pin.0 {
         // SAFETY: each bit of OUT is at least R
-        0 => unsafe { port.out().read().p0().get().0 == 1 },
+        0 => unsafe { port.out().read().p0().get() }.0 == 1,
         // SAFETY: each bit of OUT is at least R
-        1 => unsafe { port.out().read().p1().get().0 == 1 },
+        1 => unsafe { port.out().read().p1().get() }.0 == 1,
         // SAFETY: each bit of OUT is at least R
-        2 => unsafe { port.out().read().p2().get().0 == 1 },
+        2 => unsafe { port.out().read().p2().get() }.0 == 1,
         // SAFETY: each bit of OUT is at least R
-        3 => unsafe { port.out().read().p3().get().0 == 1 },
+        3 => unsafe { port.out().read().p3().get() }.0 == 1,
         // SAFETY: each bit of OUT is at least R
-        4 => unsafe { port.out().read().p4().get().0 == 1 },
+        4 => unsafe { port.out().read().p4().get() }.0 == 1,
         // SAFETY: each bit of OUT is at least R
-        5 => unsafe { port.out().read().p5().get().0 == 1 },
+        5 => unsafe { port.out().read().p5().get() }.0 == 1,
         // SAFETY: each bit of OUT is at least R
-        6 => unsafe { port.out().read().p6().get().0 == 1 },
+        6 => unsafe { port.out().read().p6().get() }.0 == 1,
         // SAFETY: each bit of OUT is at least R
-        7 => unsafe { port.out().read().p7().get().0 == 1 },
+        7 => unsafe { port.out().read().p7().get() }.0 == 1,
         // SAFETY: each bit of OUT is at least R
-        8 => unsafe { port.out().read().p8().get().0 == 1 },
+        8 => unsafe { port.out().read().p8().get() }.0 == 1,
         // SAFETY: each bit of OUT is at least R
-        9 => unsafe { port.out().read().p9().get().0 == 1 },
+        9 => unsafe { port.out().read().p9().get() }.0 == 1,
         // SAFETY: each bit of OUT is at least R
-        10 => unsafe { port.out().read().p10().get().0 == 1 },
+        10 => unsafe { port.out().read().p10().get() }.0 == 1,
         // SAFETY: each bit of OUT is at least R
-        11 => unsafe { port.out().read().p11().get().0 == 1 },
+        11 => unsafe { port.out().read().p11().get() }.0 == 1,
         // SAFETY: each bit of OUT is at least R
-        12 => unsafe { port.out().read().p12().get().0 == 1 },
+        12 => unsafe { port.out().read().p12().get() }.0 == 1,
         // SAFETY: each bit of OUT is at least R
-        13 => unsafe { port.out().read().p13().get().0 == 1 },
+        13 => unsafe { port.out().read().p13().get() }.0 == 1,
         // SAFETY: each bit of OUT is at least R
-        14 => unsafe { port.out().read().p14().get().0 == 1 },
+        14 => unsafe { port.out().read().p14().get() }.0 == 1,
         // SAFETY: each bit of OUT is at least R
-        15 => unsafe { port.out().read().p15().get().0 == 1 },
+        15 => unsafe { port.out().read().p15().get() }.0 == 1,
         _ => {
             // Just return false for invalid pin numbers
             // TODO (alepez) should we panic here?
@@ -827,4 +827,4 @@ pub(crate) fn pin_output_is_high(port: &AnyPort, pin: PinId) -> bool {
 }
 
 // TODO This is not type safe
-type AnyPort = crate::pac::port_00::Port00;
+type AnyPort = crate::pac::p00::P00;

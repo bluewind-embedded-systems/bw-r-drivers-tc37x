@@ -136,8 +136,12 @@
 #![warn(unused_unsafe)]
 #![warn(clippy::unnecessary_safety_comment)] // Since Rust 1.67
 
-#[cfg(not(target_arch = "tricore"))]
+#![cfg_attr(target_arch = "tricore", feature(stdsimd))]
+
+#[cfg(feature = "tracing")]
 pub mod tracing;
+
+pub(crate) mod common;
 
 pub mod can;
 pub mod cpu;
@@ -147,7 +151,7 @@ pub mod scu;
 pub mod ssw;
 pub mod util;
 
-pub use tc37x_pac as pac;
+pub use tc37x as pac;
 
 mod sealed {
     pub trait Sealed {}

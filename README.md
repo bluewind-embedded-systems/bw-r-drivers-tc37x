@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-Make sure `tc37x-pac` and `tc37x-rt` are available in the parent directory.
+Make sure `tc37x` and `tc37x-rt` are available in the parent directory.
 
 You should have a workspace with this setup:
 
@@ -10,13 +10,15 @@ You should have a workspace with this setup:
 ├── tc37x-driver
 │   ├── Cargo.toml
 │   ...
-├── tc37x-pac
+├── tc37x
 │   ├── Cargo.toml
 │    ...
 └── tc37x-rt
     ├── Cargo.toml
     ...
 ```
+:warning: reference repository for 'tc37x' is here [https://git.bwlocal.it/bw-rust/third-parties/ifx/tc37x](https://git.bwlocal.it/bw-rust/third-parties/ifx/tc37x). 
+
 ## Build & run with scripts 
 
 You can run an example with `tricore-probe`.

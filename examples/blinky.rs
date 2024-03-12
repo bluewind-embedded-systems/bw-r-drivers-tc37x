@@ -29,7 +29,7 @@ fn main() -> ! {
     #[cfg(feature = "log_with_env_logger")]
     env_logger::init();
 
-    let gpio00 = pac::PORT_00.split();
+    let gpio00 = pac::P00.split();
 
     let mut led1 = gpio00.p00_5.into_push_pull_output();
     let mut led2 = gpio00.p00_6.into_push_pull_output();
@@ -113,6 +113,7 @@ fn post_init_fn() {
     load_interrupt_table();
 }
 
+#[cfg(target_arch = "tricore")]
 #[allow(unused_variables)]
 #[panic_handler]
 fn panic(panic: &core::panic::PanicInfo<'_>) -> ! {
