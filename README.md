@@ -1,4 +1,4 @@
-# tc37x-driver
+# bw-r-driver-tc37x
 
 ## Prerequisites
 
