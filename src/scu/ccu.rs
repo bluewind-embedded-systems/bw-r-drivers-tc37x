@@ -298,9 +298,12 @@ pub(crate) fn modulation_init(config: &Config) -> Result<(), ()> {
 
         wdt::clear_safety_endinit_inline();
 
+        // SAFETY: Bits MODCFG[9:5] are treated as integer part and bits MODCFG[4:0] as fractional part.
+        // Bits MODCFG[15:10] have to be configured with the following setting: 0x111101B.
+        // TODO: check value of rgain_hex
         unsafe {
             SCU.syspllcon2()
-                .modify(|r| r.modcfg().set((0x3 << 10) | rgain_p.rgain_hex))
+                .modify(|r| r.modcfg().set((0x3D << 10) | rgain_p.rgain_hex))
         };
 
         // SAFETY: MODEN is a RW bit
