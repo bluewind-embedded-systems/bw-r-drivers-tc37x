@@ -9,6 +9,12 @@ use super::wdt;
 use crate::log::debug;
 use tc37x_pac::hidden::RegValue;
 use tc37x_pac::scu;
+use tc37x_pac::scu::ccucon0::{Bbbdiv, Fsi2Div, Fsidiv, Gtmdiv, Lpdiv, Spbdiv, Sridiv, Stmdiv};
+use tc37x_pac::scu::ccucon1::{
+    Clkselmcan, Clkselmsc, Clkselqspi, I2Cdiv, Mcandiv, Mscdiv, Pll1Divdis, Qspidiv,
+};
+use tc37x_pac::scu::ccucon2::{Asclinfdiv, Asclinsdiv, Clkselasclins};
+use tc37x_pac::scu::ccucon5::{Gethdiv, Mcanhdiv};
 use tc37x_pac::{RegisterValue, SCU, SMU};
 
 const SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT: usize = 0x3000;
@@ -290,10 +296,24 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
 
     // CCUCON0 config
     {
-        let mut cuccon0 = unsafe { SCU.ccucon0().read() };
-        *cuccon0.data_mut_ref() &= !(config.clock_distribution.ccucon0.mask);
-        *cuccon0.data_mut_ref() |=
-            config.clock_distribution.ccucon0.mask & config.clock_distribution.ccucon0.value;
+        let cuccon0 = unsafe { SCU.ccucon0().read() }
+            .stmdiv()
+            .set(config.clock_distribution.ccucon0.stm_div)
+            .gtmdiv()
+            .set(config.clock_distribution.ccucon0.gtm_div)
+            .sridiv()
+            .set(config.clock_distribution.ccucon0.sri_div)
+            // TODO: check this
+            .lpdiv()
+            .set(config.clock_distribution.ccucon0.lp_div)
+            .spbdiv()
+            .set(config.clock_distribution.ccucon0.spb_div)
+            .bbbdiv()
+            .set(config.clock_distribution.ccucon0.bbb_div)
+            .fsidiv()
+            .set(config.clock_distribution.ccucon0.fsi_div)
+            .fsi2div()
+            .set(config.clock_distribution.ccucon0.fsi2_div);
 
         wait_ccucon0_lock()?;
 
@@ -309,9 +329,23 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
             || ccucon1.clkselqspi().get() != scu::ccucon1::Clkselqspi::CONST_22
         /*ccucon1::Clkselqspi::CLKSELQSPI_STOPPED*/
         {
-            *ccucon1.data_mut_ref() &= !config.clock_distribution.ccucon1.mask;
-            *ccucon1.data_mut_ref() |=
-                config.clock_distribution.ccucon1.mask & config.clock_distribution.ccucon1.value;
+            ccucon1 = ccucon1
+                .mcandiv()
+                .set(config.clock_distribution.ccucon1.mcan_div)
+                .clkselmcan()
+                .set(config.clock_distribution.ccucon1.clksel_mcan)
+                .pll1divdis()
+                .set(config.clock_distribution.ccucon1.pll1_div_dis)
+                .i2cdiv()
+                .set(config.clock_distribution.ccucon1.i2c_div)
+                .mscdiv()
+                .set(config.clock_distribution.ccucon1.msc_div)
+                .clkselmsc()
+                .set(config.clock_distribution.ccucon1.clksel_msc)
+                .qspidiv()
+                .set(config.clock_distribution.ccucon1.qspi_div)
+                .clkselqspi()
+                .set(config.clock_distribution.ccucon1.clksel_qspi);
 
             ccucon1 = ccucon1
                 .clkselmcan()
@@ -332,10 +366,23 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
             wait_ccucon1_lock()?;
         }
 
-        ccucon1 = unsafe { SCU.ccucon1().read() };
-        *ccucon1.data_mut_ref() &= !config.clock_distribution.ccucon1.mask;
-        *ccucon1.data_mut_ref() |=
-            config.clock_distribution.ccucon1.mask & config.clock_distribution.ccucon1.value;
+        ccucon1 = unsafe { SCU.ccucon1().read() }
+            .mcandiv()
+            .set(config.clock_distribution.ccucon1.mcan_div)
+            .clkselmcan()
+            .set(config.clock_distribution.ccucon1.clksel_mcan)
+            .pll1divdis()
+            .set(config.clock_distribution.ccucon1.pll1_div_dis)
+            .i2cdiv()
+            .set(config.clock_distribution.ccucon1.i2c_div)
+            .mscdiv()
+            .set(config.clock_distribution.ccucon1.msc_div)
+            .clkselmsc()
+            .set(config.clock_distribution.ccucon1.clksel_msc)
+            .qspidiv()
+            .set(config.clock_distribution.ccucon1.qspi_div)
+            .clkselqspi()
+            .set(config.clock_distribution.ccucon1.clksel_qspi);
 
         wait_ccucon1_lock()?;
         unsafe { SCU.ccucon1().write(ccucon1) };
@@ -348,10 +395,13 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         if ccucon2.clkselasclins().get() != scu::ccucon2::Clkselasclins::CONST_00
         /*scu::Ccucon2::Clkselasclins::CLKSELASCLINS_STOPPED*/
         {
-            ccucon2 = unsafe { SCU.ccucon2().read() };
-            *ccucon2.data_mut_ref() &= !config.clock_distribution.ccucon2.mask;
-            *ccucon2.data_mut_ref() =
-                config.clock_distribution.ccucon2.mask & config.clock_distribution.ccucon2.value;
+            ccucon2 = unsafe { SCU.ccucon2().read() }
+                .asclinfdiv()
+                .set(config.clock_distribution.ccucon2.asclinf_div)
+                .asclinsdiv()
+                .set(config.clock_distribution.ccucon2.asclins_div)
+                .clkselasclins()
+                .set(config.clock_distribution.ccucon2.clksel_asclins);
 
             ccucon2 = ccucon2.clkselasclins().set(
                 scu::ccucon2::Clkselasclins::CONST_00, /*scu::ccucon2::Clkselasclins::CLKSELASCLINS_STOPPED*/
@@ -364,10 +414,13 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
             wait_ccucon2_lock()?;
         }
 
-        ccucon2 = unsafe { SCU.ccucon2().read() };
-        *ccucon2.data_mut_ref() &= !config.clock_distribution.ccucon2.mask;
-        *ccucon2.data_mut_ref() |=
-            config.clock_distribution.ccucon2.mask & config.clock_distribution.ccucon2.value;
+        ccucon2 = unsafe { SCU.ccucon2().read() }
+            .asclinfdiv()
+            .set(config.clock_distribution.ccucon2.asclinf_div)
+            .asclinsdiv()
+            .set(config.clock_distribution.ccucon2.asclins_div)
+            .clkselasclins()
+            .set(config.clock_distribution.ccucon2.clksel_asclins);
 
         wait_ccucon2_lock()?;
         unsafe { SCU.ccucon2().write(ccucon2) };
@@ -376,10 +429,12 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
 
     // CUCCON5 config
     {
-        let mut ccucon5 = unsafe { SCU.ccucon5().read() };
-        *ccucon5.data_mut_ref() &= !config.clock_distribution.ccucon5.mask;
-        *ccucon5.data_mut_ref() |=
-            config.clock_distribution.ccucon5.mask & config.clock_distribution.ccucon5.value;
+        let mut ccucon5 = unsafe { SCU.ccucon5().read() }
+            .gethdiv()
+            .set(config.clock_distribution.ccucon5.geth_div)
+            .mcanhdiv()
+            .set(config.clock_distribution.ccucon5.mcanh_div);
+
         ccucon5 = ccucon5.up().set(scu::ccucon5::Up::CONST_11);
 
         wait_ccucon5_lock()?;
@@ -392,36 +447,24 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     // CUCCON6 config
     {
         unsafe {
-            SCU.ccucon6().modify(|mut r| {
-                *r.data_mut_ref() &= !config.clock_distribution.ccucon6.mask;
-                *r.data_mut_ref() |= config.clock_distribution.ccucon6.mask
-                    & config.clock_distribution.ccucon6.value;
-                r
-            })
+            SCU.ccucon6()
+                .modify(|r| r.cpu0div().set(config.clock_distribution.ccucon6.cpu0_div))
         };
     }
 
     // CUCCON7 config
     {
         unsafe {
-            SCU.ccucon7().modify(|mut r| {
-                *r.data_mut_ref() &= !config.clock_distribution.ccucon7.mask;
-                *r.data_mut_ref() |= config.clock_distribution.ccucon7.mask
-                    & config.clock_distribution.ccucon7.value;
-                r
-            })
+            SCU.ccucon7()
+                .modify(|r| r.cpu1div().set(config.clock_distribution.ccucon7.cpu1_div))
         };
     }
 
     // CUCCON8 config
     {
         unsafe {
-            SCU.ccucon8().modify(|mut r| {
-                *r.data_mut_ref() &= !config.clock_distribution.ccucon8.mask;
-                *r.data_mut_ref() |= config.clock_distribution.ccucon8.mask
-                    & config.clock_distribution.ccucon8.value;
-                r
-            })
+            SCU.ccucon8()
+                .modify(|r| r.cpu2div().set(config.clock_distribution.ccucon8.cpu2_div))
         };
     }
 
@@ -553,19 +596,60 @@ pub struct PllStepConfig {
     pub wait_time: f32,
 }
 
-pub struct ConRegConfig {
-    pub value: u32,
-    pub mask: u32,
+pub struct Con0RegConfig {
+    pub stm_div: Stmdiv,
+    pub gtm_div: Gtmdiv,
+    pub sri_div: Sridiv,
+    pub lp_div: Lpdiv,
+    pub spb_div: Spbdiv,
+    pub bbb_div: Bbbdiv,
+    pub fsi_div: Fsidiv,
+    pub fsi2_div: Fsi2Div,
+}
+
+pub struct Con1RegConfig {
+    pub mcan_div: Mcandiv,
+    pub clksel_mcan: Clkselmcan,
+    pub pll1_div_dis: Pll1Divdis,
+    pub i2c_div: I2Cdiv,
+    pub msc_div: Mscdiv,
+    pub clksel_msc: Clkselmsc,
+    pub qspi_div: Qspidiv,
+    pub clksel_qspi: Clkselqspi,
+}
+
+pub struct Con2RegConfig {
+    pub asclinf_div: Asclinfdiv,
+    pub asclins_div: Asclinsdiv,
+    pub clksel_asclins: Clkselasclins,
+}
+
+pub struct Con5RegConfig {
+    pub geth_div: Gethdiv,
+    pub mcanh_div: Mcanhdiv,
+    pub adas_div: Mcanhdiv, // TODO: missing adas in pac
+}
+
+pub struct Con6RegConfig {
+    pub cpu0_div: u8,
+}
+
+pub struct Con7RegConfig {
+    pub cpu1_div: u8,
+}
+
+pub struct Con8RegConfig {
+    pub cpu2_div: u8,
 }
 
 pub struct ClockDistributionConfig {
-    pub ccucon0: ConRegConfig,
-    pub ccucon1: ConRegConfig,
-    pub ccucon2: ConRegConfig,
-    pub ccucon5: ConRegConfig,
-    pub ccucon6: ConRegConfig,
-    pub ccucon7: ConRegConfig,
-    pub ccucon8: ConRegConfig,
+    pub ccucon0: Con0RegConfig,
+    pub ccucon1: Con1RegConfig,
+    pub ccucon2: Con2RegConfig,
+    pub ccucon5: Con5RegConfig,
+    pub ccucon6: Con6RegConfig,
+    pub ccucon7: Con7RegConfig,
+    pub ccucon8: Con8RegConfig,
 }
 
 pub struct FlashWaitStateConfig {
@@ -640,60 +724,39 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
     },
     sys_pll_throttle: &DEFAULT_PLL_CONFIG_STEPS,
     clock_distribution: ClockDistributionConfig {
-        ccucon0: ConRegConfig {
-            value: ((3) << (0))
-                | ((1) << (4))
-                | ((1) << (8))
-                | ((3) << (16))
-                | ((2) << (20))
-                | (((1) * 3) << (24))
-                | (((1) * 1) << (26)),
-            mask: ((0xf) << (0))
-                | ((0xf) << (4))
-                | ((0xf) << (8))
-                | ((0xf) << (16))
-                | ((0xf) << (20))
-                | ((0x3) << (24))
-                | ((0x3) << (26)),
+        ccucon0: Con0RegConfig {
+            stm_div: Stmdiv::CONST_33,
+            gtm_div: Gtmdiv::CONST_11,
+            sri_div: Sridiv::CONST_11,
+            lp_div: Lpdiv::CONST_00,
+            spb_div: Spbdiv::CONST_33,
+            bbb_div: Bbbdiv::CONST_22,
+            fsi_div: Fsidiv::CONST_33,
+            fsi2_div: Fsi2Div::CONST_11,
         },
-        ccucon1: ConRegConfig {
-            value: ((2) << (0))
-                | ((1) << (4))
-                | ((0) << (7))
-                | ((2) << (8))
-                | ((1) << (16))
-                | ((1) << (20))
-                | ((1) << (24))
-                | ((2) << (28)),
-            mask: ((0xf) << (0))
-                | ((0x3) << (4))
-                | ((0x1) << (7))
-                | ((0xf) << (8))
-                | ((0xf) << (16))
-                | ((0x3) << (20))
-                | ((0xf) << (24))
-                | ((0x3) << (28)),
+        ccucon1: Con1RegConfig {
+            mcan_div: Mcandiv::CONST_22,
+            clksel_mcan: Clkselmcan::CONST_11,
+            pll1_div_dis: Pll1Divdis::CONST_00,
+            i2c_div: I2Cdiv::CONST_22,
+            msc_div: Mscdiv::CONST_11,
+            clksel_msc: Clkselmsc::CONST_11,
+            qspi_div: Qspidiv::CONST_11,
+            clksel_qspi: Clkselqspi::CONST_22,
         },
-        ccucon2: ConRegConfig {
-            value: ((1) << (0)) | ((2) << (8)) | ((1) << (12)),
-            mask: ((0xf) << (0)) | ((0xf) << (8)) | ((0x3) << (12)),
+        ccucon2: Con2RegConfig {
+            asclinf_div: Asclinfdiv::CONST_11,
+            asclins_div: Asclinsdiv::CONST_22,
+            clksel_asclins: Clkselasclins::CONST_11,
         },
-        ccucon5: ConRegConfig {
-            value: (((2) << (0)) | ((3) << (4))),
-            mask: ((0xf) << (0)) | ((0xf) << (4)),
+        ccucon5: Con5RegConfig {
+            geth_div: Gethdiv::CONST_22,
+            mcanh_div: Mcanhdiv::CONST_33,
+            adas_div: Mcanhdiv::CONST_00,
         },
-        ccucon6: ConRegConfig {
-            value: 0 << 0,
-            mask: 0x3f << 0,
-        },
-        ccucon7: ConRegConfig {
-            value: 0 << 0,
-            mask: 0x3f << 0,
-        },
-        ccucon8: ConRegConfig {
-            value: 0 << 0,
-            mask: 0x3f << 0,
-        },
+        ccucon6: Con6RegConfig { cpu0_div: 0u8 },
+        ccucon7: Con7RegConfig { cpu1_div: 0u8 },
+        ccucon8: Con8RegConfig { cpu2_div: 0u8 },
     },
     flash_wait_state: FlashWaitStateConfig {
         value: 0x00000105,
