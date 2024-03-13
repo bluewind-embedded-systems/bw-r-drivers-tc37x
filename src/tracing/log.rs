@@ -88,15 +88,15 @@ impl super::Reporter for Reporter {
             .shared_data()
             .read_fifo
             .0
-            .pop_front()
-            .expect("Unexpected read");
+            .pop_back()
+            .unwrap_or_else(|| panic!("Read at address 0x{:08X} and len {} failed. Fifo is empty", addr, len));
 
         if entry.addr == addr && entry.len == len {
             let val = entry.val;
             self.push(ReportEntry::Read(ReadEntry { addr, len, val }));
             val
         } else {
-            panic!("Unexpected read at address 0x{:08X} and len {}", addr, len)
+            panic!("Expected read at address 0x{:08X} and len {}, found 0x{:08X} len {}", entry.addr, entry.len, addr, len);
         }
     }
 
