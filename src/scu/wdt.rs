@@ -52,6 +52,7 @@ pub(crate) fn clear_cpu_endinit_inline() {
     let core_id = read_cpu_core_id();
     let con0 = unsafe { get_wdt_con0(core_id as u8) };
 
+    // FIXME con0 is read twice
     if unsafe { con0.read() }.lck().get() {
         let rel = unsafe { con0.read() }.rel().get();
         let data = pac::scu::Wdtcpu0Con0::default()
@@ -89,6 +90,7 @@ pub(crate) fn set_cpu_endinit_inline() {
     let core_id = read_cpu_core_id();
     let con0 = unsafe { get_wdt_con0(core_id as u8) };
 
+    // FIXME con0 is read twice
     if unsafe { con0.read() }.lck().get() {
         let rel = unsafe { con0.read() }.rel().get();
         let data = pac::scu::Wdtcpu0Con0::default()
@@ -116,6 +118,7 @@ pub(crate) fn set_cpu_endinit_inline() {
 
     unsafe { con0.write(data) };
 
+    // FIXME do we need to enable it only with tricore like clear_cpu_endinit_inline?
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
