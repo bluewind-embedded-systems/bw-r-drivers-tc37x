@@ -41,31 +41,37 @@ pub(crate) fn init(config: &Config) -> Result<(), InitError> {
 
 fn wait_ccucon0_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
+        // SAFETY: each bit of CCUCON0 is at least R, except for bit UP (W, if read always return 0)
         unsafe { SCU.ccucon0().read() }.lck().get() == scu::ccucon0::Lck::CONST_11
     })
 }
 
 fn wait_ccucon1_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
+        // SAFETY: each bit of CCUCON1 is at least R
         unsafe { SCU.ccucon1().read() }.lck().get() == scu::ccucon1::Lck::CONST_11
     })
 }
 
 fn wait_ccucon2_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
+        // SAFETY: each bit of CCUCON2 is at least R
         unsafe { SCU.ccucon2().read() }.lck().get() == scu::ccucon2::Lck::CONST_11
     })
 }
 
 fn wait_ccucon5_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
+        // SAFETY: each bit of CCUCON5 is at least R, except for bit UP (W, if read always return 0)
         unsafe { SCU.ccucon5().read() }.lck().get() == scu::ccucon5::Lck::CONST_11
     })
 }
 
 fn wait_divider() -> Result<(), ()> {
     wait_cond(PLL_KRDY_TIMEOUT_COUNT, || {
+        // SAFETY: each bit of SYSPLLSTAT is at least R
         let sys = unsafe { SCU.syspllstat().read() };
+        // SAFETY: each bit of PERPLLSTAT is at least R
         let per = unsafe { SCU.perpllstat().read() };
         let sys_k2 = sys.k2rdy().get();
         let per_k2 = sys.k2rdy().get();
@@ -78,11 +84,15 @@ fn set_pll_power(
     syspllpower: scu::syspllcon0::Pllpwd,
     perpllpower: scu::perpllcon0::Pllpwd,
 ) -> Result<(), ()> {
+    // SAFETY: PLLPWD is a RW bit, syspllpower takes only values in range [0, 1]
     unsafe { SCU.syspllcon0().modify(|r| r.pllpwd().set(syspllpower)) };
+    // SAFETY: PLLPWD is a RW bit, syspllpower takes only values in range [0, 1]
     unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(perpllpower)) };
 
     wait_cond(SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT, || {
+        // SAFETY: each bit of SYSPLLSTAT is at least R
         let sys = unsafe { SCU.syspllstat().read() };
+        // SAFETY: each bit of PERPLLSTAT is at least R
         let per = unsafe { SCU.perpllstat().read() };
         (syspllpower.0) == (sys.pwdstat().get().0) || (perpllpower.0) == (per.pwdstat().get().0)
     })
@@ -97,6 +107,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     wait_ccucon0_lock()?;
 
     // TODO Explain this
+    // SAFETY: CLKSEL is RWH and takes values in range [0, 3], UP is a W bit. Written respectively with 0 and 1
     unsafe {
         SCU.ccucon0().modify(|r| {
             r.clksel()
@@ -109,14 +120,21 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
 
     // disable SMU
     {
-        // The SMU core configuration is only possible if this field is set to 0xBC
+        // The SMU_core configuration is only possible if KEYS.CFGLCK (bits 0:7) is set to 0xBC
+        // SAFETY: CFGLCK and PERLCK are RW, bits 16:31 are written with 0
         unsafe { SMU.keys().init(|r| r.cfglck().set(0xBC)) };
 
         // FIXME After pac update, this is a BW patch on pac
+        // Clear CF0, CF2, CF3 and CF4
+        // SAFETY: Each bit of AgiCFj is RW
         unsafe { SMU.ag8cfj()[0].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        // SAFETY: Each bit of AgiCFj is RW
         unsafe { SMU.ag8cfj()[1].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        // SAFETY: Each bit of AgiCFj is RW
         unsafe { SMU.ag8cfj()[2].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
 
+        // Disable SMU_core configuration
+        // SAFETY: CFGLCK and PERLCK are RW, bits 16:31 are written with 0
         unsafe { SMU.keys().init(|r| r.cfglck().set(0)) };
     }
 
@@ -138,10 +156,13 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         const MODE_EXTERNALCRYSTAL: u8 = 0;
 
         let mode = MODE_EXTERNALCRYSTAL;
+        // TODO: xtal_frequency should be in range [16 MHz, 40 MHz]
         let oscval: u8 = ((plls_params.xtal_frequency / 1000000) - 15)
             .try_into()
             .map_err(|_| ())?;
 
+        // SAFETY: MODE is RW and takes values in range [0, 3], OSCVAL is RW and takes values in range [1, 25] (TODO: is it right?)
+        // MODE is written with 0
         unsafe {
             SCU.osccon()
                 .modify(|r| r.mode().set(scu::osccon::Mode(mode)).oscval().set(oscval))
@@ -149,6 +170,9 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     }
 
     // Configure the initial steps for the system PLL
+    // SAFETY: PDIV is RW and takes values in range [0, 7], TODO: p_divider should be in range [0, 7]
+    // NDIV is RW and takes values in range [0, 127], TODO: n_divider should be in range [0, 127]
+    // INSEL is RW and takes values in range [0, 2], this is guaranteed by pll_input_clock_selection's type PllInputClockSelection
     unsafe {
         SCU.syspllcon0().modify(|r| {
             r.pdiv()
@@ -163,6 +187,9 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     }
 
     // Configure the initial steps for the peripheral PLL
+    // SAFETY: DIVBY is a RW bit, TODO: k3_divider_bypass should be in range [0, 1]
+    // PDIV is RW and takes values in range [0, 7], TODO: p_divider should be in range [0, 7]
+    // NDIV is RW and takes values in range [0, 127], TODO: n_divider should be in range [0, 127]
     unsafe {
         SCU.perpllcon0().modify(|r| {
             r.divby()
@@ -181,11 +208,16 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
 
     wait_divider()?;
 
+    // SAFETY: K2DIV is RW and takes values in range [0, 7], TODO: k2_divider should be in range [0, 7]
+    // K2DIV is locked while SYSPLLSTAT.K2RDY is equal to 0, wait is performed by wait_divider
     unsafe {
         SCU.syspllcon1()
             .modify(|r| r.k2div().set(plls_params.sys_pll.k2_divider));
     }
 
+    // SAFETY: K2DIV is RW and takes values in range [0, 7], TODO: k2_divider should be in range [0, 7]
+    // K3DIV is RW and takes values in range [0, 7], TODO: k3_divider should be in range [0, 7]
+    // K2DIV and K3DIV are respectively locked while PERPLLSTAT.K2RDY and PERPLLSTAT.K3RDY are equal to 0, wait is performed by wait_divider
     unsafe {
         SCU.perpllcon1().modify(|r| {
             r.k2div()
@@ -199,17 +231,22 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
 
     // Check if OSC frequencies are in the limit
     wait_cond(OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT, || {
+        // SAFETY: each bit of OSCCON is at least R, except for bit OSCRES (W, if read always return 0)
         let osccon = unsafe { SCU.osccon().read() };
         osccon.plllv().get().0 == 0 && osccon.pllhv().get().0 == 0
     })?;
 
     // Start PLL locking for latest set values
     {
+        // SAFETY: RESLD is a W bit
         unsafe { SCU.syspllcon0().modify(|r| r.resld().set(true)) };
+        // SAFETY: RESLD is a W bit
         unsafe { SCU.perpllcon0().modify(|r| r.resld().set(true)) };
 
         wait_cond(PLL_LOCK_TIMEOUT_COUNT, || {
+            // SAFETY: each bit of SYSPLLSTAT is at least R
             let sys = unsafe { SCU.syspllstat().read() };
+            // SAFETY: each bit of PERPLLSTAT is at least R
             let per = unsafe { SCU.perpllstat().read() };
             sys.lock().get().0 == 0 || per.lock().get().0 == 0
         })?;
@@ -217,16 +254,24 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
 
     // enable SMU alarms
     {
-        // TODO Explain these magic numbers
+        // The SMU_core configuration is only possible if KEYS.CFGLCK (bits 0:7) is set to 0xBC
+        // SAFETY: CFGLCK and PERLCK are RW, bits 16:31 are written with 0
         unsafe { SMU.keys().write(RegValue::new(0xBC, 0)) };
+        // SMU Alarm Status Clear Enable command (SMU_ASCE(ARG), ARG shall be set to 0)
+        // SAFETY: CMD and ARG are W, bits 8:31 are written with 0
         unsafe { SMU.cmd().write(RegValue::new(0x00000005, 0)) };
+        // Set SF0, SF2, SF3 and SF4
+        // SAFETY: Each bit of AGi is RWh
         unsafe {
             SMU.agi()[8].write(RegValue::new(0x1D, 0));
         }
+        // Disable SMU_core configuration
+        // SAFETY: CFGLCK and PERLCK are RW, bits 16:31 are written with 0
         unsafe { SMU.keys().write(RegValue::new(0, 0)) };
     }
 
     {
+        // SAFETY: each bit of CCUCON0 is at least R, UP is a W bit and CLKSEL is RWH and takes values in range [0, 1]
         let ccucon0 = unsafe { SCU.ccucon0().read() }
             .clksel()
             .set(scu::ccucon0::Clksel::CONST_11)
@@ -235,6 +280,8 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
 
         wait_ccucon0_lock()?;
 
+        // SAFETY: each bit of CCUCON0 is W except for LCK (RH), TODO: what in this case?
+        // updates of CCUCON0 are locked while LCK == 1, wait is performed by wait_ccucon0_lock
         unsafe { SCU.ccucon0().write(ccucon0) };
 
         wait_ccucon0_lock()?;
@@ -256,6 +303,7 @@ pub(crate) fn modulation_init(config: &Config) -> Result<(), ()> {
                 .modify(|r| r.modcfg().set((0x3 << 10) | rgain_p.rgain_hex))
         };
 
+        // SAFETY: MODEN is a RW bit
         unsafe {
             SCU.syspllcon0()
                 .modify(|r| r.moden().set(scu::syspllcon0::Moden::CONST_11))
@@ -278,6 +326,7 @@ fn calc_rgain_parameters(modamp: ModulationAmplitude) -> RGainValues {
     let mod_amp = MA_PERCENT[modamp as usize];
 
     let fosc_hz = get_osc_frequency();
+    // SAFETY: each bit of SYSPLLCON0 is at least R, except for bit RESLD (W, if read always return 0)
     let syspllcon0 = unsafe { SCU.syspllcon0().read() };
     let fdco_hz = (fosc_hz * (f32::from(syspllcon0.ndiv().get()) + 1.0))
         / (f32::from(syspllcon0.pdiv().get()) + 1.0);
@@ -296,6 +345,8 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
 
     // CCUCON0 config
     {
+        // SAFETY: each bit of CCUCON0 is at least R, except for bit UP (W, if read always return 0)
+        // Each bitfield in the following instructions is RW, and takes specific value ranges that are guaranteed by the types used
         let cuccon0 = unsafe { SCU.ccucon0().read() }
             .stmdiv()
             .set(config.clock_distribution.ccucon0.stm_div)
@@ -317,12 +368,15 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
 
         wait_ccucon0_lock()?;
 
+        // SAFETY: each bit of CCUCON0 is W except for LCK (RH), TODO: what in this case?
+        // updates of CCUCON0 are locked while LCK == 1, wait is performed by wait_ccucon0_lock
         unsafe { SCU.ccucon0().write(cuccon0) };
 
         wait_ccucon0_lock()?;
     }
     // CCUCON1 config
     {
+        // SAFETY: each bit of CCUCON1 is at least R
         let mut ccucon1 = unsafe { SCU.ccucon1().read() };
         if ccucon1.clkselmcan().get() !=  scu::ccucon1::Clkselmcan::CONST_00 /*ccucon1::Clkselmcan::CLKSELMCAN_STOPPED*/
             || ccucon1.clkselmsc().get() != scu::ccucon1::Clkselmsc::CONST_11 /*ccucon1::Clkselmsc::CLKSELMSC_STOPPED*/
@@ -362,10 +416,16 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
                 );
 
             wait_ccucon1_lock()?;
+
+            // SAFETY: each bit of CCUCON1 is at least W, except for bit LCK (RH) TODO: what in this case?
+            // Each bitfield set above is RW, and takes specific value ranges that are guaranteed by the types used
+            // updates of CCUCON1 are locked while LCK == 1, wait is performed by wait_ccucon1_lock
             unsafe { SCU.ccucon1().write(ccucon1) };
+
             wait_ccucon1_lock()?;
         }
 
+        // SAFETY: each bit of CCUCON1 is at least R
         ccucon1 = unsafe { SCU.ccucon1().read() }
             .mcandiv()
             .set(config.clock_distribution.ccucon1.mcan_div)
@@ -385,16 +445,23 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
             .set(config.clock_distribution.ccucon1.clksel_qspi);
 
         wait_ccucon1_lock()?;
+
+        // SAFETY: each bit of CCUCON1 is at least W, except for bit LCK (RH) TODO: what in this case?
+        // Each bitfield set above is RW, and takes specific value ranges that are guaranteed by the types used
+        // updates of CCUCON1 are locked while LCK == 1, wait is performed by wait_ccucon1_lock
         unsafe { SCU.ccucon1().write(ccucon1) };
+
         wait_ccucon1_lock()?;
     }
 
     // CCUCON2 config
     {
+        // SAFETY: each bit of CCUCON2 is at least R
         let mut ccucon2 = unsafe { SCU.ccucon2().read() };
         if ccucon2.clkselasclins().get() != scu::ccucon2::Clkselasclins::CONST_00
         /*scu::Ccucon2::Clkselasclins::CLKSELASCLINS_STOPPED*/
         {
+            // SAFETY: each bit of CCUCON2 is at least R
             ccucon2 = unsafe { SCU.ccucon2().read() }
                 .asclinfdiv()
                 .set(config.clock_distribution.ccucon2.asclinf_div)
@@ -409,11 +476,15 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
 
             wait_ccucon2_lock()?;
 
+            // SAFETY: each bit of CCUCON2 is at least W, except for bit LCK (RH) TODO: what in this case?
+            // Each bitfield set above is RW, and takes specific value ranges that are guaranteed by the types used
+            // updates of CCUCON2 are locked while LCK == 1, wait is performed by wait_ccucon2_lock
             unsafe { SCU.ccucon2().write(ccucon2) };
 
             wait_ccucon2_lock()?;
         }
 
+        // SAFETY: each bit of CCUCON2 is at least R
         ccucon2 = unsafe { SCU.ccucon2().read() }
             .asclinfdiv()
             .set(config.clock_distribution.ccucon2.asclinf_div)
@@ -423,12 +494,18 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
             .set(config.clock_distribution.ccucon2.clksel_asclins);
 
         wait_ccucon2_lock()?;
+
+        // SAFETY: each bit of CCUCON2 is at least W, except for bit LCK (RH) TODO: what in this case?
+        // Each bitfield set above is RW, and takes specific value ranges that are guaranteed by the types used
+        // updates of CCUCON2 are locked while LCK == 1, wait is performed by wait_ccucon2_lock
         unsafe { SCU.ccucon2().write(ccucon2) };
+
         wait_ccucon2_lock()?;
     }
 
     // CUCCON5 config
     {
+        // SAFETY: each bit of CCUCON5 is at least R, except for bit UP (W, if read always return 0)
         let mut ccucon5 = unsafe { SCU.ccucon5().read() }
             .gethdiv()
             .set(config.clock_distribution.ccucon5.geth_div)
@@ -439,6 +516,9 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
 
         wait_ccucon5_lock()?;
 
+        // SAFETY: each bit of CCUCON5 is at least W, except for bit LCK (RH) TODO: what in this case?
+        // Each bitfield set above is RW, and takes specific value ranges that are guaranteed by the types used
+        // updates of CCUCON5 are locked while LCK == 1, wait is performed by wait_ccucon5_lock
         unsafe { SCU.ccucon5().write(ccucon5) };
 
         wait_ccucon5_lock()?;
@@ -446,6 +526,8 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
 
     // CUCCON6 config
     {
+        // SAFETY: CPU0DIV is RW, bits [6:31] are written with 0
+        // TODO: cpu0_div should be in range [0, 2^6)
         unsafe {
             SCU.ccucon6()
                 .modify(|r| r.cpu0div().set(config.clock_distribution.ccucon6.cpu0_div))
@@ -454,6 +536,8 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
 
     // CUCCON7 config
     {
+        // SAFETY: CPU1DIV is RW, bits [6:31] are written with 0
+        // TODO: cpu1_div should be in range [0, 2^6)
         unsafe {
             SCU.ccucon7()
                 .modify(|r| r.cpu1div().set(config.clock_distribution.ccucon7.cpu1_div))
@@ -462,6 +546,8 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
 
     // CUCCON8 config
     {
+        // SAFETY: CPU2DIV is RW, bits [6:31] are written with 0
+        // TODO: cpu2_div should be in range [0, 2^6)
         unsafe {
             SCU.ccucon8()
                 .modify(|r| r.cpu2div().set(config.clock_distribution.ccucon8.cpu2_div))
@@ -478,12 +564,15 @@ pub(crate) fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
         wdt::clear_safety_endinit_inline();
 
         wait_cond(PLL_KRDY_TIMEOUT_COUNT, || {
+            // SAFETY: each bit of SYSPLLSTAT is at least R
             unsafe { SCU.syspllstat().read() }.k2rdy().get().0 != 1
         })?;
 
         #[allow(clippy::indexing_slicing)]
         let k2div = config.sys_pll_throttle[pll_step_count].k2_step;
 
+        // SAFETY: K2DIV is RW and takes values in range [0, 7], TODO: k2div should be in range [0, 7]
+        // K2DIV is locked while SYSPLLSTAT.K2RDY is equal to 0, wait is performed by wait_cond
         unsafe { SCU.syspllcon1().modify(|r| r.k2div().set(k2div)) };
 
         wdt::set_safety_endinit_inline();
@@ -512,6 +601,7 @@ const SYSCLK_FREQUENCY: u32 = 20_000_000;
 
 #[inline]
 pub(crate) fn get_osc_frequency() -> f32 {
+    // SAFETY: each bit of SYSPLLCON0 is at least R, except for bit RESLD (W, if read always return 0)
     let f = match unsafe { SCU.syspllcon0().read() }.insel().get() {
         scu::syspllcon0::Insel::CONST_00 => EVR_OSC_FREQUENCY,
         scu::syspllcon0::Insel::CONST_11 => XTAL_FREQUENCY,
@@ -523,7 +613,9 @@ pub(crate) fn get_osc_frequency() -> f32 {
 
 pub(crate) fn get_pll_frequency() -> u32 {
     let osc_freq = get_osc_frequency();
+    // SAFETY: each bit of SYSPLLCON0 is at least R, except for bit RESLD (W, if read always return 0)
     let syspllcon0 = unsafe { SCU.syspllcon0().read() };
+    // SAFETY: each bit of SYSPLLCON1 is at least R
     let syspllcon1 = unsafe { SCU.syspllcon1().read() };
     let f = (osc_freq * f32::from(syspllcon0.ndiv().get() + 1))
         / f32::from((syspllcon1.k2div().get() + 1) * (syspllcon0.pdiv().get() + 1));
@@ -532,7 +624,9 @@ pub(crate) fn get_pll_frequency() -> u32 {
 
 pub(crate) fn get_per_pll_frequency1() -> u32 {
     let osc_freq = get_osc_frequency();
+    // SAFETY: each bit of PERPLLCON0 is at least R, except for bit RESLD (W, if read always return 0)
     let perpllcon0 = unsafe { SCU.perpllcon0().read() };
+    // SAFETY: each bit of PERPLLCON1 is at least R
     let perpllcon1 = unsafe { SCU.perpllcon1().read() };
     let f = (osc_freq * f32::from(perpllcon0.ndiv().get() + 1))
         / f32::from((perpllcon0.pdiv().get() + 1) * (perpllcon1.k2div().get() + 1));
@@ -541,7 +635,9 @@ pub(crate) fn get_per_pll_frequency1() -> u32 {
 
 pub(crate) fn get_per_pll_frequency2() -> u32 {
     let osc_freq = get_osc_frequency();
+    // SAFETY: each bit of PERPLLCON0 is at least R, except for bit RESLD (W, if read always return 0)
     let perpllcon0 = unsafe { SCU.perpllcon0().read() };
+    // SAFETY: each bit of PERPLLCON1 is at least R
     let perpllcon1 = unsafe { SCU.perpllcon1().read() };
 
     let multiplier = if perpllcon0.divby().get().0 == 1 {
