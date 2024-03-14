@@ -1,6 +1,8 @@
 use tc37x_driver::tracing::log::Report;
-use tc37x_driver::can::{Module, Module0, NodeConfig, BitTimingConfig, AutoBitTiming, Node0};
+use tc37x_driver::can::{Module, Module0, NodeConfig, BitTimingConfig, AutoBitTiming, Node0, TxConfig, TxMode, DataFieldSize};
 
+// TODO fix values of can_module.enable reads
+// TODO add report comments with actual registers' name
 #[test]
 fn test_can_module_take_node(){
     let report = Report::new();
@@ -89,8 +91,38 @@ fn test_can_module_take_node(){
     // nbtp0 for set_nominal_bit_timing
     report.expect_read(0xF020821C, 4, 0b0000_0110_0000_0000_0000_1010_0000_0011);
 
-
     let mut node = can_module.take_node(Node0, cfg).expect("Cannot take can node");
+
+    // txesc0 for set_tx_buffer_data_field_size for setup_tx
+    report.expect_read(0xF02082C8, 4, 0b0);
+
+    // txbc0 for set_tx_buffer_data_field_size for setup_tx
+    report.expect_read(0xF02082C0, 4, 0b0);
+
+    // txbc0 for set_dedicated_tx_buffers_number for setup_tx
+    report.expect_read(0xF02082C0, 4, 0b0000_0000_0000_0000_0000_0100_0100_0000);
+
+    // txbtie0 for enable_tx_buffer_transmission_interrupt for setup_tx
+    report.expect_read(0xF02082E0, 4, 0b0);
+    report.expect_read(0xF02082E0, 4, 0b1);
+
+    // txefc0 for set_tx_event_fifo_start_address for setup_tx
+    report.expect_read(0xF02082F0, 4, 0b0);
+    // txefc0 for set_tx_event_fifo_size for setup_tx
+    report.expect_read(0xF02082F0, 4, 0b0100_0000_0000);
+
+    // cccr0 for set_frame_mode for setup_tx
+    report.expect_read(0xF0208218, 4, 0b11);
+
+    node.setup_tx(&TxConfig {
+        mode: TxMode::DedicatedBuffers,
+        dedicated_tx_buffers_number: 2,
+        fifo_queue_size: 0,
+        buffer_data_field_size: DataFieldSize::_8,
+        event_fifo_size: 1,
+        tx_event_fifo_start_address: 0x400,
+        tx_buffers_start_address: 0x440,
+    });
 
     insta::assert_snapshot!(report.take_log());
 }
