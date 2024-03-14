@@ -68,8 +68,26 @@ fn test_can_module_take_node(){
     // modify
     report.expect_read(0xF0208218, 4, 0b1);
 
-    // ccucon1 read for get_mcan_frequency for configure_baud_rate
+    // ccucon1 for get_mcan_frequency for configure_baud_rate
+    report.expect_read(0xF0036034, 4, 0b0010_0001_0001_0001_0000_0010_0001_0010);
+
     // ccucon0 read for get_source_frequency for get_mcan_frequency
+    report.expect_read(0xF0036030, 4, 0b0001_0111_0010_0011_0000_0001_0001_0011);
+
+    // syspllcon0 read for get_osc_frequency for get_per_pll_frequency1 for get_source_frequency
+    report.expect_read(0xF0036018, 4, 0b0100_0000_0000_0001_0011_1010_0000_0000);
+
+    // perpllcon0 read for get_per_pll_frequency1 for get_source_frequency
+    report.expect_read(0xF0036028, 4, 0b0000_0000_0000_0001_0011_1111_0000_0000);
+
+    // perpllcon1 read for get_per_pll_frequency1 for get_source_frequency
+    report.expect_read(0xF003602C, 4, 0b0000_0000_0000_0000_0000_0001_0000_0001);
+
+    // ccucon1 for get_source_frequency
+    report.expect_read(0xF0036034, 4, 0b0010_0001_0001_0001_0000_0010_0001_0010);
+
+    // nbtp0 for set_nominal_bit_timing
+    report.expect_read(0xF020821C, 4, 0b0000_0110_0000_0000_0000_1010_0000_0011);
 
 
     let mut node = can_module.take_node(Node0, cfg).expect("Cannot take can node");
