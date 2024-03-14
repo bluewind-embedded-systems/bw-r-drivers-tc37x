@@ -1,5 +1,18 @@
 use tc37x_driver::tracing::log::Report;
-use tc37x_driver::can::{Module, Module0, NodeConfig, BitTimingConfig, AutoBitTiming, Node0, TxConfig, TxMode, DataFieldSize};
+use tc37x_driver::can::{
+    Module,
+    Module0,
+    NodeConfig,
+    BitTimingConfig,
+    AutoBitTiming,
+    Node0,
+    TxConfig,
+    TxMode,
+    DataFieldSize,
+    RxConfig,
+    RxMode,
+    RxFifoMode
+};
 
 // TODO fix values of can_module.enable reads
 // TODO add report comments with actual registers' name
@@ -96,7 +109,7 @@ fn test_can_module_take_node(){
     // txesc0 for set_tx_buffer_data_field_size for setup_tx
     report.expect_read(0xF02082C8, 4, 0b0);
 
-    // txbc0 for set_tx_buffer_data_field_size for setup_tx
+    // txbc0 for set_tx_buffer_start_address for setup_tx
     report.expect_read(0xF02082C0, 4, 0b0);
 
     // txbc0 for set_dedicated_tx_buffers_number for setup_tx
@@ -122,6 +135,47 @@ fn test_can_module_take_node(){
         event_fifo_size: 1,
         tx_event_fifo_start_address: 0x400,
         tx_buffers_start_address: 0x440,
+    });
+
+    // rxesc0 for set_rx_buffer_data_field_size for setup_rx
+    report.expect_read(0xF02082BC, 4, 0b0);
+
+    // rxbc0 for set_rx_buffer_start_address for setup_rx
+    report.expect_read(0xF02082AC, 4, 0b0);
+
+    // rxesc0 for set_rx_fifo0_data_field_size for setup_rx
+    report.expect_read(0xF02082BC, 4, 0b0);
+
+    // rxf0c0 for set_rx_fifo0_start_address
+    report.expect_read(0xF02082A0, 4, 0b0);
+
+    // rxf0c0 for set_rx_fifo0_size
+    report.expect_read(0xF02082A0, 4, 0b1_0000_0000);
+
+    // rxf0c0 for set_rx_fifo0_operating_mode
+    report.expect_read(0xF02082A0, 4, 0b0100_0000_0001_0000_0000);
+
+    // rxf0c0 for set_rx_fifo0_watermark_level
+    report.expect_read(0xF02082A0, 4, 0b0100_0000_0001_0000_0000);
+
+    // cccr0 for set_frame_mode for setup_tx
+    report.expect_read(0xF0208218, 4, 0b11);
+
+
+    node.setup_rx(RxConfig {
+        mode: RxMode::SharedFifo0,
+        buffer_data_field_size: DataFieldSize::_8,
+        fifo0_data_field_size: DataFieldSize::_8,
+        fifo1_data_field_size: DataFieldSize::_8,
+        fifo0_operating_mode: RxFifoMode::Blocking,
+        fifo1_operating_mode: RxFifoMode::Blocking,
+        fifo0_watermark_level: 0,
+        fifo1_watermark_level: 0,
+        fifo0_size: 4,
+        fifo1_size: 0,
+        rx_fifo0_start_address: 0x100,
+        rx_fifo1_start_address: 0x200,
+        rx_buffers_start_address: 0x300,
     });
 
     insta::assert_snapshot!(report.take_log());
