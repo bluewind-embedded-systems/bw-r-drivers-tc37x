@@ -40,21 +40,39 @@ fn test_can_module_take_node(){
     };
 
     // mcr read for set clock source
-    // report.expect_read(0xF0208030, 4, 0x0000);
-    // report.expect_read(0xF0208030, 4, 0b0_0_0_0_0_000_0000000000000000_00_00_00_11);
+    report.expect_read(0xF0208030, 4, 0x0000);
+    report.expect_read(0xF0208030, 4, 0b0_0_0_0_0_000_0000000000000000_00_00_00_11);
 
-    // cccr read for enable configuration change
-    // FIXME it's not working
-    // report.expect_read(0xF0208218, 4, 0b000000000000000000000000000000_0_1);
-    // report.expect_read(0xF0208218, 4, 0b000000000000000000000000000000_0_1);
-    // report.expect_read(0xF0208218, 4, 0b000000000000000000000000000000_0_0);
-    // report.expect_read(0xF0208218, 4, 0b000000000000000000000000000000_0_1);
+    // cccr for enable configuration change
+    // read
+    report.expect_read(0xF0208218, 4, 0b1);
+    
+    // modify
+    report.expect_read(0xF0208218, 4, 0b1);
+
+    // read
+    report.expect_read(0xF0208218, 4, 0b1);
+    
+    // modify
+    report.expect_read(0xF0208218, 4, 0b1);
+    
+    // read
+    report.expect_read(0xF0208218, 4, 0b0);
+    
+    // modify
+    report.expect_read(0xF0208218, 4, 0b0);
+    
+    // read
+    report.expect_read(0xF0208218, 4, 0b1);
+
+    // modify
+    report.expect_read(0xF0208218, 4, 0b1);
 
     // ccucon1 read for get_mcan_frequency for configure_baud_rate
     // ccucon0 read for get_source_frequency for get_mcan_frequency
 
 
-    // let mut node = can_module.take_node(Node0, cfg).expect("Cannot take can node");
+    let mut node = can_module.take_node(Node0, cfg).expect("Cannot take can node");
 
     insta::assert_snapshot!(report.take_log());
 }
