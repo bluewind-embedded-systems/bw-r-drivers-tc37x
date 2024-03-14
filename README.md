@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-Make sure `tc37x` and `tc37x-rt` are available in the parent directory.
+Make sure `tc37x` and `tc37x-rt-example` are available in the parent directory.
 
 You should have a workspace with this setup:
 

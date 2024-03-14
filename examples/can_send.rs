@@ -5,7 +5,7 @@
 #![cfg_attr(target_arch = "tricore", no_std)]
 
 #[cfg(target_arch = "tricore")]
-tc37x_rt::entry!(main);
+bw_r_driver_tc37x::entry!(main);
 
 use core::time::Duration;
 use embedded_can::ExtendedId;
