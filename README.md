@@ -19,37 +19,44 @@ You should have a workspace with this setup:
 ```
 :warning: reference repository for 'tc37x' is here [https://git.bwlocal.it/bw-rust/third-parties/ifx/tc37x](https://git.bwlocal.it/bw-rust/third-parties/ifx/tc37x). 
 
-## Build & run with scripts 
+## Build 
 
-You can run an example with `tricore-probe`.
+### Build the whole project
 
-
-On linux: 
-- Build project : 
 ```
-./tools/build_on_target 
+./tools/build_for_target # build for target
+./tools/build_for_host # build for host
 ```
 
-- Build example (`can_send`) can_send: 
+### Build an example
+
 ```
-./tools/run_on_target can_send 
+./tools/build_for_target <example> # build for target
+./tools/build_for_host <example> # build for host
 ```
 
-## Examples
+## Run
 
-You can run an example with `tricore-probe`.
+### Available examples
+- `bliky`to show gpio dirver basic usage
+- `can_send` to use a tc37x-litekit to transmit/receive message from/to another device. 
 
+### Run an example
 The file `.cargo/config.toml` is already set up to launch all examples with
-tricore-probe. So you can just use `cargo run` to run examples on target.
+tricore-probe.
 
 Make sure you have a TC37x board attached to yout PC through a debugger  and
 launch an example:
 
-```sh
-cargo run --example=blinky --features=example
+```
+./tools/run_on_target <example>
+./tools/run_on_host <example>
 ```
 
-### Available examples
-- `bliky`to show gpio dirver basic usage
-- `can_send` to use a tc37x-litekit to send message to another device. 
+## Test
 
+```
+./tools/set_build_profile host
+cargo test -Ftracing --lib # run every test
+cargo test -Ftracing --tests # run snapshot tests
+```
