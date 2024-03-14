@@ -6,17 +6,17 @@ Make sure `tc37x` and `tc37x-rt` are available in the parent directory.
 
 You should have a workspace with this setup:
 
-```txt
-├── bw-r-driver-tc37x
-│   ├── Cargo.toml
-│   ...
-├── tc37x
-│   ├── Cargo.toml
-│    ...
-└── tc37x-rt
-    ├── Cargo.toml
-    ...
-```
+
+- 📂 bw-r-driver-tc37x
+   - 📄 `Cargo.toml`
+   -  ` ...`
+- 📂 tc37x --> [tc375-pac](https://github.com/Infineon/tc375-pac) 
+   -  `Cargo.toml`
+   -  `...`
+- 📂 [tc37x-rt](https://github.com/bluewind-embedded-systems/bw-r-rt-example)
+   -  `Cargo.toml`
+   - `...`
+
 
 ## Build 
 
