@@ -10,7 +10,7 @@ You should have a workspace with this setup:
 - 📂 bw-r-driver-tc37x
    - 📄 `Cargo.toml`
    -  ` ...`
-- 📂 [tc37x] --> (https://github.com/Infineon/tc375-pac) 
+- 📂 tc37x --> [tc375-pac](https://github.com/Infineon/tc375-pac) 
    -  `Cargo.toml`
    -  `...`
 - 📂 [tc37x-rt](https://github.com/bluewind-embedded-systems/bw-r-rt-example)
