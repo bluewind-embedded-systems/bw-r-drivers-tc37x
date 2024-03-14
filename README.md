@@ -7,7 +7,7 @@ Make sure `tc37x` and `tc37x-rt` are available in the parent directory.
 You should have a workspace with this setup:
 
 ```txt
-├── tc37x-driver
+├── bw-r-driver-tc37x
 │   ├── Cargo.toml
 │   ...
 ├── tc37x
