@@ -11,7 +11,10 @@ use tc37x_driver::can::{
     DataFieldSize,
     RxConfig,
     RxMode,
-    RxFifoMode
+    RxFifoMode,
+    Pins,
+    pin_map::{PIN_TX_0_0_P20_8, PIN_RX_0_0_P20_7},
+
 };
 
 // TODO fix values of can_module.enable reads
@@ -177,6 +180,13 @@ fn test_can_module_take_node(){
         rx_fifo1_start_address: 0x200,
         rx_buffers_start_address: 0x300,
     });
+
+    // node.setup_pins(&Pins {
+    //     tx: PIN_TX_0_0_P20_8,
+    //     rx: PIN_RX_0_0_P20_7,
+    // });
+
+    // check wtdcpu0con0
 
     insta::assert_snapshot!(report.take_log());
 }
