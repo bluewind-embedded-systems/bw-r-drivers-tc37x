@@ -1,4 +1,4 @@
-# tc37x-driver
+# bw-r-driver-tc37x
 
 ## Prerequisites
 
@@ -17,7 +17,6 @@ You should have a workspace with this setup:
     ├── Cargo.toml
     ...
 ```
-:warning: reference repository for 'tc37x' is here [https://git.bwlocal.it/bw-rust/third-parties/ifx/tc37x](https://git.bwlocal.it/bw-rust/third-parties/ifx/tc37x). 
 
 ## Build 
 
