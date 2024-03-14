@@ -2,8 +2,8 @@ use embedded_hal::digital::PinState;
 use tc37x::P01;
 use tc37x::{P00, P20};
 
-use tc37x_driver::gpio::{ErasedPin, GpioExt};
-use tc37x_driver::tracing;
+use bw_r_driver_tc37x::gpio::{ErasedPin, GpioExt};
+use bw_r_driver_tc37x::tracing;
 use tracing::log::Report;
 
 #[test]
@@ -262,7 +262,7 @@ fn pin_can_type_match_with_peripheral() {
 }
 
 mod mock_can {
-    use tc37x_driver::gpio::*;
+    use bw_r_driver_tc37x::gpio::*;
 
     pub struct Can<CAN: alt::CanCommon> {
         _tx_pin: CAN::Tx,
@@ -322,7 +322,7 @@ mod mock_can {
 // implement bit banging.
 #[test]
 fn test_gpio_outport_array() {
-    use tc37x_driver::gpio::group::PinArray;
+    use bw_r_driver_tc37x::gpio::group::PinArray;
 
     let report = Report::new();
     let port = P00.split();
@@ -345,7 +345,7 @@ fn test_gpio_outport_array() {
 // implement bit banging.
 #[test]
 fn test_gpio_outport_tuple() {
-    use tc37x_driver::gpio::group::PinGroup;
+    use bw_r_driver_tc37x::gpio::group::PinGroup;
 
     let report = Report::new();
 

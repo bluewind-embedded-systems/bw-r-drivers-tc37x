@@ -2,7 +2,7 @@
 name = "bw-r-driver-tc37x"
 version = "0.1.0"
 edition = "2021"
-license = "Boost Software License - Version 1.0"
+license = " BSL-1.0 license"
 
 [dependencies]
 embedded-can = "0.4.1"
@@ -59,8 +59,8 @@ features = [
     "can1",
 ]
 
-[dependencies.tc37x-rt]
-path = "../tc37x-rt"
+[dependencies.bw-r-rt-example]
+path = "../bw-r-rt-example"
 
 [dependencies.critical-section]
 optional = true
