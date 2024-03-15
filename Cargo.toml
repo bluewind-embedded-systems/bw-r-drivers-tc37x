@@ -5,7 +5,7 @@ edition = "2021"
 license = " BSL-1.0 license"
 
 [dependencies]
-embedded-can = "0.4.1"
+embedded-can = "=0.4.1"
 
 [dependencies.log]
 optional = true
@@ -13,15 +13,15 @@ version = "0.4"
 
 [dependencies.env_logger]
 optional = true
-version = "0.10.1"
+version = "0.11.3"
 
 [dependencies.defmt-rtt]
 optional = true
-version = "0.4.0"
+version = "=0.4.0"
 
 [dependencies.defmt]
 optional = true
-version = "0.3.5"
+version = "=0.3.5"
 
 [dependencies.embedded-hal]
 package = "embedded-hal"
@@ -64,12 +64,12 @@ path = "../bw-r-rt-example"
 
 [dependencies.critical-section]
 optional = true
-version = "1.1.1"
+version = "=1.1.2"
 features = ["restore-state-bool"]
 
 [dependencies.insta]
 optional = true
-version = "1.34.0"
+version = "=1.36.0"
 features = ["ron"]
 
 [dev-dependencies]
