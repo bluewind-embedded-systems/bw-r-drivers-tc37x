@@ -4,7 +4,7 @@ use super::TraceGuard;
 use crate::tracing::{LoadModifyStoreEntry, ReadEntry, ReportEntry, WriteEntry};
 use std::any::Any;
 use std::collections::{HashMap, VecDeque};
-use std::fmt::{Debug, Display, Formatter, Write};
+use std::fmt::{Debug, Display, format, Formatter, Write};
 use std::sync::{Arc, Mutex, MutexGuard};
 
 struct ReadFifoEntry {
@@ -89,7 +89,7 @@ impl super::Reporter for Reporter {
             .read_fifo
             .0
             .pop_front()
-            .expect("Unexpected read");
+            .expect(&format!("Unexpected read at address 0x{:08X} and len {}", addr, len));
 
         if entry.addr == addr && entry.len == len {
             let val = entry.val;
