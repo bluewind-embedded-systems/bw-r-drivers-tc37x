@@ -206,6 +206,7 @@ pub fn disable_cpu_watchdog() {
     set_cpu_endinit_inline();
 }
 
+#[cfg(feature = "tracing")]
 #[cfg(test)]
 mod tests {
     use crate::tracing::log::Report;
