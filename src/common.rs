@@ -93,17 +93,14 @@ pub(crate) mod hidden {
 use hidden::{CastFrom, RegValue};
 
 pub(crate) trait RegisterValue: RegValue {
-    /// Create a register value from raw value
     #[inline(always)]
     fn new(data: <Self as RegValue>::DataType) -> Self {
         RegValue::new(data, 0x0u8.into())
     }
-    /// Get raw register value
     #[inline(always)]
     fn get_raw(&self) -> <Self as RegValue>::DataType {
         self.data()
     }
-    /// Return a copy with register value set to `value` and write mask fully set
     #[inline(always)]
     fn set_raw(mut self, value: <Self as RegValue>::DataType) -> Self {
         *self.data_mut_ref() = value;
@@ -145,12 +142,6 @@ impl<T: RegValue, A: Access> Reg<T, A> {
 }
 
 impl<T: RegValue, A: Read> Reg<T, A> {
-    /// Read register and return a register value
-    ///
-    /// # Safety
-    /// Read operation could cause undefined behavior for some peripheral. Developer shall read device user manual.
-    /// Register is Send and Sync to allow complete freedom. Developer is responsible of proper use in interrupt and thread.
-    ///
     #[inline(always)]
     #[must_use]
     pub(crate) unsafe fn read(&self) -> T {
@@ -160,16 +151,6 @@ impl<T: RegValue, A: Read> Reg<T, A> {
 }
 
 impl<T: RegValue, A: Write> Reg<T, A> {
-    /// Write register value back to register
-    ///
-    /// # Arguments
-    ///
-    /// * `reg_value` - A string slice that holds the name of the person
-    ///
-    /// # Safety
-    /// Write operation could cause undefined behavior for some peripheral. Developer shall read device user manual.
-    /// Register is Send and Sync to allow complete freedom. Developer is responsible of proper use in interrupt and thread.
-    ///
     #[inline(always)]
     pub(crate) unsafe fn write(&self, reg_value: T) {
         unsafe { (self.ptr as *mut T::DataType).write_volatile(reg_value.data()); }
@@ -177,18 +158,7 @@ impl<T: RegValue, A: Write> Reg<T, A> {
 }
 
 impl<T: Default + RegValue, A: Write> Reg<T, A> {
-    /// Init register with value returned by the closure.
-    ///
-    /// # Arguments
-    ///
-    /// * `f` - Closure that receive as input a register value initialized with register value at Power On Reset.
-    ///
-    /// # Safety
-    /// Write operation could cause undefined behavior for some peripheral. Developer shall read device user manual.
-    /// Register is Send and Sync to allow complete freedom. Developer is responsible of proper use in interrupt and thread.
-    ///
     #[inline(always)]
-    /// Write value computed by closure that receive as input the reset value of register
     pub(crate) unsafe fn init(&self, f: impl FnOnce(T) -> T) {
         let val = Default::default();
         let res = f(val);
@@ -198,16 +168,6 @@ impl<T: Default + RegValue, A: Write> Reg<T, A> {
 
 impl<T: RegValue, A: Read + Write> Reg<T, A> {
     #[inline(always)]
-    /// Write register with value returned by the closure.
-    ///
-    /// # Arguments
-    ///
-    /// * `f` - Closure that receive as input a register value read from register.
-    ///
-    /// # Safety
-    /// Write operation could cause undefined behavior for some peripheral. Developer shall read device user manual.
-    /// Register is Send and Sync to allow complete freedom. Developer is responsible of proper use in interrupt and thread.
-    ///
     pub(crate) unsafe fn modify(&self, f: impl FnOnce(T) -> T) {
         let val = unsafe { self.read() };
         let res = f(val);
@@ -346,30 +306,5 @@ impl<const START_OFFSET: usize, const DIM: u8, const DIM_INCREMENT: u8, T: RegVa
         *self.data.data_mut_ref() &= !masked_offset;
         *self.data.data_mut_ref() |= value << offset;
         self.data
-    }
-}
-
-impl<const START_OFFSET: usize, const DIM: u8, const DIM_INCREMENT: u8, T: RegValue, A: Access>
-    RegisterFieldBool<START_OFFSET, DIM, DIM_INCREMENT, T, A>
-{
-    #[inline(always)]
-    #[allow(dead_code)]
-    pub(crate) fn from_register(data: T, index: u8) -> Self {
-        Self {
-            data,
-            index,
-            marker: PhantomData,
-        }
-    }
-}
-
-pub(crate) trait FromPtr<A> {
-    unsafe fn from_ptr_unchecked(ptr: *mut u8) -> Self;
-}
-
-impl<T: RegValue, A: Access> FromPtr<A> for Reg<T, A> {
-    #[inline(always)]
-    unsafe fn from_ptr_unchecked(ptr: *mut u8) -> Self {
-        Reg::<T, A>::from_ptr(ptr)
     }
 }
