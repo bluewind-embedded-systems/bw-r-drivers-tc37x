@@ -3,9 +3,6 @@ use crate::cpu::Priority;
 use tc37x::src::can::can_can::CaNxInTy_SPEC;
 use tc37x::{Reg, RW};
 
-// Note: for simplicity, this wraps a value of Can0Int0 type, even if the
-// underlying registers have different types in the PAC crate.
-// TODO This is technically correct, but it is bypassing PAC type-safety. We should discuss about this.
 pub(crate) struct ServiceRequest(Reg<CaNxInTy_SPEC, RW>);
 
 impl Module0 {
