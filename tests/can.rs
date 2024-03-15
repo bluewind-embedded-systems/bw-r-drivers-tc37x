@@ -28,7 +28,7 @@ use pac::{CAN0, SCU, SRC};
 // TODO fix values of can_module.enable reads
 // TODO add report comments with actual registers' name
 #[test]
-fn test_can_module_take_node(){
+fn test_setup_can0(){
     let report = Report::new();
     let can_module = Module::new(Module0);
 
