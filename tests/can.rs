@@ -1,5 +1,5 @@
-use tc37x_driver::tracing::log::Report;
-use tc37x_driver::can::{
+use bw_r_driver_tc37x::tracing::log::Report;
+use bw_r_driver_tc37x::can::{
     Module,
     Module0,
     NodeConfig,
@@ -19,8 +19,8 @@ use tc37x_driver::can::{
     Interrupt,
     InterruptLine,
 };
-use tc37x_driver::cpu::Priority;
-use tc37x_driver::can::Tos;
+use bw_r_driver_tc37x::cpu::Priority;
+use bw_r_driver_tc37x::can::Tos;
 
 use tc37x as pac;
 use pac::{CAN0, SCU, SRC};
