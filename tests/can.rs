@@ -37,7 +37,7 @@ fn test_can_module_take_node(){
     // wtdcpu0con0 write
 
     // clc read
-    report.expect_read(CAN0.clc().addr(), 4, 0b00000000000000000_00000000_0000_0_0_0);
+    report.expect_read(CAN0.clc().addr(), 4, 0b0);
 
     // wtdcpu0con0 for set_cpu_endinit
     report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_0);
@@ -60,8 +60,8 @@ fn test_can_module_take_node(){
     };
 
     // mcr read for set clock source
-    report.expect_read(CAN0.mcr().addr(), 4, 0x0000);
-    report.expect_read(CAN0.mcr().addr(), 4, 0b0_0_0_0_0_000_0000000000000000_00_00_00_11);
+    report.expect_read(CAN0.mcr().addr(), 4, 0b0);
+    report.expect_read(CAN0.mcr().addr(), 4, 0b11);
 
     // cccr for enable configuration change
     // read
@@ -98,16 +98,16 @@ fn test_can_module_take_node(){
     report.expect_read(SCU.syspllcon0().addr(), 4, 0b0100_0000_0000_0001_0011_1010_0000_0000);
 
     // perpllcon0 read for get_per_pll_frequency1 for get_source_frequency
-    report.expect_read(SCU.perpllcon0().addr(), 4, 0b0000_0000_0000_0001_0011_1111_0000_0000);
+    report.expect_read(SCU.perpllcon0().addr(), 4, 0b10011_1111_0000_0000);
 
     // perpllcon1 read for get_per_pll_frequency1 for get_source_frequency
-    report.expect_read(SCU.perpllcon1().addr(), 4, 0b0000_0000_0000_0000_0000_0001_0000_0001);
+    report.expect_read(SCU.perpllcon1().addr(), 4, 0b1_0000_0001);
 
     // ccucon1 for get_source_frequency
-    report.expect_read(SCU.ccucon1().addr(), 4, 0b0010_0001_0001_0001_0000_0010_0001_0010);
+    report.expect_read(SCU.ccucon1().addr(), 4, 0b10_0001_0001_0001_0000_0010_0001_0010);
 
     // nbtp0 for set_nominal_bit_timing
-    report.expect_read(CAN0.n()[0].nbtpi().addr(), 4, 0b0000_0110_0000_0000_0000_1010_0000_0011);
+    report.expect_read(CAN0.n()[0].nbtpi().addr(), 4, 0b110_0000_0000_0000_1010_0000_0011);
 
     let mut node = can_module.take_node(Node0, cfg).expect("Cannot take can node");
 
@@ -118,7 +118,7 @@ fn test_can_module_take_node(){
     report.expect_read(CAN0.n()[0].tx().txbci().addr(), 4, 0b0);
 
     // txbc0 for set_dedicated_tx_buffers_number for setup_tx
-    report.expect_read(CAN0.n()[0].tx().txbci().addr(), 4, 0b0000_0000_0000_0000_0000_0100_0100_0000);
+    report.expect_read(CAN0.n()[0].tx().txbci().addr(), 4, 0b100_0100_0000);
 
     // txbtie0 for enable_tx_buffer_transmission_interrupt for setup_tx
     report.expect_read(CAN0.n()[0].tx().txbtiei().addr(), 4, 0b0);
@@ -127,7 +127,7 @@ fn test_can_module_take_node(){
     // txefc0 for set_tx_event_fifo_start_address for setup_tx
     report.expect_read(CAN0.n()[0].tx().txefci().addr(), 4, 0b0);
     // txefc0 for set_tx_event_fifo_size for setup_tx
-    report.expect_read(CAN0.n()[0].tx().txefci().addr(), 4, 0b0100_0000_0000);
+    report.expect_read(CAN0.n()[0].tx().txefci().addr(), 4, 0b100_0000_0000);
 
     // cccr0 for set_frame_mode for setup_tx
     report.expect_read(CAN0.n()[0].cccri().addr(), 4, 0b11);
