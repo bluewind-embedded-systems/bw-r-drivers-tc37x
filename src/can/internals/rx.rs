@@ -9,7 +9,7 @@ use core::mem::transmute;
 // create RxMsg using pac structure and unsafe transmute
 
 pub(crate) struct Rx {
-    inner: reg::RxMsg,
+    inner: reg::msg_rx::RxMsg,
 }
 
 impl Rx {

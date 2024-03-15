@@ -6,7 +6,7 @@ use crate::can::{frame::DataLenghtCode, reg, FrameMode};
 use core::mem::transmute;
 
 pub(crate) struct Tx {
-    inner: reg::TxMsg,
+    inner: reg::msg_tx::TxMsg,
 }
 
 impl Tx {
