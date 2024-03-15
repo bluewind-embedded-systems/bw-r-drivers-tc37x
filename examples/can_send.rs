@@ -26,7 +26,7 @@ use core::sync::atomic::AtomicBool;
 use core::sync::atomic::Ordering;
 use bw_r_driver_tc37x::cpu::Priority;
 use bw_r_driver_tc37x::can::msg::ReadFrom;
-use bw_r_rt_example::asm_calls::{read_cpu_core_id, enable_interrupts, disable_interrupts};
+use bw_r_rt_example::asm_calls::{read_cpu_core_id, enable_interrupts};
 
 pub static CAN0_NODE0_NEW_MSG: AtomicBool = AtomicBool::new(false);
 
