@@ -931,7 +931,7 @@ impl Port {
         let m : u32 = 0xFFu32 << shift;
 
         unsafe {
-            crate::load_modify_store(iocr.ptr(), v, m);
+            crate::intrinsics::load_modify_store(iocr.ptr(), v, m);
         }
     }
 
