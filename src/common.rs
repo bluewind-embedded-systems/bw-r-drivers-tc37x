@@ -1,54 +1,46 @@
 use core::convert::From;
 use core::marker::PhantomData;
 
-/// All side effects (I/O on peripherals) must pass through an implementation
-/// of this trait.
-pub trait Effect {
-    unsafe fn read_volatile<T: RegValue>(addr: usize) -> T;
-    unsafe fn write_volatile<T: RegValue>(addr: usize, val: T);
-    unsafe fn load_modify_store(addr: usize, val: u64);
-}
-
 #[derive(Copy, Clone, PartialEq, Eq)]
-pub struct RW;
+pub(crate) struct RW;
 #[derive(Copy, Clone, PartialEq, Eq)]
-pub struct R;
+pub(crate) struct R;
 #[derive(Copy, Clone, PartialEq, Eq)]
-pub struct W;
+pub(crate) struct W;
 
 mod sealed {
     use super::*;
-    pub trait Access {}
+    pub(crate) trait Access {}
     impl Access for R {}
     impl Access for W {}
     impl Access for RW {}
 }
 
-pub trait Access: sealed::Access + Copy {}
+pub(crate) trait Access: sealed::Access + Copy {}
 impl Access for R {}
 impl Access for W {}
 impl Access for RW {}
 
-pub trait Read: Access {}
+pub(crate) trait Read: Access {}
 impl Read for RW {}
 impl Read for R {}
 
-pub trait Write: Access {}
+pub(crate) trait Write: Access {}
 impl Write for RW {}
 impl Write for W {}
 
 #[derive(Copy, Clone, PartialEq, Eq)]
-pub struct Reg<T, A: Access> {
+pub(crate) struct Reg<T, A: Access> {
     ptr: *mut u8,
     phantom: PhantomData<*mut (T, A)>,
 }
 unsafe impl<T, A: Access> Send for Reg<T, A> {}
 unsafe impl<T, A: Access> Sync for Reg<T, A> {}
 
-pub mod hidden {
+pub(crate) mod hidden {
     use core::ops::{BitAnd, BitAndAssign, BitOrAssign, Not, Shl, Shr};
 
-    pub trait CastFrom<A> {
+    pub(crate) trait CastFrom<A> {
         fn cast_from(val: A) -> Self;
     }
 
@@ -80,7 +72,7 @@ pub mod hidden {
         }
     }
 
-    pub trait RegValue: Default {
+    pub(crate) trait RegValue: Default {
         type DataType: Copy
             + From<u8>
             + Into<u64>
@@ -100,7 +92,7 @@ pub mod hidden {
 
 use hidden::{CastFrom, RegValue};
 
-pub trait RegisterValue: RegValue {
+pub(crate) trait RegisterValue: RegValue {
     /// Create a register value from raw value
     #[inline(always)]
     fn new(data: <Self as RegValue>::DataType) -> Self {
@@ -122,7 +114,7 @@ pub trait RegisterValue: RegValue {
 
 impl<T: RegValue> RegisterValue for T {}
 
-pub trait NoBitfieldReg: RegValue
+pub(crate) trait NoBitfieldReg: RegValue
 where
     Self: Sized,
 {
@@ -147,7 +139,7 @@ impl<T: RegValue, A: Access> Reg<T, A> {
 
     #[inline(always)]
     #[must_use]
-    pub const fn ptr(&self) -> *mut T::DataType {
+    pub(crate) const fn ptr(&self) -> *mut T::DataType {
         self.ptr as _
     }
 }
@@ -161,7 +153,7 @@ impl<T: RegValue, A: Read> Reg<T, A> {
     ///
     #[inline(always)]
     #[must_use]
-    pub unsafe fn read(&self) -> T {
+    pub(crate) unsafe fn read(&self) -> T {
         let v = unsafe { (self.ptr as *mut T::DataType).read_volatile() };
         T::new(v, 0.into())
     }
@@ -179,7 +171,7 @@ impl<T: RegValue, A: Write> Reg<T, A> {
     /// Register is Send and Sync to allow complete freedom. Developer is responsible of proper use in interrupt and thread.
     ///
     #[inline(always)]
-    pub unsafe fn write(&self, reg_value: T) {
+    pub(crate) unsafe fn write(&self, reg_value: T) {
         unsafe { (self.ptr as *mut T::DataType).write_volatile(reg_value.data()); }
     }
 }
@@ -197,7 +189,7 @@ impl<T: Default + RegValue, A: Write> Reg<T, A> {
     ///
     #[inline(always)]
     /// Write value computed by closure that receive as input the reset value of register
-    pub unsafe fn init(&self, f: impl FnOnce(T) -> T) {
+    pub(crate) unsafe fn init(&self, f: impl FnOnce(T) -> T) {
         let val = Default::default();
         let res = f(val);
         unsafe { self.write(res) };
@@ -216,14 +208,14 @@ impl<T: RegValue, A: Read + Write> Reg<T, A> {
     /// Write operation could cause undefined behavior for some peripheral. Developer shall read device user manual.
     /// Register is Send and Sync to allow complete freedom. Developer is responsible of proper use in interrupt and thread.
     ///
-    pub unsafe fn modify(&self, f: impl FnOnce(T) -> T) {
+    pub(crate) unsafe fn modify(&self, f: impl FnOnce(T) -> T) {
         let val = unsafe { self.read() };
         let res = f(val);
         unsafe { self.write(res) };
     }
 }
 
-pub struct RegisterField<
+pub(crate) struct RegisterField<
     const START_OFFSET: usize,
     const MASK: u64,
     const DIM: u8,
@@ -279,7 +271,7 @@ where
     ValueType: CastFrom<u64>,
 {
     #[inline(always)]
-    pub fn get(&self) -> ValueType {
+    pub(crate) fn get(&self) -> ValueType {
         let offset = START_OFFSET + (self.index * DIM_INCREMENT) as usize;
         let filtered: T::DataType = (self.data.data() >> offset) & T::DataType::cast_from(MASK);
         ValueType::cast_from(filtered.into())
@@ -302,7 +294,7 @@ where
 {
     #[inline(always)]
     #[must_use]
-    pub fn set(mut self, value: ValueType) -> T {
+    pub(crate) fn set(mut self, value: ValueType) -> T {
         let mask = T::DataType::cast_from(MASK);
         let value: T::DataType = T::DataType::cast_from(Into::<u64>::into(value)) & mask;
         let offset = START_OFFSET + (self.index * DIM_INCREMENT) as usize;
@@ -314,7 +306,7 @@ where
     }
 }
 
-pub struct RegisterFieldBool<
+pub(crate) struct RegisterFieldBool<
     const START_OFFSET: usize,
     const DIM: u8,
     const DIM_INCREMENT: u8,
@@ -330,7 +322,7 @@ impl<const START_OFFSET: usize, const DIM: u8, const DIM_INCREMENT: u8, T: RegVa
     RegisterFieldBool<START_OFFSET, DIM, DIM_INCREMENT, T, A>
 {
     #[inline(always)]
-    pub fn get(&self) -> bool {
+    pub(crate) fn get(&self) -> bool {
         let offset = START_OFFSET + (self.index * DIM_INCREMENT) as usize;
         let filtered = (self.data.data().into() >> offset) & 1;
         filtered == 1
@@ -342,7 +334,7 @@ impl<const START_OFFSET: usize, const DIM: u8, const DIM_INCREMENT: u8, T: RegVa
 {
     #[inline(always)]
     #[must_use]
-    pub fn set(mut self, value: bool) -> T {
+    pub(crate) fn set(mut self, value: bool) -> T {
         let value: T::DataType = if value {
             T::DataType::cast_from(1u64)
         } else {
@@ -371,7 +363,7 @@ impl<const START_OFFSET: usize, const DIM: u8, const DIM_INCREMENT: u8, T: RegVa
     }
 }
 
-pub trait FromPtr<A> {
+pub(crate) trait FromPtr<A> {
     unsafe fn from_ptr_unchecked(ptr: *mut u8) -> Self;
 }
 

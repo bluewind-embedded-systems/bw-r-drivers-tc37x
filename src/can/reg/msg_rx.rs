@@ -8,7 +8,7 @@ use crate::common::{Reg, RegisterField, RegisterFieldBool, RW, hidden::RegValue}
 use core::mem::transmute;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
-pub struct RxMsg(pub(super) *mut u8);
+pub(crate) struct RxMsg(pub(super) *mut u8);
 
 unsafe impl Send for RxMsg {}
 unsafe impl Sync for RxMsg {}
@@ -16,7 +16,7 @@ unsafe impl Sync for RxMsg {}
 impl RxMsg {
     #[inline(always)]
     #[allow(unused)]
-    pub fn r0(self) -> Reg<R0, RW> {
+    pub(crate) fn r0(self) -> Reg<R0, RW> {
         let ptr = unsafe { self.0.add(0usize) };
         unsafe { transmute(ptr) }
         // TODO Instead of transmute, the following code should be used (once pac supports it)
@@ -24,20 +24,20 @@ impl RxMsg {
     }
     #[inline(always)]
     #[allow(unused)]
-    pub fn r1(self) -> Reg<R1, RW> {
+    pub(crate) fn r1(self) -> Reg<R1, RW> {
         let ptr = unsafe { self.0.add(4usize) };
         unsafe { transmute(ptr) }
     }
     #[inline(always)]
     #[allow(unused)]
-    pub fn db(self) -> Reg<Db, RW> {
+    pub(crate) fn db(self) -> Reg<Db, RW> {
         let ptr = unsafe { self.0.add(8usize) };
         unsafe { transmute(ptr) }
     }
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Default)]
-pub struct R0(u32, u32);
+pub(crate) struct R0(u32, u32);
 
 impl RegValue for R0 {
     type DataType = u32;
@@ -62,30 +62,30 @@ impl RegValue for R0 {
 impl R0 {
     #[inline(always)]
     #[allow(unused)]
-    pub fn id(self) -> RegisterField<0, 0x1FFFFFFF, 1, 0, u32, R0, RW> {
+    pub(crate) fn id(self) -> RegisterField<0, 0x1FFFFFFF, 1, 0, u32, R0, RW> {
         unsafe { transmute((self, 1)) }
     }
 
     #[inline(always)]
     #[allow(unused)]
-    pub fn rtr(self) -> RegisterFieldBool<29, 1, 0, R0, RW> {
+    pub(crate) fn rtr(self) -> RegisterFieldBool<29, 1, 0, R0, RW> {
         unsafe { transmute((self, 1)) }
     }
 
     #[inline(always)]
     #[allow(unused)]
-    pub fn xtd(self) -> RegisterFieldBool<30, 1, 0, R0, RW> {
+    pub(crate) fn xtd(self) -> RegisterFieldBool<30, 1, 0, R0, RW> {
         unsafe { transmute((self, 1)) }
     }
     #[inline(always)]
     #[allow(unused)]
-    pub fn esi(self) -> RegisterFieldBool<31, 1, 0, R0, RW> {
+    pub(crate) fn esi(self) -> RegisterFieldBool<31, 1, 0, R0, RW> {
         unsafe { transmute((self, 1)) }
     }
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Default)]
-pub struct R1(u32, u32);
+pub(crate) struct R1(u32, u32);
 
 impl RegValue for R1 {
     type DataType = u32;
@@ -110,42 +110,42 @@ impl RegValue for R1 {
 impl R1 {
     #[inline(always)]
     #[allow(unused)]
-    pub fn rxts(self) -> RegisterField<0, 0xffff, 1, 0, u16, R1, RW> {
+    pub(crate) fn rxts(self) -> RegisterField<0, 0xffff, 1, 0, u16, R1, RW> {
         unsafe { transmute((self, 1)) }
     }
     #[inline(always)]
     #[allow(unused)]
-    pub fn dlc(self) -> RegisterField<16, 0xf, 1, 0, u8, R1, RW> {
-        unsafe { transmute((self, 1)) }
-    }
-
-    #[inline(always)]
-    #[allow(unused)]
-    pub fn brs(self) -> RegisterFieldBool<20, 1, 0, R1, RW> {
+    pub(crate) fn dlc(self) -> RegisterField<16, 0xf, 1, 0, u8, R1, RW> {
         unsafe { transmute((self, 1)) }
     }
 
     #[inline(always)]
     #[allow(unused)]
-    pub fn fdf(self) -> RegisterFieldBool<21, 1, 0, R1, RW> {
+    pub(crate) fn brs(self) -> RegisterFieldBool<20, 1, 0, R1, RW> {
         unsafe { transmute((self, 1)) }
     }
 
     #[inline(always)]
     #[allow(unused)]
-    pub fn fidx(self) -> RegisterField<24, 0x7F, 1, 0, u8, R1, RW> {
+    pub(crate) fn fdf(self) -> RegisterFieldBool<21, 1, 0, R1, RW> {
         unsafe { transmute((self, 1)) }
     }
 
     #[inline(always)]
     #[allow(unused)]
-    pub fn anmf(self) -> RegisterFieldBool<31, 1, 0, R1, RW> {
+    pub(crate) fn fidx(self) -> RegisterField<24, 0x7F, 1, 0, u8, R1, RW> {
+        unsafe { transmute((self, 1)) }
+    }
+
+    #[inline(always)]
+    #[allow(unused)]
+    pub(crate) fn anmf(self) -> RegisterFieldBool<31, 1, 0, R1, RW> {
         unsafe { transmute((self, 1)) }
     }
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Default)]
-pub struct Db(u32, u32);
+pub(crate) struct Db(u32, u32);
 
 impl RegValue for Db {
     type DataType = u32;
