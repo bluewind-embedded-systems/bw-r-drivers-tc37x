@@ -86,7 +86,7 @@ pub(crate) fn read_cpu_core_id() -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloc::string::ToString;
+    use std::string::ToString;
 
     #[test]
     fn test_load_modify_store() {
