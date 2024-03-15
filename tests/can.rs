@@ -14,10 +14,16 @@ use tc37x_driver::can::{
     RxFifoMode,
     Pins,
     pin_map::{PIN_TX_0_0_P20_8, PIN_RX_0_0_P20_7},
-
+    config::NodeInterruptConfig,
+    InterruptGroup,
+    Interrupt,
+    InterruptLine,
 };
+use tc37x_driver::cpu::Priority;
+use tc37x_driver::can::Tos;
+
 use tc37x as pac;
-use pac::{CAN0, SCU};
+use pac::{CAN0, SCU, SRC};
 
 // TODO fix values of can_module.enable reads
 // TODO add report comments with actual registers' name
@@ -226,6 +232,22 @@ fn test_can_module_take_node(){
     node.setup_pins(&Pins {
         tx: PIN_TX_0_0_P20_8,
         rx: PIN_RX_0_0_P20_7,
+    });
+
+    report.expect_read(CAN0.n()[0].grint2i().addr(), 4, 0b0);
+
+    report.expect_read(SRC.can().can_can()[0].canxinty()[1].addr(), 4, 0b0);
+    report.expect_read(SRC.can().can_can()[0].canxinty()[1].addr(), 4, 0b0);
+    report.expect_read(SRC.can().can_can()[0].canxinty()[1].addr(), 4, 0b0);
+
+    report.expect_read(CAN0.n()[0].iei().addr(), 4, 0b0);
+    
+    node.setup_interrupt(&NodeInterruptConfig {
+        interrupt_group: InterruptGroup::Rxf0n,
+        interrupt: Interrupt::RxFifo0newMessage,
+        line: InterruptLine::Line1,
+        priority: Priority::try_from(2).unwrap(),
+        tos: Tos::Cpu0,
     });
 
     insta::assert_snapshot!(report.take_log());
