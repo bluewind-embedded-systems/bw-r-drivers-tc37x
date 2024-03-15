@@ -138,6 +138,8 @@
 
 #![cfg_attr(target_arch = "tricore", feature(stdsimd))]
 
+extern crate alloc;
+
 #[cfg(feature = "tracing")]
 pub mod tracing;
 

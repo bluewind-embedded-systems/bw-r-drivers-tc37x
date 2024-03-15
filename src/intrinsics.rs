@@ -1,9 +1,11 @@
+#[cfg(feature = "tracing")]
 use crate::tracing;
 
 /// Atomic Load-Modify-Store, store under a `mask` of a `value` to the address `addr`.
 /// This is needed to atomically update a memory location or to
 /// track the changes to a memory location when tracing feature is enabled.
 #[allow(unreachable_code)]
+#[inline(always)]
 pub(crate) unsafe fn load_modify_store(addr: *mut u32, v: u32, m: u32) {
     #[cfg(feature = "tracing")]
     {
@@ -22,6 +24,8 @@ pub(crate) unsafe fn load_modify_store(addr: *mut u32, v: u32, m: u32) {
 
 /// Volatile write to a memory location.
 /// This is the equivalent of ptr.write_volatile(val) but it is tracked when the tracing feature is enabled.
+#[allow(unreachable_code)]
+#[inline(always)]
 pub(crate) unsafe fn write_volatile<T>(addr: *mut T, val: T)
 where
     u64: From<T>,
@@ -31,11 +35,18 @@ where
         return tracing::write_volatile(addr as usize, core::mem::size_of::<T>(), val.into());
     }
 
+    #[cfg(target_arch = "tricore")]
+    {
+        return unsafe { addr.write_volatile(val) };
+    }
+
     panic!("unsupported architecture");
 }
 
 /// Volatile read from a memory location.
 /// This is the equivalent of ptr.read_volatile() but it is tracked when the tracing feature is enabled.
+#[allow(unreachable_code)]
+#[inline(always)]
 pub(crate) unsafe fn read_volatile<T>(addr: *mut T) -> T
 where
     T: From<u32>,
@@ -45,6 +56,11 @@ where
         let val: u64 = tracing::read_volatile(addr as usize, core::mem::size_of::<T>());
         let val: u32 = val as u32;
         return val.into();
+    }
+
+    #[cfg(target_arch = "tricore")]
+    {
+        return unsafe { addr.read_volatile() };
     }
 
     panic!("unsupported architecture");
