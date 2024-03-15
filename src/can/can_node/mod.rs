@@ -948,10 +948,8 @@ impl Port {
         wdt_call::call_without_cpu_endinit(|| {
             let v : u32 = (driver as u32) << shift;
             let m : u32 = 0xF << shift;
-            // TODO This bypass tracing, so it is not catched by tests
-            #[cfg(target_arch = "tricore")]
             unsafe {
-                core::arch::tricore::intrinsics::__ldmst(pdr.ptr(), v, m);
+                crate::intrinsics::load_modify_store(pdr.ptr(), v, m);
             }
         });
     }
