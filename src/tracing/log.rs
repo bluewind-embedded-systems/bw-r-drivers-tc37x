@@ -4,7 +4,7 @@ use super::TraceGuard;
 use crate::tracing::{LoadModifyStoreEntry, ReadEntry, ReportEntry, WriteEntry};
 use std::any::Any;
 use std::collections::{HashMap, VecDeque};
-use std::fmt::{Debug, Display, format, Formatter, Write};
+use std::fmt::{Debug, Display, Formatter, Write};
 use std::sync::{Arc, Mutex, MutexGuard};
 
 struct ReadFifoEntry {
@@ -60,7 +60,7 @@ impl Report {
         self.shared_data()
             .read_fifo
             .0
-            .push_front(ReadFifoEntry { addr, len, val })
+            .push_back(ReadFifoEntry { addr, len, val })
     }
 
     pub fn comment(&self, s: impl Into<String>) {
@@ -89,14 +89,14 @@ impl super::Reporter for Reporter {
             .read_fifo
             .0
             .pop_front()
-            .expect(&format!("Unexpected read at address 0x{:08X} and len {}", addr, len));
+            .expect(&format!("Read at address 0x{:08X} and len {} failed. Fifo is empty", addr, len));
 
         if entry.addr == addr && entry.len == len {
             let val = entry.val;
             self.push(ReportEntry::Read(ReadEntry { addr, len, val }));
             val
         } else {
-            panic!("Unexpected read at address 0x{:08X} and len {}", addr, len)
+            panic!("Unexpected read at address 0x{:08X} and len {}, found 0x{:08X} len {}", entry.addr, entry.len, addr, len);
         }
     }
 
