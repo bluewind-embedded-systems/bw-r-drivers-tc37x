@@ -21,10 +21,6 @@ impl Module1 {
         let line_index = usize::from(line as u8);
         let x = tc37x::SRC.can().can_can()[1].canxinty()[line_index];
         ServiceRequest(x)
-        // ServiceRequest(match line {
-        //     // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-        //     InterruptLine::Line0 => unsafe { transmute(tc37x::SRC.can1int0()) },
-        // })
     }
 }
 
