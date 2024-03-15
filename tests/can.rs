@@ -46,7 +46,7 @@ fn test_can_module_take_node(){
 
     // wtdcpu0con0 write
     report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_0_1);
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_0_1);
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
 
     let mut can_module = can_module.enable();
 
@@ -183,12 +183,50 @@ fn test_can_module_take_node(){
         rx_buffers_start_address: 0x300,
     });
 
-    // node.setup_pins(&Pins {
-    //     tx: PIN_TX_0_0_P20_8,
-    //     rx: PIN_RX_0_0_P20_7,
-    // });
+    // wtdcpu0con0 for clear_cpu_endinit
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
+    // wtdcpu0con0 write
+    // wtdcpu0con0 read
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_0_1);
 
-    // check wtdcpu0con0
+    // wtdcpu0con0 for set_cpu_endinit
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_0);
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_0);
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_0);
+
+    // wtdcpu0con0 write
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_0_1);
+
+    // wtdcpu0con0 write
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
+
+    report.expect_read(CAN0.n()[0].npcri().addr(), 4, 0b0);
+
+    // wtdcpu0con0 for clear_cpu_endinit
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
+    // wtdcpu0con0 write
+    // wtdcpu0con0 read
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_0_1);
+
+    // wtdcpu0con0 for set_cpu_endinit
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_0);
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_0);
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_0);
+
+    // wtdcpu0con0 write
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_0_1);
+
+    // wtdcpu0con0 write
+    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
+
+    node.setup_pins(&Pins {
+        tx: PIN_TX_0_0_P20_8,
+        rx: PIN_RX_0_0_P20_7,
+    });
 
     insta::assert_snapshot!(report.take_log());
 }
