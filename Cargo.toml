@@ -1,7 +1,8 @@
 [package]
-name = "tc37x-driver"
+name = "bw-r-driver-tc37x"
 version = "0.1.0"
 edition = "2021"
+license = " BSL-1.0 license"
 
 [dependencies]
 embedded-can = "0.4.1"

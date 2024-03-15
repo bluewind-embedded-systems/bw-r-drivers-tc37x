@@ -1,23 +1,22 @@
-# gpio_driver
+# bw-r-driver-tc37x
 
 ## Prerequisites
 
-Make sure `tc37x` and `tc37x-rt` are available in the parent directory.
+Make sure `tc37x` and `tc37x-rt-example` are available in the parent directory.
 
 You should have a workspace with this setup:
 
-```txt
-├── tc37x-driver
-│   ├── Cargo.toml
-│   ...
-├── tc37x
-│   ├── Cargo.toml
-│    ...
-└── tc37x-rt
-    ├── Cargo.toml
-    ...
-```
-:warning: reference repository for 'tc37x' is here [https://git.bwlocal.it/bw-rust/third-parties/ifx/tc37x](https://git.bwlocal.it/bw-rust/third-parties/ifx/tc37x). 
+
+- 📂 bw-r-driver-tc37x
+   - 📄 `Cargo.toml`
+   -  ` ...`
+- 📂 tc37x --> [tc375-pac](https://github.com/Infineon/tc375-pac) 
+   -  `Cargo.toml`
+   -  `...`
+- 📂 [tc37x-rt](https://github.com/bluewind-embedded-systems/bw-r-rt-example)
+   -  `Cargo.toml`
+   - `...`
+
 
 ## Build 
 
