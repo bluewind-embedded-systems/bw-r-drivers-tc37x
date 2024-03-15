@@ -60,7 +60,7 @@ features = [
 ]
 
 [dependencies.bw-r-rt-example]
-path = "../tc37x-rt"
+path = "../bw-r-rt-example"
 
 [dependencies.critical-section]
 optional = true
