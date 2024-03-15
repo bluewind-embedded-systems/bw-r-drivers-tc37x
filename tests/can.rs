@@ -250,5 +250,12 @@ fn test_can_module_take_node(){
         tos: Tos::Cpu0,
     });
 
+    report.expect_read(CAN0.n()[0].cccri().addr(), 4, 0b0);
+    report.expect_read(CAN0.n()[0].cccri().addr(), 4, 0b0);
+    report.expect_read(CAN0.n()[0].cccri().addr(), 4, 0b0);
+    report.expect_read(CAN0.n()[0].cccri().addr(), 4, 0b0);
+
+    node.lock_configuration();
+
     insta::assert_snapshot!(report.take_log());
 }
