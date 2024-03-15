@@ -15,8 +15,6 @@ use embedded_can::ExtendedId;
 use bw_r_driver_tc37x::can::config::NodeInterruptConfig;
 use bw_r_driver_tc37x::can::pin_map::*;
 use bw_r_driver_tc37x::can::*;
-use bw_r_driver_tc37x::cpu::asm::enable_interrupts;
-use bw_r_driver_tc37x::cpu::asm::read_cpu_core_id;
 use bw_r_driver_tc37x::gpio::GpioExt;
 use bw_r_driver_tc37x::log::info;
 use bw_r_driver_tc37x::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
@@ -28,6 +26,7 @@ use core::sync::atomic::AtomicBool;
 use core::sync::atomic::Ordering;
 use bw_r_driver_tc37x::cpu::Priority;
 use bw_r_driver_tc37x::can::msg::ReadFrom;
+use bw_r_rt_example::asm_calls::{read_cpu_core_id, enable_interrupts, disable_interrupts};
 
 pub static CAN0_NODE0_NEW_MSG: AtomicBool = AtomicBool::new(false);
 
