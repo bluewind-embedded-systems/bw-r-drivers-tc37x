@@ -7,8 +7,8 @@
 // TODO Remove this once the code is stable
 #![allow(clippy::if_same_then_else)]
 
-// TODO Are we sure we want to publish this function?
-#[cfg(target_arch = "tricore")]
+use crate::intrinsics::read_volatile;
+
 #[inline]
 pub(crate) fn is_application_reset() -> bool {
     use tc37x::RegisterValue;
@@ -39,16 +39,9 @@ pub(crate) fn is_application_reset() -> bool {
         v == 2
     } else if v.cb3().get().0 == 1 {
         true
-    } else if (unsafe { (0xF880D000 as *const u32).read_volatile() } & (0x3 << 1)) != 0 {
+    } else if (unsafe { read_volatile(0xF880D000 as *const u32) } & (0x3 << 1)) != 0 {
         true
     } else {
         false
     }
-}
-
-// TODO Are we sure we want to publish this function?
-#[cfg(not(target_arch = "tricore"))]
-#[inline]
-pub(crate) fn is_application_reset() -> bool {
-    false
 }
