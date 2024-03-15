@@ -1,7 +1,7 @@
 // TODO Remove this once the code is stable
 #![allow(clippy::undocumented_unsafe_blocks)]
 
-use crate::cpu::asm::read_cpu_core_id;
+use crate::intrinsics::read_cpu_core_id;
 use core::mem::transmute;
 use tc37x as pac;
 

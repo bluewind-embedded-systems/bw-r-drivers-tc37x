@@ -67,6 +67,21 @@ where
     panic!("unsupported architecture");
 }
 
+#[inline(always)]
+pub(crate) fn read_cpu_core_id() -> u32 {
+    #[cfg(feature = "tracing")]
+    {
+        return 0;
+    }
+
+    #[cfg(target_arch = "tricore")]
+    unsafe {
+        let value: u32;
+        core::arch::asm!("mfcr {0}, 0xFE1C", out(reg32) value);
+        return value;
+    }
+}
+
 #[cfg(feature = "tracing")]
 #[cfg(test)]
 mod tests {
