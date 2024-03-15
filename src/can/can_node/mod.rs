@@ -930,10 +930,8 @@ impl Port {
         let v : u32 = (mode.0) << shift;
         let m : u32 = 0xFFu32 << shift;
 
-        // TODO This bypass tracing, so it is not catched by tests
-        #[cfg(target_arch = "tricore")]
         unsafe {
-            core::arch::tricore::intrinsics::__ldmst(iocr.ptr(), v, m);
+            crate::load_modify_store(iocr.ptr(), v, m);
         }
     }
 
