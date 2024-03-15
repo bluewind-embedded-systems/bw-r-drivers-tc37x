@@ -209,12 +209,16 @@ pub fn disable_cpu_watchdog() {
     set_cpu_endinit_inline();
 }
 
+#[cfg(feature = "tracing")]
 #[cfg(test)]
 mod tests {
+    use crate::tracing::log::Report;
     use super::*;
 
     #[test]
     fn test_get_wdt_con0() {
+        let report = Report::new();
+        report.expect_read(0xF003624C, 4, 0x00000000);
         let pwd = get_cpu_watchdog_password();
         assert_eq!(pwd, 0x3F);
     }

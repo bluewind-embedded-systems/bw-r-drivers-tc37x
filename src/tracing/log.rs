@@ -60,7 +60,7 @@ impl Report {
         self.shared_data()
             .read_fifo
             .0
-            .push_front(ReadFifoEntry { addr, len, val })
+            .push_back(ReadFifoEntry { addr, len, val })
     }
 
     pub fn comment(&self, s: impl Into<String>) {
@@ -88,8 +88,8 @@ impl super::Reporter for Reporter {
             .shared_data()
             .read_fifo
             .0
-            .pop_back()
-            .unwrap_or_else(|| panic!("Read at address 0x{:08X} and len {} failed. Fifo is empty", addr, len));
+            .pop_front()
+            .expect(&format!("Read at address 0x{:08X} and len {} failed. Fifo is empty", addr, len));
 
         if entry.addr == addr && entry.len == len {
             let val = entry.val;

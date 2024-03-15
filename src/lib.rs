@@ -138,10 +138,10 @@
 
 #![cfg_attr(target_arch = "tricore", feature(stdsimd))]
 
+extern crate alloc;
+
 #[cfg(feature = "tracing")]
 pub mod tracing;
-
-pub(crate) mod common;
 
 pub mod can;
 pub mod cpu;
@@ -150,6 +150,7 @@ pub mod log;
 pub mod scu;
 pub mod ssw;
 pub mod util;
+mod intrinsics;
 
 pub use tc37x as pac;
 
