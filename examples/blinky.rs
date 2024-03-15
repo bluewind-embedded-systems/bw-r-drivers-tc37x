@@ -4,7 +4,7 @@
 #![cfg_attr(target_arch = "tricore", no_std)]
 
 #[cfg(target_arch = "tricore")]
-tc37x_rt::entry!(main);
+bw_r_rt_example::entry!(main);
 
 use core::time::Duration;
 use embedded_hal::digital::StatefulOutputPin;
@@ -13,7 +13,7 @@ use tc37x_driver::gpio::GpioExt;
 use tc37x_driver::log::info;
 use tc37x_driver::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
 use tc37x_driver::{pac, ssw};
-use tc37x_rt::{isr::load_interrupt_table, post_init, pre_init};
+use bw_r_rt_example::{isr::load_interrupt_table, post_init, pre_init};
 
 pub enum State {
     NotChanged = 0,

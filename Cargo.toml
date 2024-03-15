@@ -58,7 +58,7 @@ features = [
     "can1",
 ]
 
-[dependencies.tc37x-rt]
+[dependencies.bw-r-rt-example]
 path = "../tc37x-rt"
 
 [dependencies.critical-section]

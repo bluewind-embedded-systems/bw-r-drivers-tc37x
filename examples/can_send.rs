@@ -5,7 +5,7 @@
 #![cfg_attr(target_arch = "tricore", no_std)]
 
 #[cfg(target_arch = "tricore")]
-tc37x_rt::entry!(main);
+bw_r_rt_example::entry!(main);
 
 use core::time::Duration;
 use embedded_can::ExtendedId;
@@ -20,7 +20,7 @@ use tc37x_driver::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
 use tc37x_driver::{pac, ssw};
 use tc37x::can0::{Can0, N as Can0Node};
 // use tc37x::can1::{Can1, N as Can1Node};
-use tc37x_rt::{isr::load_interrupt_table, post_init, pre_init};
+use bw_r_rt_example::{isr::load_interrupt_table, post_init, pre_init};
 use core::sync::atomic::AtomicBool;
 use core::sync::atomic::Ordering;
 use tc37x_driver::cpu::Priority;
