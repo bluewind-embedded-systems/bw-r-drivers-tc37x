@@ -25,6 +25,7 @@ pub(crate) unsafe fn load_modify_store(addr: *mut u32, v: u32, m: u32) {
 /// Volatile write to a memory location.
 /// This is the equivalent of ptr.write_volatile(val) but it is tracked when the tracing feature is enabled.
 #[allow(unreachable_code)]
+#[allow(dead_code)]
 #[inline(always)]
 pub(crate) unsafe fn write_volatile<T>(addr: *mut T, val: T)
 where
@@ -46,7 +47,6 @@ where
 /// Volatile read from a memory location.
 /// This is the equivalent of ptr.read_volatile() but it is tracked when the tracing feature is enabled.
 #[allow(unreachable_code)]
-#[allow(dead_code)]
 #[inline(always)]
 pub(crate) unsafe fn read_volatile<T>(addr: *const T) -> T
 where
