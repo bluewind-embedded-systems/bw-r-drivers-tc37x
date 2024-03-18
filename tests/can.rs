@@ -1,12 +1,12 @@
-use bw_r_driver_tc37x::can::Tos;
-use bw_r_driver_tc37x::can::{
+use bw_r_drivers_tc37x::can::Tos;
+use bw_r_drivers_tc37x::can::{
     config::NodeInterruptConfig,
     pin_map::{PIN_RX_0_0_P20_7, PIN_TX_0_0_P20_8},
     AutoBitTiming, BitTimingConfig, DataFieldSize, Interrupt, InterruptGroup, InterruptLine,
     Module, Module0, Node0, NodeConfig, Pins, RxConfig, RxFifoMode, RxMode, TxConfig, TxMode,
 };
-use bw_r_driver_tc37x::cpu::Priority;
-use bw_r_driver_tc37x::tracing::log::Report;
+use bw_r_drivers_tc37x::cpu::Priority;
+use bw_r_drivers_tc37x::tracing::log::Report;
 
 use pac::{CAN0, SCU, SRC};
 use tc37x as pac;

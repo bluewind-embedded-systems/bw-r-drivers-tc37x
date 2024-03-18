@@ -55,7 +55,7 @@ macro_rules! no_log_error {
 /// bytes as a hex string.
 ///
 /// ```
-/// use bw_r_driver_tc37x::log::HexSlice;
+/// use bw_r_drivers_tc37x::log::HexSlice;
 /// let bytes = &[1u8, 2, 3, 4];
 /// assert_eq!(format!("{}", HexSlice::from(bytes)), "01020304");
 /// ```

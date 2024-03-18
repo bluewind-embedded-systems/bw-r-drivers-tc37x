@@ -1,5 +1,5 @@
 [package]
-name = "bw-r-driver-tc37x"
+name = "bw-r-drivers-tc37x"
 version = "0.1.0"
 edition = "2021"
 license = " BSL-1.0 license"
