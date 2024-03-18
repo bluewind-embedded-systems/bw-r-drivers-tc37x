@@ -6,7 +6,6 @@ use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
 use core::marker::PhantomData;
 
-
 pub trait ModuleId {}
 
 pub struct Module0;

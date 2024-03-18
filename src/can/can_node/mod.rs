@@ -927,8 +927,8 @@ impl Port {
             unsafe { transmute(addr) }
         };
 
-        let v : u32 = (mode.0) << shift;
-        let m : u32 = 0xFFu32 << shift;
+        let v: u32 = (mode.0) << shift;
+        let m: u32 = 0xFFu32 << shift;
 
         unsafe {
             crate::intrinsics::load_modify_store(iocr.ptr(), v, m);
@@ -946,8 +946,8 @@ impl Port {
         };
 
         wdt_call::call_without_cpu_endinit(|| {
-            let v : u32 = (driver as u32) << shift;
-            let m : u32 = 0xF << shift;
+            let v: u32 = (driver as u32) << shift;
+            let m: u32 = 0xF << shift;
             unsafe {
                 crate::intrinsics::load_modify_store(pdr.ptr(), v, m);
             }

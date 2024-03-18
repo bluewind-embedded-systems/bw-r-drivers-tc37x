@@ -212,8 +212,8 @@ pub fn disable_cpu_watchdog() {
 #[cfg(feature = "tracing")]
 #[cfg(test)]
 mod tests {
-    use crate::tracing::log::Report;
     use super::*;
+    use crate::tracing::log::Report;
 
     #[test]
     fn test_get_wdt_con0() {

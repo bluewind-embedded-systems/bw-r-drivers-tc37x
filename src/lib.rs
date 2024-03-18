@@ -135,7 +135,6 @@
 #![warn(clippy::undocumented_unsafe_blocks)] // Since Rust 1.58
 #![warn(unused_unsafe)]
 #![warn(clippy::unnecessary_safety_comment)] // Since Rust 1.67
-
 #![cfg_attr(target_arch = "tricore", feature(stdsimd))]
 
 #[cfg(feature = "tracing")]
@@ -144,11 +143,11 @@ pub mod tracing;
 pub mod can;
 pub mod cpu;
 pub mod gpio;
+mod intrinsics;
 pub mod log;
 pub mod scu;
 pub mod ssw;
 pub mod util;
-mod intrinsics;
 
 pub use tc37x as pac;
 

@@ -156,7 +156,9 @@ impl<T: RegValue, A: Read> Reg<T, A> {
 impl<T: RegValue, A: Write> Reg<T, A> {
     #[inline(always)]
     pub(crate) unsafe fn write(&self, reg_value: T) {
-        unsafe { (self.ptr as *mut T::DataType).write_volatile(reg_value.data()); }
+        unsafe {
+            (self.ptr as *mut T::DataType).write_volatile(reg_value.data());
+        }
     }
 }
 

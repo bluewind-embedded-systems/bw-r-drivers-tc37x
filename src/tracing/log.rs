@@ -84,19 +84,20 @@ impl Reporter {
 
 impl super::Reporter for Reporter {
     fn read_volatile(&self, addr: usize, len: usize) -> u64 {
-        let entry = self
-            .shared_data()
-            .read_fifo
-            .0
-            .pop_front()
-            .expect(&format!("Read at address 0x{:08X} and len {} failed. Fifo is empty", addr, len));
+        let entry = self.shared_data().read_fifo.0.pop_front().expect(&format!(
+            "Read at address 0x{:08X} and len {} failed. Fifo is empty",
+            addr, len
+        ));
 
         if entry.addr == addr && entry.len == len {
             let val = entry.val;
             self.push(ReportEntry::Read(ReadEntry { addr, len, val }));
             val
         } else {
-            panic!("Expected read at address 0x{:08X} and len {}, found 0x{:08X} len {}", entry.addr, entry.len, addr, len);
+            panic!(
+                "Expected read at address 0x{:08X} and len {}, found 0x{:08X} len {}",
+                entry.addr, entry.len, addr, len
+            );
         }
     }
 

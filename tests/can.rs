@@ -1,44 +1,46 @@
-use bw_r_driver_tc37x::tracing::log::Report;
+use bw_r_driver_tc37x::can::Tos;
 use bw_r_driver_tc37x::can::{
-    Module,
-    Module0,
-    NodeConfig,
-    BitTimingConfig,
-    AutoBitTiming,
-    Node0,
-    TxConfig,
-    TxMode,
-    DataFieldSize,
-    RxConfig,
-    RxMode,
-    RxFifoMode,
-    Pins,
-    pin_map::{PIN_TX_0_0_P20_8, PIN_RX_0_0_P20_7},
     config::NodeInterruptConfig,
-    InterruptGroup,
-    Interrupt,
-    InterruptLine,
+    pin_map::{PIN_RX_0_0_P20_7, PIN_TX_0_0_P20_8},
+    AutoBitTiming, BitTimingConfig, DataFieldSize, Interrupt, InterruptGroup, InterruptLine,
+    Module, Module0, Node0, NodeConfig, Pins, RxConfig, RxFifoMode, RxMode, TxConfig, TxMode,
 };
 use bw_r_driver_tc37x::cpu::Priority;
-use bw_r_driver_tc37x::can::Tos;
+use bw_r_driver_tc37x::tracing::log::Report;
 
-use tc37x as pac;
 use pac::{CAN0, SCU, SRC};
+use tc37x as pac;
 
 // TODO fix values of can_module.enable reads
 // TODO add report comments with actual registers' name
 #[test]
-fn test_setup_can0(){
+fn test_setup_can0() {
     let report = Report::new();
     let can_module = Module::new(Module0);
 
     // wtdcpu0con0 for clear_cpu_endinit
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_1,
+    );
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_1,
+    );
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_1,
+    );
     // wtdcpu0con0 write
     // wtdcpu0con0 read
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_0_1);
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_0_1,
+    );
 
     // wtdcpu0con0 write
 
@@ -46,13 +48,33 @@ fn test_setup_can0(){
     report.expect_read(CAN0.clc().addr(), 4, 0b0);
 
     // wtdcpu0con0 for set_cpu_endinit
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_0);
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_0);
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_0);
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_0,
+    );
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_0,
+    );
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_0,
+    );
 
     // wtdcpu0con0 write
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_0_1);
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_0_1,
+    );
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_1,
+    );
 
     let mut can_module = can_module.enable();
 
@@ -72,22 +94,22 @@ fn test_setup_can0(){
     // cccr for enable configuration change
     // read
     report.expect_read(CAN0.n()[0].cccri().addr(), 4, 0b1);
-    
+
     // modify
     report.expect_read(CAN0.n()[0].cccri().addr(), 4, 0b1);
 
     // read
     report.expect_read(CAN0.n()[0].cccri().addr(), 4, 0b1);
-    
+
     // modify
     report.expect_read(CAN0.n()[0].cccri().addr(), 4, 0b1);
-    
+
     // read
     report.expect_read(CAN0.n()[0].cccri().addr(), 4, 0b0);
-    
+
     // modify
     report.expect_read(CAN0.n()[0].cccri().addr(), 4, 0b0);
-    
+
     // read
     report.expect_read(CAN0.n()[0].cccri().addr(), 4, 0b1);
 
@@ -95,13 +117,25 @@ fn test_setup_can0(){
     report.expect_read(CAN0.n()[0].cccri().addr(), 4, 0b1);
 
     // ccucon1 for get_mcan_frequency for configure_baud_rate
-    report.expect_read(SCU.ccucon1().addr(), 4, 0b0010_0001_0001_0001_0000_0010_0001_0010);
+    report.expect_read(
+        SCU.ccucon1().addr(),
+        4,
+        0b0010_0001_0001_0001_0000_0010_0001_0010,
+    );
 
     // ccucon0 read for get_source_frequency for get_mcan_frequency
-    report.expect_read(SCU.ccucon0().addr(), 4, 0b0001_0111_0010_0011_0000_0001_0001_0011);
+    report.expect_read(
+        SCU.ccucon0().addr(),
+        4,
+        0b0001_0111_0010_0011_0000_0001_0001_0011,
+    );
 
     // syspllcon0 read for get_osc_frequency for get_per_pll_frequency1 for get_source_frequency
-    report.expect_read(SCU.syspllcon0().addr(), 4, 0b0100_0000_0000_0001_0011_1010_0000_0000);
+    report.expect_read(
+        SCU.syspllcon0().addr(),
+        4,
+        0b0100_0000_0000_0001_0011_1010_0000_0000,
+    );
 
     // perpllcon0 read for get_per_pll_frequency1 for get_source_frequency
     report.expect_read(SCU.perpllcon0().addr(), 4, 0b10011_1111_0000_0000);
@@ -110,12 +144,22 @@ fn test_setup_can0(){
     report.expect_read(SCU.perpllcon1().addr(), 4, 0b1_0000_0001);
 
     // ccucon1 for get_source_frequency
-    report.expect_read(SCU.ccucon1().addr(), 4, 0b10_0001_0001_0001_0000_0010_0001_0010);
+    report.expect_read(
+        SCU.ccucon1().addr(),
+        4,
+        0b10_0001_0001_0001_0000_0010_0001_0010,
+    );
 
     // nbtp0 for set_nominal_bit_timing
-    report.expect_read(CAN0.n()[0].nbtpi().addr(), 4, 0b110_0000_0000_0000_1010_0000_0011);
+    report.expect_read(
+        CAN0.n()[0].nbtpi().addr(),
+        4,
+        0b110_0000_0000_0000_1010_0000_0011,
+    );
 
-    let mut node = can_module.take_node(Node0, cfg).expect("Cannot take can node");
+    let mut node = can_module
+        .take_node(Node0, cfg)
+        .expect("Cannot take can node");
 
     // txesc0 for set_tx_buffer_data_field_size for setup_tx
     report.expect_read(CAN0.n()[0].tx().txesci().addr(), 4, 0b0);
@@ -164,14 +208,21 @@ fn test_setup_can0(){
     report.expect_read(CAN0.n()[0].rx().rxf0ci().addr(), 4, 0b1_0000_0000);
 
     // rxf0c0 for set_rx_fifo0_operating_mode
-    report.expect_read(CAN0.n()[0].rx().rxf0ci().addr(), 4, 0b0100_0000_0001_0000_0000);
+    report.expect_read(
+        CAN0.n()[0].rx().rxf0ci().addr(),
+        4,
+        0b0100_0000_0001_0000_0000,
+    );
 
     // rxf0c0 for set_rx_fifo0_watermark_level
-    report.expect_read(CAN0.n()[0].rx().rxf0ci().addr(), 4, 0b0100_0000_0001_0000_0000);
+    report.expect_read(
+        CAN0.n()[0].rx().rxf0ci().addr(),
+        4,
+        0b0100_0000_0001_0000_0000,
+    );
 
     // cccr0 for set_frame_mode for setup_tx
     report.expect_read(CAN0.n()[0].cccri().addr(), 4, 0b11);
-
 
     node.setup_rx(RxConfig {
         mode: RxMode::SharedFifo0,
@@ -190,44 +241,116 @@ fn test_setup_can0(){
     });
 
     // wtdcpu0con0 for clear_cpu_endinit
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_1,
+    );
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_1,
+    );
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_1,
+    );
     // wtdcpu0con0 write
     // wtdcpu0con0 read
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_0_1);
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_0_1,
+    );
 
     // wtdcpu0con0 for set_cpu_endinit
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_0);
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_0);
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_0);
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_0,
+    );
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_0,
+    );
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_0,
+    );
 
     // wtdcpu0con0 write
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_0_1);
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_0_1,
+    );
 
     // wtdcpu0con0 write
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_1,
+    );
 
     report.expect_read(CAN0.n()[0].npcri().addr(), 4, 0b0);
 
     // wtdcpu0con0 for clear_cpu_endinit
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_1,
+    );
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_1,
+    );
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_1,
+    );
     // wtdcpu0con0 write
     // wtdcpu0con0 read
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_0_1);
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_0_1,
+    );
 
     // wtdcpu0con0 for set_cpu_endinit
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_0);
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_0);
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_0);
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_0,
+    );
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_0,
+    );
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_0,
+    );
 
     // wtdcpu0con0 write
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_0_1);
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_0_1,
+    );
 
     // wtdcpu0con0 write
-    report.expect_read(SCU.wdtcpu0con0().addr(), 4, 0b1111111111111100_00000000111100_1_1);
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111111111111100_00000000111100_1_1,
+    );
 
     node.setup_pins(&Pins {
         tx: PIN_TX_0_0_P20_8,
@@ -241,7 +364,7 @@ fn test_setup_can0(){
     report.expect_read(SRC.can().can_can()[0].canxinty()[1].addr(), 4, 0b0);
 
     report.expect_read(CAN0.n()[0].iei().addr(), 4, 0b0);
-    
+
     node.setup_interrupt(&NodeInterruptConfig {
         interrupt_group: InterruptGroup::Rxf0n,
         interrupt: Interrupt::RxFifo0newMessage,

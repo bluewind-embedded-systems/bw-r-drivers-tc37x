@@ -6,14 +6,14 @@
 #[cfg(target_arch = "tricore")]
 bw_r_rt_example::entry!(main);
 
-use core::time::Duration;
-use embedded_hal::digital::StatefulOutputPin;
+use bw_r_driver_tc37x::cpu::asm::read_cpu_core_id;
 use bw_r_driver_tc37x::gpio::GpioExt;
 use bw_r_driver_tc37x::log::info;
 use bw_r_driver_tc37x::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
 use bw_r_driver_tc37x::{pac, ssw};
 use bw_r_rt_example::{isr::load_interrupt_table, post_init, pre_init};
-use bw_r_rt_example::asm_calls::read_cpu_core_id;
+use core::time::Duration;
+use embedded_hal::digital::StatefulOutputPin;
 
 pub enum State {
     NotChanged = 0,
