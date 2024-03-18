@@ -1,7 +1,7 @@
 // TODO Remove this once the code is stable
 #![allow(clippy::undocumented_unsafe_blocks)]
 
-use crate::cpu::asm::read_cpu_core_id;
+use crate::intrinsics::read_cpu_core_id;
 use core::mem::transmute;
 use tc37x as pac;
 
@@ -52,6 +52,7 @@ pub(crate) fn clear_cpu_endinit_inline() {
     let core_id = read_cpu_core_id();
     let con0 = unsafe { get_wdt_con0(core_id as u8) };
 
+    // FIXME con0 is read twice
     if unsafe { con0.read() }.lck().get() {
         let rel = unsafe { con0.read() }.rel().get();
         let data = pac::scu::Wdtcpu0Con0::default()
@@ -89,6 +90,7 @@ pub(crate) fn set_cpu_endinit_inline() {
     let core_id = read_cpu_core_id();
     let con0 = unsafe { get_wdt_con0(core_id as u8) };
 
+    // FIXME con0 is read twice
     if unsafe { con0.read() }.lck().get() {
         let rel = unsafe { con0.read() }.rel().get();
         let data = pac::scu::Wdtcpu0Con0::default()
@@ -116,6 +118,7 @@ pub(crate) fn set_cpu_endinit_inline() {
 
     unsafe { con0.write(data) };
 
+    // FIXME do we need to enable it only with tricore like clear_cpu_endinit_inline?
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
@@ -206,12 +209,16 @@ pub fn disable_cpu_watchdog() {
     set_cpu_endinit_inline();
 }
 
+#[cfg(feature = "tracing")]
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tracing::log::Report;
 
     #[test]
     fn test_get_wdt_con0() {
+        let report = Report::new();
+        report.expect_read(0xF003624C, 4, 0x00000000);
         let pwd = get_cpu_watchdog_password();
         assert_eq!(pwd, 0x3F);
     }

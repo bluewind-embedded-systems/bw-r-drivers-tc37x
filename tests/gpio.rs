@@ -244,6 +244,8 @@ fn toggle_stateful_output_pin_type_erasure_port_and_number() {
 
 #[test]
 fn type_erasure_with_into() {
+    let _report = Report::new();
+
     let port = P00.split();
     let output = port.p00_5.into_push_pull_output();
     let output = output.erase();
@@ -252,6 +254,8 @@ fn type_erasure_with_into() {
 
 #[test]
 fn pin_can_type_match_with_peripheral() {
+    let _report = Report::new();
+
     use self::mock_can::*;
 
     let port = P20.split();

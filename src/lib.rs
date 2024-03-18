@@ -140,11 +140,10 @@
 #[cfg(feature = "tracing")]
 pub mod tracing;
 
-pub(crate) mod common;
-
 pub mod can;
 pub mod cpu;
 pub mod gpio;
+mod intrinsics;
 pub mod log;
 pub mod scu;
 pub mod ssw;
