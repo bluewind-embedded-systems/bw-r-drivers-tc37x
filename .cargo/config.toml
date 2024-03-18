@@ -6,10 +6,3 @@ rustflags = [
 ]
 
 runner = ["tricore-probe"]
-
-[build]
-target = "tc162-htc-none"
-
-[env]
-DEFMT_LOG = "trace"
-RUST_LOG = "trace"
