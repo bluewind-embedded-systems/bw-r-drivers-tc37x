@@ -20,11 +20,11 @@ use crate::can::msg::ReadFrom;
 use crate::can::msg::RxMessage;
 use crate::cpu::Priority;
 use crate::log::info;
+use crate::pac::common::RegisterValue;
 use crate::scu::wdt_call;
 pub use config::NodeConfig;
 use core::marker::PhantomData;
 use core::mem::transmute;
-use tc37x_pac::hidden::RegValue;
 
 #[derive(PartialEq, Debug, Default)]
 pub enum FrameType {
@@ -812,7 +812,7 @@ pub enum PadDriver {
 }
 
 struct Port {
-    inner: tc37x_pac::port_00::Port00,
+    inner: tc37x::p00::P00,
 }
 
 #[derive(Clone, Copy)]
@@ -847,37 +847,36 @@ enum State {
 // TODO Is this needed? Can we get rid of it? Seems to be a duplicate of gpio
 impl Port {
     fn new(port: PortNumber) -> Self {
-        use tc37x_pac::port_00::Port00;
-        use tc37x_pac::*;
+        use tc37x::p00::P00;
+        use tc37x::*;
 
-        let inner: Port00 = match port {
-            PortNumber::_00 => PORT_00,
-            PortNumber::_01 => unsafe { transmute(PORT_01) },
-            PortNumber::_02 => unsafe { transmute(PORT_02) },
-            PortNumber::_10 => unsafe { transmute(PORT_10) },
-            PortNumber::_11 => unsafe { transmute(PORT_11) },
-            PortNumber::_12 => unsafe { transmute(PORT_12) },
-            PortNumber::_13 => unsafe { transmute(PORT_13) },
-            PortNumber::_14 => unsafe { transmute(PORT_14) },
-            PortNumber::_15 => unsafe { transmute(PORT_15) },
-            PortNumber::_20 => unsafe { transmute(PORT_20) },
-            PortNumber::_21 => unsafe { transmute(PORT_21) },
-            PortNumber::_22 => unsafe { transmute(PORT_22) },
-            PortNumber::_23 => unsafe { transmute(PORT_23) },
-            PortNumber::_32 => unsafe { transmute(PORT_32) },
-            PortNumber::_33 => unsafe { transmute(PORT_33) },
-            PortNumber::_34 => unsafe { transmute(PORT_34) },
-            PortNumber::_40 => unsafe { transmute(PORT_40) },
+        let inner: P00 = match port {
+            PortNumber::_00 => P00,
+            PortNumber::_01 => unsafe { transmute(P01) },
+            PortNumber::_02 => unsafe { transmute(P02) },
+            PortNumber::_10 => unsafe { transmute(P10) },
+            PortNumber::_11 => unsafe { transmute(P11) },
+            PortNumber::_12 => unsafe { transmute(P12) },
+            PortNumber::_13 => unsafe { transmute(P13) },
+            PortNumber::_14 => unsafe { transmute(P14) },
+            PortNumber::_15 => unsafe { transmute(P15) },
+            PortNumber::_20 => unsafe { transmute(P20) },
+            PortNumber::_21 => unsafe { transmute(P21) },
+            PortNumber::_22 => unsafe { transmute(P22) },
+            PortNumber::_23 => unsafe { transmute(P23) },
+            PortNumber::_32 => unsafe { transmute(P32) },
+            PortNumber::_33 => unsafe { transmute(P33) },
+            PortNumber::_34 => unsafe { transmute(P34) },
+            PortNumber::_40 => unsafe { transmute(P40) },
         };
         Self { inner }
     }
 
     fn set_pin_state(&self, index: u8, action: State) {
         unsafe {
-            self.inner.omr().init(|mut r| {
-                let data = r.data_mut_ref();
-                *data = (action as u32) << index;
-                r
+            self.inner.omr().init(|r| {
+                let v = (action as u32) << index;
+                r.set_raw(v)
             })
         };
     }
@@ -903,52 +902,59 @@ impl Port {
         let shift = (index & 0x3) * 8;
 
         // TODO This unsafe code could be made safe by comparing the address (usize) of the port if only self.inner.0 was public
-        let is_supervisor = unsafe { transmute::<_, usize>(self.inner) }
-            == unsafe { transmute(crate::pac::PORT_40) };
+        let is_supervisor =
+            unsafe { transmute::<_, usize>(self.inner) } == unsafe { transmute(crate::pac::P40) };
 
         if is_supervisor {
             wdt_call::call_without_cpu_endinit(|| unsafe {
-                self.inner.pdisc().modify(|mut r| {
-                    *r.data_mut_ref() &= !(1 << index);
-                    r
+                self.inner.pdisc().modify(|r| {
+                    // TODO Check if the new version is compatible with the previous one:
+                    // *r.data_mut_ref() &= !(1 << index);
+
+                    let mut v = r.get_raw();
+                    v &= !(1 << index);
+                    r.set_raw(v)
                 })
             });
         }
 
         // TODO Can we do this without transmute?
         // TODO Use change_pin_mode_port_pin from gpio module instead?
-        let iocr: crate::pac::Reg<crate::pac::port_00::Iocr0, crate::pac::RW> = {
+        let iocr: crate::pac::Reg<crate::pac::p00::Iocr0_SPEC, crate::pac::RW> = {
             let iocr0 = self.inner.iocr0();
             let addr: *mut u32 = unsafe { transmute(iocr0) };
             let addr = unsafe { addr.add(ioc_index as usize) };
             unsafe { transmute(addr) }
         };
 
+        let v: u32 = (mode.0) << shift;
+        let m: u32 = 0xFFu32 << shift;
+
+        // TODO This bypass tracing, so it is not catched by tests
+        #[cfg(target_arch = "tricore")]
         unsafe {
-            iocr.modify_atomic(|mut r| {
-                *r.data_mut_ref() = (mode.0) << shift;
-                *r.get_mask_mut_ref() = 0xFFu32 << shift;
-                r
-            })
-        };
+            core::arch::tricore::intrinsics::__ldmst(iocr.ptr(), v, m);
+        }
     }
 
     fn set_pin_pad_driver(&self, index: u8, driver: PadDriver) {
         let pdr_index = index / 8;
         let shift = (index & 0x7) * 4;
-        let pdr: crate::pac::Reg<crate::pac::port_00::Pdr0, crate::pac::RW> = {
+        let pdr: crate::pac::Reg<crate::pac::p00::Pdr0_SPEC, crate::pac::RW> = {
             let pdr0 = self.inner.pdr0();
             let addr: *mut u32 = unsafe { transmute(pdr0) };
             let addr = unsafe { addr.add(pdr_index as usize) };
             unsafe { transmute(addr) }
         };
 
-        wdt_call::call_without_cpu_endinit(|| unsafe {
-            pdr.modify_atomic(|mut r| {
-                *r.data_mut_ref() = (driver as u32) << shift;
-                *r.get_mask_mut_ref() = 0xF << shift;
-                r
-            })
+        wdt_call::call_without_cpu_endinit(|| {
+            let v: u32 = (driver as u32) << shift;
+            let m: u32 = 0xF << shift;
+            // TODO This bypass tracing, so it is not catched by tests
+            #[cfg(target_arch = "tricore")]
+            unsafe {
+                core::arch::tricore::intrinsics::__ldmst(pdr.ptr(), v, m);
+            }
         });
     }
 }

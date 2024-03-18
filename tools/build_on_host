@@ -3,9 +3,15 @@
 ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && cd ../ && pwd )"
 
 main() {
+  local example=$1
   cd "${ROOT_DIR}" || exit
   ./tools/set_build_profile host
-  cargo build --features=tracing
+  if [ -z $example ]
+  then
+    cargo build --features=tracing
+  else
+    cargo build --features=tracing --example=$example
+  fi
 }
 
-main
+main $1

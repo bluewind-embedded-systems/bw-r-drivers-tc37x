@@ -5,22 +5,29 @@
 #![cfg_attr(target_arch = "tricore", no_std)]
 
 #[cfg(target_arch = "tricore")]
-tc37x_rt::entry!(main);
+bw_r_rt_example::entry!(main);
 
+use bw_r_driver_tc37x::can::config::NodeInterruptConfig;
+use bw_r_driver_tc37x::can::pin_map::*;
+use bw_r_driver_tc37x::can::Frame;
+use bw_r_driver_tc37x::can::InterruptLine;
+use bw_r_driver_tc37x::can::MessageId;
+use bw_r_driver_tc37x::can::*;
+use bw_r_driver_tc37x::cpu::asm::enable_interrupts;
+use bw_r_driver_tc37x::cpu::asm::read_cpu_core_id;
+use bw_r_driver_tc37x::gpio::GpioExt;
+use bw_r_driver_tc37x::log::info;
+use bw_r_driver_tc37x::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
+use bw_r_driver_tc37x::{pac, ssw};
 use core::time::Duration;
 use embedded_can::ExtendedId;
-use tc37x_driver::can::config::NodeInterruptConfig;
-use tc37x_driver::can::pin_map::*;
-use tc37x_driver::can::*;
-use tc37x_driver::cpu::asm::enable_interrupts;
-use tc37x_driver::cpu::asm::read_cpu_core_id;
-use tc37x_driver::gpio::GpioExt;
-use tc37x_driver::log::info;
-use tc37x_driver::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
-use tc37x_driver::{pac, ssw};
-use tc37x_pac::can0::{Can0, N as Can0Node};
-// use tc37x_pac::can1::{Can1, N as Can1Node};
-use tc37x_rt::{isr::load_interrupt_table, post_init, pre_init};
+use tc37x::can0::{Can0, N as Can0Node};
+// use tc37x::can1::{Can1, N as Can1Node};
+use bw_r_driver_tc37x::can::msg::ReadFrom;
+use bw_r_driver_tc37x::cpu::Priority;
+use bw_r_rt_example::{isr::load_interrupt_table, post_init, pre_init};
+use core::sync::atomic::AtomicBool;
+use core::sync::atomic::Ordering;
 
 pub static CAN0_NODE0_NEW_MSG: AtomicBool = AtomicBool::new(false);
 
@@ -72,7 +79,7 @@ fn setup_can0() -> Option<Node<Can0Node, Can0, Node0, Configured>> {
 
     // TODO Can we use gpio for this?
     {
-        let gpio20 = pac::PORT_20.split();
+        let gpio20 = pac::P20.split();
         let _tx = gpio20.p20_8;
         let _rx = gpio20.p20_7;
         // node.setup_pins(tx, rx);
@@ -96,14 +103,14 @@ fn setup_can0() -> Option<Node<Can0Node, Can0, Node0, Configured>> {
 
 /// Initialize the STB pin for the CAN transceiver.
 fn init_can_stb_pin() {
-    let gpio20 = pac::PORT_20.split();
+    let gpio20 = pac::P20.split();
     let mut stb = gpio20.p20_6.into_push_pull_output();
     stb.set_low();
 }
 
 fn main() -> ! {
     #[cfg(not(target_arch = "tricore"))]
-    let _report = tc37x_driver::tracing::print::Report::new();
+    let _report = bw_r_driver_tc37x::tracing::print::Report::new();
 
     #[cfg(feature = "log_with_env_logger")]
     env_logger::init();
@@ -114,7 +121,7 @@ fn main() -> ! {
     enable_interrupts();
 
     info!("Setup notification LED");
-    let gpio00 = pac::PORT_00.split();
+    let gpio00 = pac::P00.split();
     let mut led1 = gpio00.p00_5.into_push_pull_output();
 
     info!("Initialize CAN transceiver");
@@ -180,7 +187,7 @@ fn main() -> ! {
 fn wait_nop(period: Duration) {
     #[cfg(target_arch = "tricore")]
     {
-        use tc37x_driver::util::wait_nop_cycles;
+        use bw_r_driver_tc37x::util::wait_nop_cycles;
         let ns = period.as_nanos() as u32;
         let n_cycles = ns / 920;
         wait_nop_cycles(n_cycles);
@@ -209,33 +216,35 @@ fn post_init_fn() {
     load_interrupt_table();
 }
 
+#[cfg(target_arch = "tricore")]
 #[allow(unused_variables)]
 #[panic_handler]
 fn panic(panic: &core::panic::PanicInfo<'_>) -> ! {
+    #[cfg(feature = "log_with_defmt")]
     defmt::error!("Panic! {}", defmt::Display2Format(panic));
     #[allow(clippy::empty_loop)]
     loop {}
 }
 
-use core::arch::asm;
-use core::sync::atomic::{AtomicBool, Ordering};
-use critical_section::RawRestoreState;
-use tc37x_driver::can::msg::ReadFrom;
-use tc37x_driver::cpu::Priority;
+#[cfg(feature = "log_with_defmt")]
+mod critical_section_impl {
+    use core::arch::asm;
+    use critical_section::RawRestoreState;
 
-struct Section;
+    struct Section;
 
-critical_section::set_impl!(Section);
+    critical_section::set_impl!(Section);
 
-unsafe impl critical_section::Impl for Section {
-    unsafe fn acquire() -> RawRestoreState {
-        unsafe { asm!("disable") };
-        true
-    }
+    unsafe impl critical_section::Impl for Section {
+        unsafe fn acquire() -> RawRestoreState {
+            unsafe { asm!("disable") };
+            true
+        }
 
-    unsafe fn release(token: RawRestoreState) {
-        if token {
-            unsafe { asm!("enable") }
+        unsafe fn release(token: RawRestoreState) {
+            if token {
+                unsafe { asm!("enable") }
+            }
         }
     }
 }

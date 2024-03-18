@@ -4,7 +4,7 @@
 // Note: this module try to mimic the behavior of the pac module, for message SRAM access
 // Note: transmute is used to create a Reg from a pointer, because the pac module does not support creating Reg from pointers
 
-use crate::pac::common::{hidden::RegValue, Reg, RegisterField, RegisterFieldBool, RW};
+use crate::common::{hidden::RegValue, Reg, RegisterField, RegisterFieldBool, RW};
 use core::mem::transmute;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -38,6 +38,7 @@ impl RxMsg {
 
 #[derive(Copy, Clone, Eq, PartialEq, Default)]
 pub struct R0(u32, u32);
+
 impl RegValue for R0 {
     type DataType = u32;
     #[inline(always)]
@@ -57,6 +58,7 @@ impl RegValue for R0 {
         Self(data, write_mask)
     }
 }
+
 impl R0 {
     #[inline(always)]
     #[allow(unused)]

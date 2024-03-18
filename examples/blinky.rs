@@ -4,16 +4,16 @@
 #![cfg_attr(target_arch = "tricore", no_std)]
 
 #[cfg(target_arch = "tricore")]
-tc37x_rt::entry!(main);
+bw_r_rt_example::entry!(main);
 
+use bw_r_driver_tc37x::cpu::asm::read_cpu_core_id;
+use bw_r_driver_tc37x::gpio::GpioExt;
+use bw_r_driver_tc37x::log::info;
+use bw_r_driver_tc37x::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
+use bw_r_driver_tc37x::{pac, ssw};
+use bw_r_rt_example::{isr::load_interrupt_table, post_init, pre_init};
 use core::time::Duration;
 use embedded_hal::digital::StatefulOutputPin;
-use tc37x_driver::cpu::asm::read_cpu_core_id;
-use tc37x_driver::gpio::GpioExt;
-use tc37x_driver::log::info;
-use tc37x_driver::scu::wdt::{disable_cpu_watchdog, disable_safety_watchdog};
-use tc37x_driver::{pac, ssw};
-use tc37x_rt::{isr::load_interrupt_table, post_init, pre_init};
 
 pub enum State {
     NotChanged = 0,
@@ -24,12 +24,12 @@ pub enum State {
 
 fn main() -> ! {
     #[cfg(not(target_arch = "tricore"))]
-    let _report = tc37x_driver::tracing::print::Report::new();
+    let _report = bw_r_driver_tc37x::tracing::print::Report::new();
 
     #[cfg(feature = "log_with_env_logger")]
     env_logger::init();
 
-    let gpio00 = pac::PORT_00.split();
+    let gpio00 = pac::P00.split();
 
     let mut led1 = gpio00.p00_5.into_push_pull_output();
     let mut led2 = gpio00.p00_6.into_push_pull_output();
@@ -84,7 +84,7 @@ fn main() -> ! {
 fn wait_nop(period: Duration) {
     #[cfg(target_arch = "tricore")]
     {
-        use tc37x_driver::util::wait_nop_cycles;
+        use bw_r_driver_tc37x::util::wait_nop_cycles;
         let ns = period.as_nanos() as u32;
         let n_cycles = ns / 1412;
         wait_nop_cycles(n_cycles);
@@ -113,6 +113,7 @@ fn post_init_fn() {
     load_interrupt_table();
 }
 
+#[cfg(target_arch = "tricore")]
 #[allow(unused_variables)]
 #[panic_handler]
 fn panic(panic: &core::panic::PanicInfo<'_>) -> ! {

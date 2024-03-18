@@ -1,11 +1,11 @@
 #![allow(clippy::expect_used)]
 
+use super::TraceGuard;
 use crate::tracing::{LoadModifyStoreEntry, ReadEntry, ReportEntry, WriteEntry};
 use std::any::Any;
 use std::collections::{HashMap, VecDeque};
 use std::fmt::{Debug, Display, Formatter, Write};
 use std::sync::{Arc, Mutex, MutexGuard};
-use tc37x_pac::tracing::TraceGuard;
 
 struct ReadFifoEntry {
     addr: usize,
@@ -82,7 +82,7 @@ impl Reporter {
     }
 }
 
-impl tc37x_pac::tracing::Reporter for Reporter {
+impl super::Reporter for Reporter {
     fn read_volatile(&self, addr: usize, len: usize) -> u64 {
         let entry = self
             .shared_data()

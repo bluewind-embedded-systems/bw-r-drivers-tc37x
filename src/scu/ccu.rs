@@ -7,15 +7,14 @@
 
 use super::wdt;
 use crate::log::debug;
-use tc37x_pac::hidden::RegValue;
-use tc37x_pac::scu;
-use tc37x_pac::scu::ccucon0::{Bbbdiv, Fsi2Div, Fsidiv, Gtmdiv, Lpdiv, Spbdiv, Sridiv, Stmdiv};
-use tc37x_pac::scu::ccucon1::{
+use tc37x::scu;
+use tc37x::scu::ccucon0::{Bbbdiv, Fsi2Div, Fsidiv, Gtmdiv, Lpdiv, Spbdiv, Sridiv, Stmdiv};
+use tc37x::scu::ccucon1::{
     Clkselmcan, Clkselmsc, Clkselqspi, I2Cdiv, Mcandiv, Mscdiv, Pll1Divdis, Qspidiv,
 };
-use tc37x_pac::scu::ccucon2::{Asclinfdiv, Asclinsdiv, Clkselasclins};
-use tc37x_pac::scu::ccucon5::{Gethdiv, Mcanhdiv};
-use tc37x_pac::{RegisterValue, SCU, SMU};
+use tc37x::scu::ccucon2::{Asclinfdiv, Asclinsdiv, Clkselasclins};
+use tc37x::scu::ccucon5::{Gethdiv, Mcanhdiv};
+use tc37x::{RegisterValue, SCU, SMU};
 
 const SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT: usize = 0x3000;
 const OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT: usize = 0x493E0;
@@ -42,28 +41,28 @@ pub(crate) fn init(config: &Config) -> Result<(), InitError> {
 fn wait_ccucon0_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
         // SAFETY: each bit of CCUCON0 is at least R, except for bit UP (W, if read always return 0)
-        unsafe { SCU.ccucon0().read() }.lck().get() == scu::ccucon0::Lck::CONST_11
+        unsafe { SCU.ccucon0().read() }.lck().get().0 == 1
     })
 }
 
 fn wait_ccucon1_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
         // SAFETY: each bit of CCUCON1 is at least R
-        unsafe { SCU.ccucon1().read() }.lck().get() == scu::ccucon1::Lck::CONST_11
+        unsafe { SCU.ccucon1().read() }.lck().get().0 == 1
     })
 }
 
 fn wait_ccucon2_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
         // SAFETY: each bit of CCUCON2 is at least R
-        unsafe { SCU.ccucon2().read() }.lck().get() == scu::ccucon2::Lck::CONST_11
+        unsafe { SCU.ccucon2().read() }.lck().get().0 == 1
     })
 }
 
 fn wait_ccucon5_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
         // SAFETY: each bit of CCUCON5 is at least R, except for bit UP (W, if read always return 0)
-        unsafe { SCU.ccucon5().read() }.lck().get() == scu::ccucon5::Lck::CONST_11
+        unsafe { SCU.ccucon5().read() }.lck().get().0 == 1
     })
 }
 
@@ -74,27 +73,33 @@ fn wait_divider() -> Result<(), ()> {
         // SAFETY: each bit of PERPLLSTAT is at least R
         let per = unsafe { SCU.perpllstat().read() };
         let sys_k2 = sys.k2rdy().get();
-        let per_k2 = sys.k2rdy().get();
+        let per_k2 = per.k2rdy().get();
         let per_k3 = per.k3rdy().get();
-        sys_k2.0 == 0 || per_k2.0 == 0 || per_k3.0 == 0
+        sys_k2.0 == 0u8 || per_k2.0 == 0u8 || per_k3.0 == 0u8
     })
 }
 
-fn set_pll_power(
-    syspllpower: scu::syspllcon0::Pllpwd,
-    perpllpower: scu::perpllcon0::Pllpwd,
-) -> Result<(), ()> {
+fn set_pll_power(syspllpower: bool, perpllpower: bool) -> Result<(), ()> {
+    let syspllpower = u8::from(syspllpower);
+    let perpllpower = u8::from(perpllpower);
+
     // SAFETY: PLLPWD is a RW bit, syspllpower takes only values in range [0, 1]
-    unsafe { SCU.syspllcon0().modify(|r| r.pllpwd().set(syspllpower)) };
+    unsafe {
+        SCU.syspllcon0()
+            .modify(|r| r.pllpwd().set(syspllpower.into()))
+    };
     // SAFETY: PLLPWD is a RW bit, syspllpower takes only values in range [0, 1]
-    unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(perpllpower)) };
+    unsafe {
+        SCU.perpllcon0()
+            .modify(|r| r.pllpwd().set(perpllpower.into()))
+    };
 
     wait_cond(SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT, || {
         // SAFETY: each bit of SYSPLLSTAT is at least R
         let sys = unsafe { SCU.syspllstat().read() };
         // SAFETY: each bit of PERPLLSTAT is at least R
         let per = unsafe { SCU.perpllstat().read() };
-        (syspllpower.0) == (sys.pwdstat().get().0) || (perpllpower.0) == (per.pwdstat().get().0)
+        (syspllpower) == (sys.pwdstat().get().0) || (perpllpower) == (per.pwdstat().get().0)
     })
 }
 
@@ -109,12 +114,8 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     // TODO Explain this
     // SAFETY: CLKSEL is RWH and takes values in range [0, 3], UP is a W bit. Written respectively with 0 and 1
     unsafe {
-        SCU.ccucon0().modify(|r| {
-            r.clksel()
-                .set(scu::ccucon0::Clksel(CLKSEL_BACKUP))
-                .up()
-                .set(scu::ccucon0::Up::CONST_11)
-        })
+        SCU.ccucon0()
+            .modify(|r| r.clksel().set(CLKSEL_BACKUP.into()).up().set(1u8.into()))
     };
     wait_ccucon0_lock()?;
 
@@ -124,14 +125,18 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         // SAFETY: CFGLCK and PERLCK are RW, bits 16:31 are written with 0
         unsafe { SMU.keys().init(|r| r.cfglck().set(0xBC)) };
 
-        // FIXME After pac update, this is a BW patch on pac
+        // unsafe { SMU.ag8cfj()[0].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        // unsafe { SMU.ag8cfj()[1].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        // unsafe { SMU.ag8cfj()[2].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+
+        // TODO Check if this is correct, see above the previous version
         // Clear CF0, CF2, CF3 and CF4
         // SAFETY: Each bit of AgiCFj is RW
-        unsafe { SMU.ag8cfj()[0].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        unsafe { SMU.agicfj()[8].agicfj_()[0].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
         // SAFETY: Each bit of AgiCFj is RW
-        unsafe { SMU.ag8cfj()[1].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        unsafe { SMU.agicfj()[8].agicfj_()[1].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
         // SAFETY: Each bit of AgiCFj is RW
-        unsafe { SMU.ag8cfj()[2].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
+        unsafe { SMU.agicfj()[8].agicfj_()[2].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
 
         // Disable SMU_core configuration
         // SAFETY: CFGLCK and PERLCK are RW, bits 16:31 are written with 0
@@ -141,10 +146,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     // Power down the both the PLLs before configuring registers
     // Both the PLLs are powered down to be sure for asynchronous PLL registers
     // update cause no glitches.
-    set_pll_power(
-        scu::syspllcon0::Pllpwd::CONST_00,
-        scu::perpllcon0::Pllpwd::CONST_00,
-    )?;
+    set_pll_power(false, false)?;
 
     let plls_params = &config.pll_initial_step.plls_parameters;
 
@@ -165,7 +167,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         // MODE is written with 0
         unsafe {
             SCU.osccon()
-                .modify(|r| r.mode().set(scu::osccon::Mode(mode)).oscval().set(oscval))
+                .modify(|r| r.mode().set(mode.into()).oscval().set(oscval))
         };
     }
 
@@ -180,9 +182,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
                 .ndiv()
                 .set(plls_params.sys_pll.n_divider)
                 .insel()
-                .set(scu::syspllcon0::Insel(
-                    plls_params.pll_input_clock_selection as u8,
-                ))
+                .set((plls_params.pll_input_clock_selection as u8).into())
         })
     }
 
@@ -201,10 +201,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         })
     }
 
-    set_pll_power(
-        scu::syspllcon0::Pllpwd::CONST_11,
-        scu::perpllcon0::Pllpwd::CONST_11,
-    )?;
+    set_pll_power(true, true)?;
 
     wait_divider()?;
 
@@ -256,18 +253,18 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     {
         // The SMU_core configuration is only possible if KEYS.CFGLCK (bits 0:7) is set to 0xBC
         // SAFETY: CFGLCK and PERLCK are RW, bits 16:31 are written with 0
-        unsafe { SMU.keys().write(RegValue::new(0xBC, 0)) };
+        unsafe { SMU.keys().write(RegisterValue::new(0xBC)) };
         // SMU Alarm Status Clear Enable command (SMU_ASCE(ARG), ARG shall be set to 0)
         // SAFETY: CMD and ARG are W, bits 8:31 are written with 0
-        unsafe { SMU.cmd().write(RegValue::new(0x00000005, 0)) };
+        unsafe { SMU.cmd().write(RegisterValue::new(0x00000005)) };
         // Set SF0, SF2, SF3 and SF4
         // SAFETY: Each bit of AGi is RWh
         unsafe {
-            SMU.agi()[8].write(RegValue::new(0x1D, 0));
+            SMU.agi()[8].write(RegisterValue::new(0x1D));
         }
         // Disable SMU_core configuration
         // SAFETY: CFGLCK and PERLCK are RW, bits 16:31 are written with 0
-        unsafe { SMU.keys().write(RegValue::new(0, 0)) };
+        unsafe { SMU.keys().write(RegisterValue::new(0)) };
     }
 
     {
@@ -352,22 +349,22 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         // Each bitfield in the following instructions is RW, and takes specific value ranges that are guaranteed by the types used
         let cuccon0 = unsafe { SCU.ccucon0().read() }
             .stmdiv()
-            .set(config.clock_distribution.ccucon0.stm_div)
+            .set(config.clock_distribution.ccucon0.stm_div.into())
             .gtmdiv()
-            .set(config.clock_distribution.ccucon0.gtm_div)
+            .set(config.clock_distribution.ccucon0.gtm_div.into())
             .sridiv()
-            .set(config.clock_distribution.ccucon0.sri_div)
+            .set(config.clock_distribution.ccucon0.sri_div.into())
             // TODO: check this
             .lpdiv()
-            .set(config.clock_distribution.ccucon0.lp_div)
+            .set(config.clock_distribution.ccucon0.lp_div.into())
             .spbdiv()
-            .set(config.clock_distribution.ccucon0.spb_div)
+            .set(config.clock_distribution.ccucon0.spb_div.into())
             .bbbdiv()
-            .set(config.clock_distribution.ccucon0.bbb_div)
+            .set(config.clock_distribution.ccucon0.bbb_div.into())
             .fsidiv()
-            .set(config.clock_distribution.ccucon0.fsi_div)
+            .set(config.clock_distribution.ccucon0.fsi_div.into())
             .fsi2div()
-            .set(config.clock_distribution.ccucon0.fsi2_div);
+            .set(config.clock_distribution.ccucon0.fsi2_div.into());
 
         wait_ccucon0_lock()?;
 
@@ -377,46 +374,40 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
 
         wait_ccucon0_lock()?;
     }
+
     // CCUCON1 config
     {
         // SAFETY: each bit of CCUCON1 is at least R
         let mut ccucon1 = unsafe { SCU.ccucon1().read() };
-        if ccucon1.clkselmcan().get() !=  scu::ccucon1::Clkselmcan::CONST_00 /*ccucon1::Clkselmcan::CLKSELMCAN_STOPPED*/
-            || ccucon1.clkselmsc().get() != scu::ccucon1::Clkselmsc::CONST_11 /*ccucon1::Clkselmsc::CLKSELMSC_STOPPED*/
-            || ccucon1.clkselqspi().get() != scu::ccucon1::Clkselqspi::CONST_22
-        /*ccucon1::Clkselqspi::CLKSELQSPI_STOPPED*/
+        if ccucon1.clkselmcan().get().0 != scu::ccucon1::Clkselmcan::CONST_00.0
+            || ccucon1.clkselmsc().get().0 != scu::ccucon1::Clkselmsc::CONST_11.0
+            || ccucon1.clkselqspi().get().0 != scu::ccucon1::Clkselqspi::CONST_22.0
         {
             ccucon1 = ccucon1
                 .mcandiv()
-                .set(config.clock_distribution.ccucon1.mcan_div)
+                .set(config.clock_distribution.ccucon1.mcan_div.into())
                 .clkselmcan()
-                .set(config.clock_distribution.ccucon1.clksel_mcan)
+                .set(config.clock_distribution.ccucon1.clksel_mcan.into())
                 .pll1divdis()
-                .set(config.clock_distribution.ccucon1.pll1_div_dis)
+                .set(config.clock_distribution.ccucon1.pll1_div_dis.into())
                 .i2cdiv()
-                .set(config.clock_distribution.ccucon1.i2c_div)
+                .set(config.clock_distribution.ccucon1.i2c_div.into())
                 .mscdiv()
-                .set(config.clock_distribution.ccucon1.msc_div)
+                .set(config.clock_distribution.ccucon1.msc_div.into())
                 .clkselmsc()
-                .set(config.clock_distribution.ccucon1.clksel_msc)
+                .set(config.clock_distribution.ccucon1.clksel_msc.into())
                 .qspidiv()
-                .set(config.clock_distribution.ccucon1.qspi_div)
+                .set(config.clock_distribution.ccucon1.qspi_div.into())
                 .clkselqspi()
-                .set(config.clock_distribution.ccucon1.clksel_qspi);
+                .set(config.clock_distribution.ccucon1.clksel_qspi.into());
 
             ccucon1 = ccucon1
                 .clkselmcan()
-                .set(
-                    scu::ccucon1::Clkselmcan::CONST_00, /*ccucon1::Clkselmcan::CLKSELMCAN_STOPPED*/
-                )
+                .set(scu::ccucon1::Clkselmcan::CONST_00)
                 .clkselmsc()
-                .set(
-                    scu::ccucon1::Clkselmsc::CONST_11, /*ccucon1::Clkselmsc::CLKSELMSC_STOPPED*/
-                )
+                .set(scu::ccucon1::Clkselmsc::CONST_11)
                 .clkselqspi()
-                .set(
-                    scu::ccucon1::Clkselqspi::CONST_22, /*ccucon1::Clkselqspi::CLKSELQSPI_STOPPED*/
-                );
+                .set(scu::ccucon1::Clkselqspi::CONST_22);
 
             wait_ccucon1_lock()?;
 
@@ -431,21 +422,21 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         // SAFETY: each bit of CCUCON1 is at least R
         ccucon1 = unsafe { SCU.ccucon1().read() }
             .mcandiv()
-            .set(config.clock_distribution.ccucon1.mcan_div)
+            .set(config.clock_distribution.ccucon1.mcan_div.into())
             .clkselmcan()
-            .set(config.clock_distribution.ccucon1.clksel_mcan)
+            .set(config.clock_distribution.ccucon1.clksel_mcan.into())
             .pll1divdis()
-            .set(config.clock_distribution.ccucon1.pll1_div_dis)
+            .set(config.clock_distribution.ccucon1.pll1_div_dis.into())
             .i2cdiv()
-            .set(config.clock_distribution.ccucon1.i2c_div)
+            .set(config.clock_distribution.ccucon1.i2c_div.into())
             .mscdiv()
-            .set(config.clock_distribution.ccucon1.msc_div)
+            .set(config.clock_distribution.ccucon1.msc_div.into())
             .clkselmsc()
-            .set(config.clock_distribution.ccucon1.clksel_msc)
+            .set(config.clock_distribution.ccucon1.clksel_msc.into())
             .qspidiv()
-            .set(config.clock_distribution.ccucon1.qspi_div)
+            .set(config.clock_distribution.ccucon1.qspi_div.into())
             .clkselqspi()
-            .set(config.clock_distribution.ccucon1.clksel_qspi);
+            .set(config.clock_distribution.ccucon1.clksel_qspi.into());
 
         wait_ccucon1_lock()?;
 
@@ -461,21 +452,21 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     {
         // SAFETY: each bit of CCUCON2 is at least R
         let mut ccucon2 = unsafe { SCU.ccucon2().read() };
-        if ccucon2.clkselasclins().get() != scu::ccucon2::Clkselasclins::CONST_00
-        /*scu::Ccucon2::Clkselasclins::CLKSELASCLINS_STOPPED*/
-        {
+
+        if ccucon2.clkselasclins().get().0 != scu::ccucon2::Clkselasclins::CONST_00.0 {
+            // TODO Why is this read again?
             // SAFETY: each bit of CCUCON2 is at least R
             ccucon2 = unsafe { SCU.ccucon2().read() }
                 .asclinfdiv()
-                .set(config.clock_distribution.ccucon2.asclinf_div)
+                .set(config.clock_distribution.ccucon2.asclinf_div.into())
                 .asclinsdiv()
-                .set(config.clock_distribution.ccucon2.asclins_div)
+                .set(config.clock_distribution.ccucon2.asclins_div.into())
                 .clkselasclins()
-                .set(config.clock_distribution.ccucon2.clksel_asclins);
+                .set(config.clock_distribution.ccucon2.clksel_asclins.into());
 
-            ccucon2 = ccucon2.clkselasclins().set(
-                scu::ccucon2::Clkselasclins::CONST_00, /*scu::ccucon2::Clkselasclins::CLKSELASCLINS_STOPPED*/
-            );
+            ccucon2 = ccucon2
+                .clkselasclins()
+                .set(scu::ccucon2::Clkselasclins::CONST_00);
 
             wait_ccucon2_lock()?;
 
@@ -490,11 +481,11 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         // SAFETY: each bit of CCUCON2 is at least R
         ccucon2 = unsafe { SCU.ccucon2().read() }
             .asclinfdiv()
-            .set(config.clock_distribution.ccucon2.asclinf_div)
+            .set(config.clock_distribution.ccucon2.asclinf_div.into())
             .asclinsdiv()
-            .set(config.clock_distribution.ccucon2.asclins_div)
+            .set(config.clock_distribution.ccucon2.asclins_div.into())
             .clkselasclins()
-            .set(config.clock_distribution.ccucon2.clksel_asclins);
+            .set(config.clock_distribution.ccucon2.clksel_asclins.into());
 
         wait_ccucon2_lock()?;
 
@@ -511,9 +502,9 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         // SAFETY: each bit of CCUCON5 is at least R, except for bit UP (W, if read always return 0)
         let mut ccucon5 = unsafe { SCU.ccucon5().read() }
             .gethdiv()
-            .set(config.clock_distribution.ccucon5.geth_div)
+            .set(config.clock_distribution.ccucon5.geth_div.into())
             .mcanhdiv()
-            .set(config.clock_distribution.ccucon5.mcanh_div);
+            .set(config.clock_distribution.ccucon5.mcanh_div.into());
 
         ccucon5 = ccucon5.up().set(scu::ccucon5::Up::CONST_11);
 
@@ -696,37 +687,37 @@ pub struct PllStepConfig {
 }
 
 pub struct Con0RegConfig {
-    pub stm_div: Stmdiv,
-    pub gtm_div: Gtmdiv,
-    pub sri_div: Sridiv,
-    pub lp_div: Lpdiv,
-    pub spb_div: Spbdiv,
-    pub bbb_div: Bbbdiv,
-    pub fsi_div: Fsidiv,
-    pub fsi2_div: Fsi2Div,
+    pub stm_div: u8,
+    pub gtm_div: u8,
+    pub sri_div: u8,
+    pub lp_div: u8,
+    pub spb_div: u8,
+    pub bbb_div: u8,
+    pub fsi_div: u8,
+    pub fsi2_div: u8,
 }
 
 pub struct Con1RegConfig {
-    pub mcan_div: Mcandiv,
-    pub clksel_mcan: Clkselmcan,
-    pub pll1_div_dis: Pll1Divdis,
-    pub i2c_div: I2Cdiv,
-    pub msc_div: Mscdiv,
-    pub clksel_msc: Clkselmsc,
-    pub qspi_div: Qspidiv,
-    pub clksel_qspi: Clkselqspi,
+    pub mcan_div: u8,
+    pub clksel_mcan: u8,
+    pub pll1_div_dis: u8,
+    pub i2c_div: u8,
+    pub msc_div: u8,
+    pub clksel_msc: u8,
+    pub qspi_div: u8,
+    pub clksel_qspi: u8,
 }
 
 pub struct Con2RegConfig {
-    pub asclinf_div: Asclinfdiv,
-    pub asclins_div: Asclinsdiv,
-    pub clksel_asclins: Clkselasclins,
+    pub asclinf_div: u8,
+    pub asclins_div: u8,
+    pub clksel_asclins: u8,
 }
 
 pub struct Con5RegConfig {
-    pub geth_div: Gethdiv,
-    pub mcanh_div: Mcanhdiv,
-    pub adas_div: Mcanhdiv, // TODO: missing adas in pac
+    pub geth_div: u8,
+    pub mcanh_div: u8,
+    pub adas_div: u8, // TODO: missing adas in pac
 }
 
 pub struct Con6RegConfig {
@@ -824,34 +815,34 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
     sys_pll_throttle: &DEFAULT_PLL_CONFIG_STEPS,
     clock_distribution: ClockDistributionConfig {
         ccucon0: Con0RegConfig {
-            stm_div: Stmdiv::CONST_33,
-            gtm_div: Gtmdiv::CONST_11,
-            sri_div: Sridiv::CONST_11,
-            lp_div: Lpdiv::CONST_00,
-            spb_div: Spbdiv::CONST_33,
-            bbb_div: Bbbdiv::CONST_22,
-            fsi_div: Fsidiv::CONST_33,
-            fsi2_div: Fsi2Div::CONST_11,
+            stm_div: Stmdiv::CONST_33.0,
+            gtm_div: Gtmdiv::CONST_11.0,
+            sri_div: Sridiv::CONST_11.0,
+            lp_div: Lpdiv::CONST_00.0,
+            spb_div: Spbdiv::CONST_33.0,
+            bbb_div: Bbbdiv::CONST_22.0,
+            fsi_div: Fsidiv::CONST_33.0,
+            fsi2_div: Fsi2Div::CONST_11.0,
         },
         ccucon1: Con1RegConfig {
-            mcan_div: Mcandiv::CONST_22,
-            clksel_mcan: Clkselmcan::CONST_11,
-            pll1_div_dis: Pll1Divdis::CONST_00,
-            i2c_div: I2Cdiv::CONST_22,
-            msc_div: Mscdiv::CONST_11,
-            clksel_msc: Clkselmsc::CONST_11,
-            qspi_div: Qspidiv::CONST_11,
-            clksel_qspi: Clkselqspi::CONST_22,
+            mcan_div: Mcandiv::CONST_22.0,
+            clksel_mcan: Clkselmcan::CONST_11.0,
+            pll1_div_dis: Pll1Divdis::CONST_00.0,
+            i2c_div: I2Cdiv::CONST_22.0,
+            msc_div: Mscdiv::CONST_11.0,
+            clksel_msc: Clkselmsc::CONST_11.0,
+            qspi_div: Qspidiv::CONST_11.0,
+            clksel_qspi: Clkselqspi::CONST_22.0,
         },
         ccucon2: Con2RegConfig {
-            asclinf_div: Asclinfdiv::CONST_11,
-            asclins_div: Asclinsdiv::CONST_22,
-            clksel_asclins: Clkselasclins::CONST_11,
+            asclinf_div: Asclinfdiv::CONST_11.0,
+            asclins_div: Asclinsdiv::CONST_22.0,
+            clksel_asclins: Clkselasclins::CONST_11.0,
         },
         ccucon5: Con5RegConfig {
-            geth_div: Gethdiv::CONST_22,
-            mcanh_div: Mcanhdiv::CONST_33,
-            adas_div: Mcanhdiv::CONST_00,
+            geth_div: Gethdiv::CONST_22.0,
+            mcanh_div: Mcanhdiv::CONST_33.0,
+            adas_div: Mcanhdiv::CONST_00.0,
         },
         ccucon6: Con6RegConfig { cpu0_div: 0u8 },
         ccucon7: Con7RegConfig { cpu1_div: 0u8 },
@@ -868,9 +859,10 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
 };
 
 pub(crate) fn get_mcan_frequency() -> u32 {
-    const CLKSELMCAN_USEMCANI: scu::ccucon1::Clkselmcan = scu::ccucon1::Clkselmcan::CONST_11;
-    const CLKSELMCAN_USEOSCILLATOR: scu::ccucon1::Clkselmcan = scu::ccucon1::Clkselmcan::CONST_22;
-    const MCANDIV_STOPPED: scu::ccucon1::Mcandiv = scu::ccucon1::Mcandiv::CONST_00;
+    //TODO create enum!
+    const CLKSELMCAN_USEMCANI: u8 = 1;
+    const CLKSELMCAN_USEOSCILLATOR: u8 = 2;
+    const MCANDIV_STOPPED: u8 = 0;
 
     // SAFETY: each bit of CCUCON1 is at least R
     let ccucon1 = unsafe { SCU.ccucon1().read() };
@@ -879,11 +871,11 @@ pub(crate) fn get_mcan_frequency() -> u32 {
 
     //info!("clkselmcan: {}, mcandiv: {}", clkselmcan, mcandiv);
 
-    match clkselmcan {
+    match clkselmcan.0 {
         CLKSELMCAN_USEMCANI => {
             let source = get_source_frequency(1);
             debug!("source: {}", source);
-            if mcandiv == MCANDIV_STOPPED {
+            if mcandiv.0 == MCANDIV_STOPPED {
                 source
             } else {
                 let div: u64 = mcandiv.into();
@@ -897,14 +889,14 @@ pub(crate) fn get_mcan_frequency() -> u32 {
 }
 
 fn get_source_frequency(source: u32) -> u32 {
-    const CLKSEL_BACKUP: scu::ccucon0::Clksel = scu::ccucon0::Clksel::CONST_00;
-    const CLKSEL_PLL: scu::ccucon0::Clksel = scu::ccucon0::Clksel::CONST_11;
+    const CLKSEL_BACKUP: u8 = 0; // TODO create enum
+    const CLKSEL_PLL: u8 = 1;
 
     // SAFETY: each bit of CCUCON0 is at least R
     let clksel = unsafe { SCU.ccucon0().read() }.clksel().get();
     //info!("clksel: {}", clksel);
 
-    match clksel {
+    match clksel.0 {
         CLKSEL_BACKUP => get_evr_frequency(),
         CLKSEL_PLL => match source {
             0 => get_pll_frequency(),
@@ -912,7 +904,7 @@ fn get_source_frequency(source: u32) -> u32 {
                 let source_freq = get_per_pll_frequency1();
                 // SAFETY: each bit of CCUCON1 is at least R
                 let ccucon1 = unsafe { SCU.ccucon1().read() };
-                if ccucon1.pll1divdis().get() == scu::ccucon1::Pll1Divdis::CONST_11 {
+                if ccucon1.pll1divdis().get().0 == 1 {
                     source_freq
                 } else {
                     source_freq / 2

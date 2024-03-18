@@ -5,7 +5,6 @@ use crate::can::NodeId;
 use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
 use core::marker::PhantomData;
-use pac::hidden::CastFrom;
 
 pub trait ModuleId {}
 
@@ -85,17 +84,15 @@ macro_rules! impl_can_module {
                 clock_select: ClockSelect,
                 clock_source: ClockSource,
             ) -> Result<(), ()> {
-                use $($m)::+::mcr::{Ccce, Ci, Clksel0, Clksel1, Clksel2, Clksel3};
-
                 // SAFETY: Entire MCR register is readable
                 let mcr = unsafe { $module_reg.mcr().read() };
 
                 // Enable CCCE and CI
                 let mcr = mcr
                     .ccce()
-                    .set($($m)::+::mcr::Ccce::CONST_11)
+                    .set(1u8.into())
                     .ci()
-                    .set($($m)::+::mcr::Ci::CONST_11);
+                    .set(1u8.into());
 
                 // SAFETY: CCCE and CI are RW bits, bits 23:8 are written with 0
                 unsafe { $module_reg.mcr().write(mcr) }
@@ -104,10 +101,10 @@ macro_rules! impl_can_module {
                 let clock_source: u8 = clock_source.into();
 
                 let mcr = match clock_select.0 {
-                    0 => mcr.clksel0().set(Clksel0::cast_from(clock_source.into())),
-                    1 => mcr.clksel1().set(Clksel1::cast_from(clock_source.into())),
-                    2 => mcr.clksel2().set(Clksel2::cast_from(clock_source.into())),
-                    3 => mcr.clksel3().set(Clksel3::cast_from(clock_source.into())),
+                    0 => mcr.clksel0().set(clock_source.into()),
+                    1 => mcr.clksel1().set(clock_source.into()),
+                    2 => mcr.clksel2().set(clock_source.into()),
+                    3 => mcr.clksel3().set(clock_source.into()),
                     _ => unreachable!(),
                 };
 
@@ -115,7 +112,7 @@ macro_rules! impl_can_module {
                 unsafe { $module_reg.mcr().write(mcr) }
 
                 // Disable CCCE and CI
-                let mcr = mcr.ccce().set(Ccce::CONST_00).ci().set(Ci::CONST_00);
+                let mcr = mcr.ccce().set(0u8.into()).ci().set(0u8.into());
                 // SAFETY: CCCE and CI are RW bits, bits 23:8 are written with 0
                 unsafe { $module_reg.mcr().write(mcr) }
 
@@ -147,7 +144,9 @@ macro_rules! impl_can_module {
             }
 
             pub(crate) fn ram_base_address(&self) -> u32 {
-                $module_reg.0 as u32
+                // TODO Ugly hack to obtain the ram base addresssize
+                // This is needed because current pac does not provide it
+                ($module_reg.accen0().addr() as u32) - 33020u32
             }
         }
     };

@@ -4,7 +4,7 @@
 // Note: this module try to mimic the behavior of the pac module, for message SRAM access
 // Note: transmute is used to create a Reg from a pointer, because the pac module does not support creating Reg from pointers
 
-use crate::pac::common::{hidden::RegValue, Reg, RegisterField, RegisterFieldBool, RW};
+use crate::common::{hidden::RegValue, Reg, RegisterField, RegisterFieldBool, RW};
 use core::mem::transmute;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
