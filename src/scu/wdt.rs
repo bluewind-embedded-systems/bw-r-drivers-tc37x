@@ -177,7 +177,7 @@ pub(crate) fn set_safety_endinit_inline() {
     unsafe {
         con0.modify(|r| {
             r.endinit()
-                .set(0u8.into())
+                .set(1u8.into())
                 .lck()
                 .set(1u8.into())
                 .pw()
