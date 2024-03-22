@@ -29,7 +29,8 @@ git = "https://github.com/rust-embedded/embedded-hal.git"
 rev = "v1.0.0-rc.1"
 
 [dependencies.tc37x]
-path = "../tc37x"
+git = "ssh://git@git.bwlocal.it/bw-rust/third-parties/ifx/tc37x.git"
+rev = "ee55208"
 features = [
     "scu",
     "smu",
