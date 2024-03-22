@@ -1,14 +1,14 @@
 use crate::can::{InterruptLine, Module0, Module1, Tos};
 use crate::cpu::Priority;
-use tc37x::src::can::can_can::CaNxInTy_SPEC;
-use tc37x::{Reg, RW};
+use crate::pac::src::can::can_can::CaNxInTy_SPEC;
+use crate::pac::{SRC, Reg, RW};
 
 pub(crate) struct ServiceRequest(Reg<CaNxInTy_SPEC, RW>);
 
 impl Module0 {
     pub(crate) fn service_request(line: InterruptLine) -> ServiceRequest {
         let line_index = usize::from(line as u8);
-        let x = tc37x::SRC.can().can_can()[0].canxinty()[line_index];
+        let x = SRC.can().can_can()[0].canxinty()[line_index];
         ServiceRequest(x)
     }
 }
@@ -16,7 +16,7 @@ impl Module0 {
 impl Module1 {
     pub(crate) fn service_request(line: InterruptLine) -> ServiceRequest {
         let line_index = usize::from(line as u8);
-        let x = tc37x::SRC.can().can_can()[1].canxinty()[line_index];
+        let x = SRC.can().can_can()[1].canxinty()[line_index];
         ServiceRequest(x)
     }
 }

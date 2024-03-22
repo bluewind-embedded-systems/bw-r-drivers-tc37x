@@ -812,7 +812,7 @@ pub enum PadDriver {
 }
 
 struct Port {
-    inner: tc37x::p00::P00,
+    inner: crate::pac::p00::P00,
 }
 
 #[derive(Clone, Copy)]
@@ -847,8 +847,8 @@ enum State {
 // TODO Is this needed? Can we get rid of it? Seems to be a duplicate of gpio
 impl Port {
     fn new(port: PortNumber) -> Self {
-        use tc37x::p00::P00;
-        use tc37x::*;
+        use crate::pac::p00::P00;
+        use crate::pac::*;
 
         let inner: P00 = match port {
             PortNumber::_00 => P00,

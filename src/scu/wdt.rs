@@ -2,8 +2,8 @@
 #![allow(clippy::undocumented_unsafe_blocks)]
 
 use crate::intrinsics::read_cpu_core_id;
+use crate::pac;
 use core::mem::transmute;
-use tc37x as pac;
 
 // TODO Are we sure we want to publish this function?
 #[inline]

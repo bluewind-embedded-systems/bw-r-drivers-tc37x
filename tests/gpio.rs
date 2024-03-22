@@ -1,6 +1,6 @@
 use embedded_hal::digital::PinState;
-use tc37x::P01;
-use tc37x::{P00, P20};
+use crate::pac::P01;
+use crate::pac::{P00, P20};
 
 use bw_r_drivers_tc37x::gpio::{ErasedPin, GpioExt};
 use bw_r_drivers_tc37x::tracing;

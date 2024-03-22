@@ -2,7 +2,7 @@
 
 use core::cell::RefCell;
 use dummy::DummyEffectReporter;
-use tc37x as pac;
+use crate::pac;
 
 pub mod dummy;
 pub mod log;

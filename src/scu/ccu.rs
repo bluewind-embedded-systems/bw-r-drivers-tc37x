@@ -7,14 +7,14 @@
 
 use super::wdt;
 use crate::log::debug;
-use tc37x::scu;
-use tc37x::scu::ccucon0::{Bbbdiv, Fsi2Div, Fsidiv, Gtmdiv, Lpdiv, Spbdiv, Sridiv, Stmdiv};
-use tc37x::scu::ccucon1::{
+use crate::pac::scu;
+use crate::pac::scu::ccucon0::{Bbbdiv, Fsi2Div, Fsidiv, Gtmdiv, Lpdiv, Spbdiv, Sridiv, Stmdiv};
+use crate::pac::scu::ccucon1::{
     Clkselmcan, Clkselmsc, Clkselqspi, I2Cdiv, Mcandiv, Mscdiv, Pll1Divdis, Qspidiv,
 };
-use tc37x::scu::ccucon2::{Asclinfdiv, Asclinsdiv, Clkselasclins};
-use tc37x::scu::ccucon5::{Gethdiv, Mcanhdiv};
-use tc37x::{RegisterValue, SCU, SMU};
+use crate::pac::scu::ccucon2::{Asclinfdiv, Asclinsdiv, Clkselasclins};
+use crate::pac::scu::ccucon5::{Gethdiv, Mcanhdiv};
+use crate::pac::{RegisterValue, SCU, SMU};
 
 const SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT: usize = 0x3000;
 const OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT: usize = 0x493E0;

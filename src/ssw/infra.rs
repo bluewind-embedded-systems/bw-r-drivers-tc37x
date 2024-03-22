@@ -11,8 +11,8 @@ use crate::intrinsics::read_volatile;
 
 #[inline]
 pub(crate) fn is_application_reset() -> bool {
-    use tc37x::RegisterValue;
-    use tc37x::SCU;
+    use crate::pac::RegisterValue;
+    use crate::pac::SCU;
 
     const APP_RESET_MSK: u32 = ((0x1) << (4))
         | ((0x1) << (7))

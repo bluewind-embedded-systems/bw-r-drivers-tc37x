@@ -3,7 +3,7 @@ use crate::can::can_node::{Interrupt, RxFifoMode, RxSel};
 use crate::can::msg::{ReadFrom, RxBufferId, TxBufferId};
 use crate::can::{DataFieldSize, TxMode};
 use crate::pac;
-use tc37x::RegisterValue;
+use pac::RegisterValue;
 
 pub(super) struct NodeEffects<T> {
     reg: T,

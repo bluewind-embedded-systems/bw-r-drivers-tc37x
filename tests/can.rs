@@ -7,9 +7,9 @@ use bw_r_drivers_tc37x::can::{
 };
 use bw_r_drivers_tc37x::cpu::Priority;
 use bw_r_drivers_tc37x::tracing::log::Report;
+use bw_r_drivers_tc37x::pac;
 
 use pac::{CAN0, SCU, SRC};
-use tc37x as pac;
 
 // TODO fix values of can_module.enable reads
 // TODO add report comments with actual registers' name
