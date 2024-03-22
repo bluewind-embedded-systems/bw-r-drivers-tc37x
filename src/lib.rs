@@ -135,6 +135,11 @@
 #![warn(clippy::undocumented_unsafe_blocks)] // Since Rust 1.58
 #![warn(unused_unsafe)]
 #![warn(clippy::unnecessary_safety_comment)] // Since Rust 1.67
+
+// Add the documentation from the README.md file to the crate root documentation
+#![doc = include_str!("../README.md")]
+
+// This feature is only needed for tricore targets and enable the intrinsics module.
 #![cfg_attr(target_arch = "tricore", feature(stdsimd))]
 
 #[cfg(feature = "tracing")]
