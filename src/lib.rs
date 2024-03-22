@@ -149,6 +149,8 @@ pub mod scu;
 pub mod ssw;
 pub mod util;
 
+pub use embedded_hal;
+pub use embedded_can;
 pub use tc37x as pac;
 
 mod sealed {
