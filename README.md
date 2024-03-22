@@ -1,61 +1,53 @@
-# bw-r-driver-tc37x
+# Rust TC37x drivers
 
-## Prerequisites
+## Getting started
 
-Make sure `tc37x` and `tc37x-rt-example` are available in the parent directory.
+### Toolchain
 
-You should have a workspace with this setup:
+Make sure you have a working toolchain. Check [Rust
+Development Platform for Infineon AURIX](https://hightec-rt.com) website to get the toolchain.
 
-
-- 📂 bw-r-driver-tc37x
-   - 📄 `Cargo.toml`
-   -  ` ...`
-- 📂 tc37x --> [tc375-pac](https://github.com/Infineon/tc375-pac) 
-   -  `Cargo.toml`
-   -  `...`
-- 📂 [tc37x-rt](https://github.com/bluewind-embedded-systems/bw-r-rt-example)
-   -  `Cargo.toml`
-   - `...`
-
-
-## Build 
-
-### Build the whole project
+Once it is installed it should appear as a rustup toolchain:
 
 ```
-./tools/build_for_target # build for target
-./tools/build_for_host # build for host
+rustup toolchain list
 ```
 
-### Build an example
+If `tricore` does not appear in this list, but the toolchain is installed somewhere in your system, you can [teach rustup about it](https://rust-lang.github.io/rustup/concepts/toolchains.html#custom-toolchains). For instance, if the toolchain is installed in `/opt/HighTec/toolchains/rust/v0.2.0/`:
 
 ```
-./tools/build_for_target <example> # build for target
-./tools/build_for_host <example> # build for host
+rustup toolchain link tricore /opt/HighTec/toolchains/rust/v0.2.0/
 ```
 
-## Run
+Check again with `rustup toolchain list` and you should have `tricore` in the output.
 
-### Available examples
-- `bliky`to show gpio dirver basic usage
-- `can_send` to use a tc37x-litekit to transmit/receive message from/to another device. 
+### Examples
 
-### Run an example
-The file `.cargo/config.toml` is already set up to launch all examples with
-tricore-probe.
-
-Make sure you have a TC37x board attached to yout PC through a debugger  and
-launch an example:
+Here you can find some examples. They are meant to be standalone and to be used
+as a boilerplate for your project. You can copy one example directory (e.g. `blinky`)
+to a new directory:
 
 ```
-./tools/run_on_target <example>
-./tools/run_on_host <example>
+git clone https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x-examples
+cd bw-r-drivers-tc37x-examples
+cp -r blinky my-example
+cd my-example
 ```
 
-## Test
+Now edit `Cargo.toml` and change the package name:
 
 ```
-./tools/set_build_profile host
-cargo test -Ftracing --lib # run every test
-cargo test -Ftracing --tests # run snapshot tests
+[package]
+name = "my-example"
 ```
+
+### Drivers
+
+This repository contains many low level drivers for the `TC37x` microcontroller:
+
+- gpio
+- can
+- adc
+
+Refer to the documentation you find here and the examples to understand how to
+use the different drivers.
