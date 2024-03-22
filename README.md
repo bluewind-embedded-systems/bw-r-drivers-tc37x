@@ -35,12 +35,13 @@ Check again with `rustup toolchain list` and you should have `tricore` in the ou
 
 ### Examples
 
-Here you can find some examples. They are meant to be standalone and to be used
-as a boilerplate for your project. You can copy one example directory (e.g.
-`blinky`) to a new directory:
+[Here you can find some
+examples](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x-examples).
+They are meant to be standalone and to be used as a boilerplate for your new
+project. You can copy one example directory (e.g. `blinky`) to a new directory:
 
 ```
-git clone https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x-examples
+git clone https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x-examples.git
 cd bw-r-drivers-tc37x-examples
 cp -r blinky my-example
 cd my-example
@@ -57,9 +58,9 @@ name = "my-example"
 
 This repository contains many low level drivers for the `TC37x` microcontroller:
 
-- gpio
-- can
-- adc
+- [gpio](gpio)
+- [can](can)
+- [adc](adc)
 
 Refer to the documentation you find here and the examples to understand how to
 use the different drivers.

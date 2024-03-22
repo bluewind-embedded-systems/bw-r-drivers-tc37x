@@ -1,8 +1,0 @@
-[target.tc162-htc-none]
-rustflags = [
-  "-C", "link-arg=--nmagic",
-  "-C", "link-arg=-Tdefmt.x",
-  "-C", "link-arg=-Ttc37xA_memory.ld"
-]
-
-runner = ["tricore-probe"]
