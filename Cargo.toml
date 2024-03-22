@@ -2,26 +2,10 @@
 name = "bw-r-drivers-tc37x"
 version = "0.1.0"
 edition = "2021"
-license = " BSL-1.0 license"
+license = "BSL-1.0"
 
-[dependencies]
-embedded-can = "=0.4.1"
-
-[dependencies.log]
-optional = true
-version = "0.4"
-
-[dependencies.env_logger]
-optional = true
-version = "0.11.3"
-
-[dependencies.defmt-rtt]
-optional = true
-version = "=0.4.0"
-
-[dependencies.defmt]
-optional = true
-version = "=0.3.6"
+[dependencies.embedded-can]
+version = "=0.4.1"
 
 [dependencies.embedded-hal]
 package = "embedded-hal"
@@ -67,7 +51,21 @@ optional = true
 version = "=1.36.0"
 features = ["ron"]
 
-[dev-dependencies]
+[dependencies.log]
+optional = true
+version = "0.4"
+
+[dependencies.env_logger]
+optional = true
+version = "0.11"
+
+[dependencies.defmt-rtt]
+optional = true
+version = "=0.4.0"
+
+[dependencies.defmt]
+optional = true
+version = "=0.3.6"
 
 [features]
 default = []
