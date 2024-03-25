@@ -6,13 +6,13 @@
 
 //! General Purpose Input / Output
 //!
-//! The GPIO pins are organised into groups of 16 pins which can be accessed through the
-//! `gpioa`, `gpiob`... modules. To get access to the pins, you first need to convert them into a
+//! The GPIO pins are organised into groups of pins which can be accessed through the
+//! `P00`, `P01`... constants. To get access to the pins, you first need to convert them into a
 //! HAL designed struct from the `pac` struct using the [split](trait.GpioExt.html#tymethod.split) function.
 //! ```rust
 //! use bw_r_drivers_tc37x::pac::P00;
 //! use bw_r_drivers_tc37x::gpio::GpioExt;
-//! let mut gpio00 = P00.split();
+//! let mut port00 = P00.split();
 //! ```
 //!
 //! This gives you a struct containing all the pins `px0..px15`.
@@ -22,9 +22,9 @@
 //! ```rust
 //! use bw_r_drivers_tc37x::pac::P00;
 //! use bw_r_drivers_tc37x::gpio::GpioExt;
-//! let mut gpio00 = P00.split();
-//! let mut output = gpio00.p00_5.into_push_pull_output();
-//! output.set_high();
+//! let mut port00 = P00.split();
+//! let mut p00_5 = port00.p00_5.into_push_pull_output();
+//! p00_5.set_high();
 //! ```
 //!
 //! ## Modes
