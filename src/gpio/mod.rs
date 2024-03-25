@@ -1,6 +1,9 @@
 // TODO Remove this once the code is stable
 #![allow(clippy::undocumented_unsafe_blocks)]
 
+#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::unused_self)]
+
 //! General Purpose Input / Output
 //!
 //! The GPIO pins are organised into groups of 16 pins which can be accessed through the
@@ -96,7 +99,7 @@ mod hal;
 pub struct NoPin<Otype = PushPull>(PhantomData<Otype>);
 
 impl<Otype> NoPin<Otype> {
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self(PhantomData)
     }
 }
@@ -319,6 +322,7 @@ pub trait PinSpeed: Sized {
     /// Set pin speed
     fn set_speed(&mut self, speed: Speed);
 
+    #[must_use]
     #[inline(always)]
     fn speed(mut self, speed: Speed) -> Self {
         self.set_speed(speed);
@@ -330,6 +334,7 @@ pub trait PinPull: Sized {
     /// Set the internal pull-up and pull-down resistor
     fn set_internal_resistor(&mut self, resistor: Pull);
 
+    #[must_use]
     #[inline(always)]
     fn internal_resistor(mut self, resistor: Pull) -> Self {
         self.set_internal_resistor(resistor);
@@ -364,7 +369,7 @@ where
     }
 
     /// Set pin speed
-    pub fn speed(mut self, speed: Speed) -> Self {
+    #[must_use] pub fn speed(mut self, speed: Speed) -> Self {
         self.set_speed(speed);
         self
     }
@@ -432,13 +437,13 @@ where
     }
 
     /// Set the internal pull-up and pull-down resistor
-    pub fn internal_resistor(mut self, resistor: Pull) -> Self {
+    #[must_use] pub fn internal_resistor(mut self, resistor: Pull) -> Self {
         self.set_internal_resistor(resistor);
         self
     }
 
     /// Enables / disables the internal pull up
-    pub fn internal_pull_up(self, on: bool) -> Self {
+    #[must_use] pub fn internal_pull_up(self, on: bool) -> Self {
         if on {
             self.internal_resistor(Pull::Up)
         } else {
@@ -447,7 +452,7 @@ where
     }
 
     /// Enables / disables the internal pull down
-    pub fn internal_pull_down(self, on: bool) -> Self {
+    #[must_use] pub fn internal_pull_down(self, on: bool) -> Self {
         if on {
             self.internal_resistor(Pull::Down)
         } else {
@@ -461,7 +466,7 @@ impl<const P: PortIndex, const N: PinIndex, MODE> Pin<P, N, MODE> {
     ///
     /// This is useful when you want to collect the pins into an array where you
     /// need all the elements to have the same type
-    pub fn erase_number(self) -> PartiallyErasedPin<P, MODE> {
+    #[must_use] pub fn erase_number(self) -> PartiallyErasedPin<P, MODE> {
         PartiallyErasedPin::new(PinId(N))
     }
 
@@ -469,7 +474,7 @@ impl<const P: PortIndex, const N: PinIndex, MODE> Pin<P, N, MODE> {
     ///
     /// This is useful when you want to collect the pins into an array where you
     /// need all the elements to have the same type
-    pub fn erase(self) -> ErasedPin<MODE> {
+    #[must_use] pub fn erase(self) -> ErasedPin<MODE> {
         ErasedPin::new(PortId(P), PinId(N))
     }
 }
@@ -547,7 +552,7 @@ impl<const P: PortIndex, const N: PinIndex, MODE> Pin<P, N, Output<MODE>> {
 
     /// Is the pin in drive high or low mode?
     #[inline(always)]
-    pub fn get_state(&self) -> PinState {
+    #[must_use] pub fn get_state(&self) -> PinState {
         if self._is_high() {
             PinState::High
         } else {
@@ -592,13 +597,13 @@ where
 {
     /// Is the input pin high?
     #[inline(always)]
-    pub fn is_high(&self) -> bool {
+    #[must_use] pub fn is_high(&self) -> bool {
         self._is_high()
     }
 
     /// Is the input pin low?
     #[inline(always)]
-    pub fn is_low(&self) -> bool {
+    #[must_use] pub fn is_low(&self) -> bool {
         !self._is_high()
     }
 }

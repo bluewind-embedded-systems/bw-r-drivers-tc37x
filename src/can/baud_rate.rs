@@ -2,6 +2,9 @@
 // TODO #![warn(clippy::as_conversions)]
 
 #![allow(clippy::float_arithmetic)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_precision_loss)]
+#![allow(clippy::cast_sign_loss)]
 
 use crate::log::info;
 // The following import is needed when f32::abs is not available (tricore toolchain)

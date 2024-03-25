@@ -106,7 +106,7 @@ pub struct Frame<'a> {
 }
 
 impl<'a> Frame<'a> {
-    pub fn new(id: MessageId, data: &'a [u8]) -> Option<Self> {
+    #[must_use] pub fn new(id: MessageId, data: &'a [u8]) -> Option<Self> {
         if data.len() > 64 {
             None
         } else {

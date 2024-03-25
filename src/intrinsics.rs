@@ -1,3 +1,6 @@
+// TODO Remove once the unsafe blocks are documented
+#![allow(clippy::undocumented_unsafe_blocks)]
+
 #[cfg(feature = "tracing")]
 use crate::tracing;
 

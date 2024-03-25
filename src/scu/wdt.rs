@@ -1,6 +1,8 @@
 // TODO Remove this once the code is stable
 #![allow(clippy::undocumented_unsafe_blocks)]
 
+#![allow(clippy::cast_possible_truncation)]
+
 use crate::intrinsics::read_cpu_core_id;
 use crate::pac;
 use core::mem::transmute;

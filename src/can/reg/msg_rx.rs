@@ -62,7 +62,7 @@ impl RegValue for R0 {
 impl R0 {
     #[inline(always)]
     #[allow(unused)]
-    pub(crate) fn id(self) -> RegisterField<0, 0x1FFFFFFF, 1, 0, u32, R0, RW> {
+    pub(crate) fn id(self) -> RegisterField<0, 0x1FFF_FFFF, 1, 0, u32, R0, RW> {
         unsafe { transmute((self, 1)) }
     }
 
