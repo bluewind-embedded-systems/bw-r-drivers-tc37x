@@ -56,7 +56,7 @@ name = "my-example"
 
 ### Drivers
 
-This repository contains many low level drivers for the `TC37x` microcontroller:
+This crate contains many low level drivers for the `TC37x` microcontroller:
 
 - [gpio](gpio)
 - [can](can)
@@ -64,3 +64,19 @@ This repository contains many low level drivers for the `TC37x` microcontroller:
 
 Refer to the documentation you find here and the examples to understand how to
 use the different drivers.
+
+### Tracing
+
+This crate has a `tracing` feature, which let you trace all side effects to the
+peripherals registers:
+
+- read
+- write
+- load-modify-store
+
+This is particularly useful to write automatic tests for low level drivers,
+because you don't need a real Aurix hardware to run the tests. You can use the
+`tracing` feature to test your application or other higher level drivers built
+on top of this crate.
+
+Take a look at `tests/gpio.rs` for some simple examples of tests.
