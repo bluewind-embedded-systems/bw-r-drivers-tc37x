@@ -48,12 +48,12 @@
 #![allow(clippy::wildcard_imports)]
 // Allow uninlined format args. We need to switch seamlessly between defmt and log
 #![allow(clippy::uninlined_format_args)]
-// no_std is required for the target
-#![cfg_attr(target_arch = "tricore", no_std)]
-// Add the documentation from the README.md file to the crate root documentation
-#![doc = include_str!("../README.md")]
+// no_std is required for the tricore bare metal target
+#![cfg_attr(target_os = "none", no_std)]
 // This feature is only needed for tricore targets and enable the intrinsics module.
 #![cfg_attr(target_arch = "tricore", feature(stdsimd))]
+// Add the documentation from the README.md file to the crate root documentation
+#![doc = include_str!("../README.md")]
 
 #[cfg(feature = "tracing")]
 pub mod tracing;

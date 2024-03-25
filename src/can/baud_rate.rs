@@ -11,6 +11,7 @@ use crate::log::info;
 #[allow(unused_imports)]
 use crate::util::F32Abs;
 
+/// CAN bit timing configuration
 pub enum BitTimingConfig {
     Auto(AutoBitTiming),
     Manual(NominalBitTiming),
@@ -22,6 +23,7 @@ impl Default for BitTimingConfig {
     }
 }
 
+/// Fast CAN bit timing configuration
 pub enum FastBitTimingConfig {
     Auto(AutoBitTiming),
     Manual(DataBitTiming),
@@ -34,10 +36,14 @@ impl Default for FastBitTimingConfig {
 }
 
 // TODO Default values are not valid
+/// Automatic bit timing configuration
 #[derive(Default)]
 pub struct AutoBitTiming {
+    /// Baud rate in bps
     pub baud_rate: u32,
+    /// Sample point in 1/10th of a percent (e.g. 8000 = 80%)
     pub sample_point: u16,
+    /// Synchronization jump width in time quanta
     pub sync_jump_width: u16,
 }
 
@@ -195,6 +201,7 @@ pub(super) fn get_best_sjw(best_tbaud: u32, best_tseg2: u32, sync_jump_width: u1
     best_sjw
 }
 
+/// Nominal CAN bit timing
 #[derive(Debug, Clone, Copy)]
 pub struct NominalBitTiming {
     pub(super) brp: u16,
@@ -203,6 +210,7 @@ pub struct NominalBitTiming {
     pub(super) tseg2: u8,
 }
 
+/// Data CAN bit timing
 #[derive(Debug, Clone, Copy)]
 pub struct DataBitTiming {
     pub(super) brp: u8,

@@ -2,6 +2,8 @@
 
 use crate::can::msg::MessageId;
 
+// TODO This should be DataLength(u8) and only from_length and to_length should be public
+/// Data length code
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, PartialOrd, Debug)]
 pub enum DataLenghtCode {
@@ -24,6 +26,7 @@ pub enum DataLenghtCode {
 }
 
 impl DataLenghtCode {
+    /// Create a new `DataLenghtCode` from a data length
     pub const fn from_length(length: usize) -> Option<Self> {
         match length {
             0 => Some(Self::_0),
@@ -46,6 +49,7 @@ impl DataLenghtCode {
         }
     }
 
+    /// Convert the `DataLenghtCode` to a data length
     pub const fn to_length(self) -> usize {
         match self {
             Self::_0 => 0,
@@ -100,13 +104,17 @@ impl From<DataLenghtCode> for u8 {
     }
 }
 
+/// A CAN frame
 pub struct Frame<'a> {
+    /// The message ID
     pub id: MessageId,
+    /// The data
     pub data: &'a [u8],
 }
 
 impl<'a> Frame<'a> {
-    #[must_use] pub fn new(id: MessageId, data: &'a [u8]) -> Option<Self> {
+    #[must_use]
+    pub fn new(id: MessageId, data: &'a [u8]) -> Option<Self> {
         if data.len() > 64 {
             None
         } else {
