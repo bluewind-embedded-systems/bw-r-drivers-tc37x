@@ -25,14 +25,13 @@ const PLL_KRDY_TIMEOUT_COUNT: usize = 0x6000;
 
 pub enum InitError {
     ConfigureCCUInitialStep,
-    ModulationInit,
     DistributeClockInline,
     ThrottleSysPllClockInline,
 }
 
 pub(crate) fn init(config: &Config) -> Result<(), InitError> {
     configure_ccu_initial_step(config).map_err(|()| InitError::ConfigureCCUInitialStep)?;
-    modulation_init(config).map_err(|()| InitError::ModulationInit)?;
+    modulation_init(config);
     distribute_clock_inline(config).map_err(|()| InitError::DistributeClockInline)?;
     throttle_sys_pll_clock_inline(config).map_err(|()| InitError::ThrottleSysPllClockInline)?;
     Ok(())
@@ -289,7 +288,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     Ok(())
 }
 
-pub(crate) fn modulation_init(config: &Config) -> Result<(), ()> {
+pub(crate) fn modulation_init(config: &Config) {
     if let ModulationEn::Enabled = config.modulation.enable {
         let rgain_p = calc_rgain_parameters(config.modulation.amp);
 
@@ -311,7 +310,6 @@ pub(crate) fn modulation_init(config: &Config) -> Result<(), ()> {
 
         wdt::set_safety_endinit_inline();
     }
-    Ok(())
 }
 
 pub struct RGainValues {
