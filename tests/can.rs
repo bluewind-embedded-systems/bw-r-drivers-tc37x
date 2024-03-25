@@ -378,7 +378,8 @@ fn test_setup_can0() {
     report.expect_read(CAN0.n()[0].cccri().addr(), 4, 0b0);
     report.expect_read(CAN0.n()[0].cccri().addr(), 4, 0b0);
 
-    node.lock_configuration();
+    #[allow(unused_variables)]
+    let node = node.lock_configuration();
 
     insta::assert_snapshot!(report.take_log());
 }
