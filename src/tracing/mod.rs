@@ -1,3 +1,5 @@
+//! Tracing module for tracking memory accesses
+
 #![allow(unused)]
 
 use crate::pac;

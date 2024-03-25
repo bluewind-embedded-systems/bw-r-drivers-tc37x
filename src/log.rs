@@ -1,3 +1,5 @@
+//! Logging macros and utilities.
+
 // Log with defmt
 #[cfg(all(not(feature = "log_with_env_logger"), feature = "log_with_defmt"))]
 pub use tricore_log::*;

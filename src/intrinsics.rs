@@ -1,3 +1,10 @@
+//! Intrinsic functions for the TriCore architecture.
+//!
+//! These functions are used to access the hardware directly and are
+//! architecture specific.
+//! When the tracing feature is enabled, these functions are replaced with
+//! tracing functions that log the access to the hardware.
+
 // TODO Remove once the unsafe blocks are documented
 #![allow(clippy::undocumented_unsafe_blocks)]
 

@@ -1,3 +1,6 @@
+//! Log effect reporter for testing purposes. It records all effects and allows
+//! to check them later.
+
 #![allow(clippy::expect_used)]
 
 use super::TraceGuard;

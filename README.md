@@ -61,6 +61,11 @@ You can use the `tricore-probe` tool to flash the binary to the target hardware:
 tricore-probe ./target/tc162-htc-none/debug/blinky.elf
 ```
 
+Alternatively, you can use other tools like 
+[Infineon MemTool](https://www.infineon.com/cms/en/tools/aurix-tools/free-tools/infineon/)
+or
+[Universal Debug Engine](https://www.pls-mc.com/products/universal-debug-engine/).
+
 
 #### Make your own executable
 
