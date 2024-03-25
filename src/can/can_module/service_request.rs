@@ -1,3 +1,5 @@
+use tc37x::src::can::CanCan;
+
 use crate::can::{InterruptLine, Module0, Module1, Tos};
 use crate::cpu::Priority;
 use crate::pac::src::can::can_can::CaNxInTy_SPEC;
@@ -6,20 +8,16 @@ use crate::pac::{Reg, RW, SRC};
 pub(crate) struct ServiceRequest(Reg<CaNxInTy_SPEC, RW>);
 
 impl Module0 {
+    #[inline(always)]
     pub(crate) fn service_request(line: InterruptLine) -> ServiceRequest {
-        let line_index = usize::from(line as u8);
-        // SAFETY line_index is in range [0, 15] because InterruptLine is an enum with 16 variants
-        let x = unsafe { *SRC.can().can_can()[0].canxinty().get_unchecked(line_index) };
-        ServiceRequest(x)
+        module_service_request(0, line)
     }
 }
 
 impl Module1 {
+    #[inline(always)]
     pub(crate) fn service_request(line: InterruptLine) -> ServiceRequest {
-        let line_index = usize::from(line as u8);
-        // SAFETY line_index is in range [0, 15] because InterruptLine is an enum with 16 variants
-        let x = unsafe { *SRC.can().can_can()[1].canxinty().get_unchecked(line_index) };
-        ServiceRequest(x)
+        module_service_request(1, line)
     }
 }
 
@@ -41,4 +39,18 @@ impl ServiceRequest {
         // SAFETY: SRE is a RW bit, bits 9:8, 15:14, 23:21, 31 are written with 0
         unsafe { self.0.modify(|r| r.sre().set(1u8.into())) };
     }
+}
+
+fn module_service_request(module_id: usize, interrupt_line: InterruptLine) -> ServiceRequest {
+    let modules = SRC.can().can_can();
+
+    // SAFETY: module_id is in range [0, 1] because
+    let module: &CanCan = unsafe { modules.get_unchecked(module_id) };
+
+    let line_index = usize::from(u8::from(interrupt_line));
+
+    // SAFETY: line_index is in range [0, 15] because InterruptLine is an enum with 16 variants
+    let x = unsafe { *module.canxinty().get_unchecked(line_index) };
+
+    ServiceRequest(x)
 }
