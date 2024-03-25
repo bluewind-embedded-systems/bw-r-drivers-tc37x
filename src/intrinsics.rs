@@ -9,7 +9,7 @@ use crate::tracing;
 pub(crate) unsafe fn load_modify_store(addr: *mut u32, v: u32, m: u32) {
     #[cfg(feature = "tracing")]
     {
-        return tracing::load_modify_store(addr as usize, v as u64 | ((m as u64) << 32));
+        return tracing::load_modify_store(addr as usize, u64::from(v) | (u64::from(m) << 32));
     }
 
     #[cfg(target_arch = "tricore")]
@@ -71,14 +71,14 @@ where
 pub(crate) fn read_cpu_core_id() -> u32 {
     #[cfg(feature = "tracing")]
     {
-        return 0;
+        0
     }
 
     #[cfg(target_arch = "tricore")]
     unsafe {
         let value: u32;
         core::arch::asm!("mfcr {0}, 0xFE1C", out(reg32) value);
-        return value;
+        value
     }
 }
 

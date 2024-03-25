@@ -22,24 +22,24 @@ fn test_setup_can0() {
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0011,
     );
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0011,
     );
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0011,
     );
     // wtdcpu0con0 write
     // wtdcpu0con0 read
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_0_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0001,
     );
 
     // wtdcpu0con0 write
@@ -51,29 +51,29 @@ fn test_setup_can0() {
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_0,
+        0b1111_1111_1111_1100_0000_0000_1111_0010,
     );
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_0,
+        0b1111_1111_1111_1100_0000_0000_1111_0010,
     );
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_0,
+        0b1111_1111_1111_1100_0000_0000_1111_0010,
     );
 
     // wtdcpu0con0 write
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_0_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0001,
     );
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0011,
     );
 
     let mut can_module = can_module.enable();
@@ -138,7 +138,7 @@ fn test_setup_can0() {
     );
 
     // perpllcon0 read for get_per_pll_frequency1 for get_source_frequency
-    report.expect_read(SCU.perpllcon0().addr(), 4, 0b10011_1111_0000_0000);
+    report.expect_read(SCU.perpllcon0().addr(), 4, 0b1_0011_1111_0000_0000);
 
     // perpllcon1 read for get_per_pll_frequency1 for get_source_frequency
     report.expect_read(SCU.perpllcon1().addr(), 4, 0b1_0000_0001);
@@ -244,55 +244,55 @@ fn test_setup_can0() {
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0011,
     );
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0011,
     );
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0011,
     );
     // wtdcpu0con0 write
     // wtdcpu0con0 read
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_0_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0001,
     );
 
     // wtdcpu0con0 for set_cpu_endinit
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_0,
+        0b1111_1111_1111_1100_0000_0000_1111_0010,
     );
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_0,
+        0b1111_1111_1111_1100_0000_0000_1111_0010,
     );
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_0,
-    );
-
-    // wtdcpu0con0 write
-    report.expect_read(
-        SCU.wdtcpu0con0().addr(),
-        4,
-        0b1111111111111100_00000000111100_0_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0010,
     );
 
     // wtdcpu0con0 write
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0001,
+    );
+
+    // wtdcpu0con0 write
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111_1111_1111_1100_0000_0000_1111_0011,
     );
 
     report.expect_read(CAN0.n()[0].npcri().addr(), 4, 0b0);
@@ -301,55 +301,55 @@ fn test_setup_can0() {
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0011,
     );
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0011,
     );
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0011,
     );
     // wtdcpu0con0 write
     // wtdcpu0con0 read
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_0_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0001,
     );
 
     // wtdcpu0con0 for set_cpu_endinit
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_0,
+        0b1111_1111_1111_1100_0000_0000_1111_0010,
     );
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_0,
+        0b1111_1111_1111_1100_0000_0000_1111_0010,
     );
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_0,
-    );
-
-    // wtdcpu0con0 write
-    report.expect_read(
-        SCU.wdtcpu0con0().addr(),
-        4,
-        0b1111111111111100_00000000111100_0_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0010,
     );
 
     // wtdcpu0con0 write
     report.expect_read(
         SCU.wdtcpu0con0().addr(),
         4,
-        0b1111111111111100_00000000111100_1_1,
+        0b1111_1111_1111_1100_0000_0000_1111_0001,
+    );
+
+    // wtdcpu0con0 write
+    report.expect_read(
+        SCU.wdtcpu0con0().addr(),
+        4,
+        0b1111_1111_1111_1100_0000_0000_1111_0011,
     );
 
     node.setup_pins(&Pins {

@@ -31,7 +31,7 @@ impl ServiceRequest {
         // TODO .tos() is only available in patched pac. If Infineon does not fix it, we need to use set_raw
         unsafe {
             self.0
-                .modify(|r| r.srpn().set(priority).tos().set(tos.into()))
+                .modify(|r| r.srpn().set(priority).tos().set(tos))
         };
 
         // Clear request
