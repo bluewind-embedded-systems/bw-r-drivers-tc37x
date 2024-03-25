@@ -8,7 +8,8 @@ pub(crate) struct ServiceRequest(Reg<CaNxInTy_SPEC, RW>);
 impl Module0 {
     pub(crate) fn service_request(line: InterruptLine) -> ServiceRequest {
         let line_index = usize::from(line as u8);
-        let x = SRC.can().can_can()[0].canxinty()[line_index];
+        // SAFETY line_index is in range [0, 15] because InterruptLine is an enum with 16 variants
+        let x = unsafe { *SRC.can().can_can()[0].canxinty().get_unchecked(line_index) };
         ServiceRequest(x)
     }
 }
@@ -16,7 +17,8 @@ impl Module0 {
 impl Module1 {
     pub(crate) fn service_request(line: InterruptLine) -> ServiceRequest {
         let line_index = usize::from(line as u8);
-        let x = SRC.can().can_can()[1].canxinty()[line_index];
+        // SAFETY line_index is in range [0, 15] because InterruptLine is an enum with 16 variants
+        let x = unsafe { *SRC.can().can_can()[1].canxinty().get_unchecked(line_index) };
         ServiceRequest(x)
     }
 }
