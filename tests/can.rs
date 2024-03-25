@@ -6,8 +6,8 @@ use bw_r_drivers_tc37x::can::{
     Module, Module0, Node0, NodeConfig, Pins, RxConfig, RxFifoMode, RxMode, TxConfig, TxMode,
 };
 use bw_r_drivers_tc37x::cpu::Priority;
-use bw_r_drivers_tc37x::tracing::log::Report;
 use bw_r_drivers_tc37x::pac;
+use bw_r_drivers_tc37x::tracing::log::Report;
 
 use pac::{CAN0, SCU, SRC};
 

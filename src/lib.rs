@@ -134,11 +134,11 @@
 #![warn(clippy::multiple_unsafe_ops_per_block)] // Since Rust 1.69
 #![warn(clippy::undocumented_unsafe_blocks)] // Since Rust 1.58
 #![warn(unused_unsafe)]
-#![warn(clippy::unnecessary_safety_comment)] // Since Rust 1.67
+#![warn(clippy::unnecessary_safety_comment)]
+// Since Rust 1.67
 
 // Add the documentation from the README.md file to the crate root documentation
 #![doc = include_str!("../README.md")]
-
 // This feature is only needed for tricore targets and enable the intrinsics module.
 #![cfg_attr(target_arch = "tricore", feature(stdsimd))]
 
@@ -154,8 +154,8 @@ pub mod scu;
 pub mod ssw;
 pub mod util;
 
-pub use embedded_hal;
 pub use embedded_can;
+pub use embedded_hal;
 pub use tc37x as pac;
 
 mod sealed {

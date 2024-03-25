@@ -1,8 +1,8 @@
 #![allow(unused)]
 
+use crate::pac;
 use core::cell::RefCell;
 use dummy::DummyEffectReporter;
-use crate::pac;
 
 pub mod dummy;
 pub mod log;

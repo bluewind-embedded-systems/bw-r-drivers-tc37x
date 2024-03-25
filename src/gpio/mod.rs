@@ -67,8 +67,8 @@ use core::fmt;
 use core::marker::PhantomData;
 use core::mem::transmute;
 
-pub use embedded_hal::digital::PinState;
 use crate::pac::RegisterValue;
+pub use embedded_hal::digital::PinState;
 
 pub use convert::PinMode;
 pub use dynamic::{Dynamic, DynamicPin};
