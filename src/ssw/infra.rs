@@ -1,6 +1,4 @@
 // TODO Remove this once the code is stable
-#![allow(clippy::undocumented_unsafe_blocks)]
-// TODO Remove this once the code is stable
 #![allow(dead_code)]
 // TODO Remove this once the code is stable
 #![allow(clippy::needless_bool)]
@@ -22,6 +20,7 @@ pub(crate) fn is_application_reset() -> bool {
         | ((0x1) << (1))
         | ((0x1) << (0));
 
+    // SAFETY: Reset Status Register RSTSTAT is RH (no priviledge required)
     let v = unsafe { SCU.rststat().read() };
 
     if v.stbyr().get().0 == 1
@@ -35,11 +34,15 @@ pub(crate) fn is_application_reset() -> bool {
         false
     } else if (v.get_raw() & APP_RESET_MSK) > 0 {
         let v = v.get_raw() & APP_RESET_MSK;
+        // SAFETY: Reset Configuration Register is R (no priviledge required)
         let v = (unsafe { SCU.rstcon().read() }.get_raw() >> ((31 - v.leading_zeros()) << 1)) & 3;
         v == 2
     } else if v.cb3().get().0 == 1 {
         true
-    } else if (unsafe { read_volatile(0xF880_D000 as *const u32) } & (0x3 << 1)) != 0 {
+    } else if (
+        // SAFETY: F8800000 (Base address) + D000 (offset) correspons to CPU0_KRST0 CPUx Reset Register 0 
+        // for TC37x
+    unsafe { read_volatile(0xF880_D000 as *const u32) } & (0x3 << 1)) != 0 {
         true
     } else {
         false
