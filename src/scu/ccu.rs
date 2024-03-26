@@ -10,7 +10,6 @@
 
 use super::wdt;
 use crate::log::debug;
-use crate::pac::scu;
 use crate::pac::{RegisterValue, SCU, SMU};
 
 const SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT: usize = 0x3000;
