@@ -33,11 +33,11 @@ impl ServiceRequest {
 
         // Clear request
         // SAFETY: CLRR is a W bit, bits 9:8, 15:14, 23:21, 31 are written with 0
-        unsafe { self.0.modify(|r| r.clrr().set(1u8.into())) };
+        unsafe { self.0.modify(|r| r.clrr().set(true)) };
 
         // Enable service request
         // SAFETY: SRE is a RW bit, bits 9:8, 15:14, 23:21, 31 are written with 0
-        unsafe { self.0.modify(|r| r.sre().set(1u8.into())) };
+        unsafe { self.0.modify(|r| r.sre().set(true)) };
     }
 }
 

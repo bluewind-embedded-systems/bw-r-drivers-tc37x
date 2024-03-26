@@ -128,13 +128,13 @@ pub(crate) fn clear_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
-    if unsafe { con0.read() }.lck().get().0 == 1 {
+    if unsafe { con0.read() }.lck().get() == true {
         unsafe {
             con0.modify(|r| {
                 r.endinit()
-                    .set(1u8.into())
+                    .set(true)
                     .lck()
-                    .set(0u8.into())
+                    .set(false)
                     .pw()
                     .set(password)
             })
@@ -143,9 +143,9 @@ pub(crate) fn clear_safety_endinit_inline() {
     unsafe {
         con0.modify(|r| {
             r.endinit()
-                .set(0u8.into())
+                .set(false)
                 .lck()
-                .set(1u8.into())
+                .set(true)
                 .pw()
                 .set(password)
         })
@@ -161,13 +161,13 @@ pub(crate) fn set_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
-    if unsafe { con0.read() }.lck().get().0 == 1 {
+    if unsafe { con0.read() }.lck().get() == true {
         unsafe {
             con0.modify(|r| {
                 r.endinit()
-                    .set(1u8.into())
+                    .set(true)
                     .lck()
-                    .set(0u8.into())
+                    .set(false)
                     .pw()
                     .set(password)
             })
@@ -177,9 +177,9 @@ pub(crate) fn set_safety_endinit_inline() {
     unsafe {
         con0.modify(|r| {
             r.endinit()
-                .set(1u8.into())
+                .set(true)
                 .lck()
-                .set(1u8.into())
+                .set(true)
                 .pw()
                 .set(password)
         })
@@ -194,7 +194,7 @@ pub fn disable_safety_watchdog() {
         pac::SCU
             .wdts()
             .wdtscon1()
-            .modify(|p| p.dr().set(1u8.into()))
+            .modify(|p| p.dr().set(true))
     };
     set_safety_endinit_inline();
 }

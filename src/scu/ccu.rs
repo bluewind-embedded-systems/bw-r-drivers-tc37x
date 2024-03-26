@@ -40,28 +40,28 @@ pub(crate) fn init(config: &Config) -> Result<(), InitError> {
 fn wait_ccucon0_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
         // SAFETY: each bit of CCUCON0 is at least R, except for bit UP (W, if read always return 0)
-        unsafe { SCU.ccucon0().read() }.lck().get().0 == 1
+        unsafe { SCU.ccucon0().read() }.lck().get() == true
     })
 }
 
 fn wait_ccucon1_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
         // SAFETY: each bit of CCUCON1 is at least R
-        unsafe { SCU.ccucon1().read() }.lck().get().0 == 1
+        unsafe { SCU.ccucon1().read() }.lck().get() == true
     })
 }
 
 fn wait_ccucon2_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
         // SAFETY: each bit of CCUCON2 is at least R
-        unsafe { SCU.ccucon2().read() }.lck().get().0 == 1
+        unsafe { SCU.ccucon2().read() }.lck().get() == true
     })
 }
 
 fn wait_ccucon5_lock() -> Result<(), ()> {
     wait_cond(CCUCON_LCK_BIT_TIMEOUT_COUNT, || {
         // SAFETY: each bit of CCUCON5 is at least R, except for bit UP (W, if read always return 0)
-        unsafe { SCU.ccucon5().read() }.lck().get().0 == 1
+        unsafe { SCU.ccucon5().read() }.lck().get() == true
     })
 }
 
@@ -74,23 +74,20 @@ fn wait_divider() -> Result<(), ()> {
         let sys_k2 = sys.k2rdy().get();
         let per_k2 = per.k2rdy().get();
         let per_k3 = per.k3rdy().get();
-        sys_k2.0 == 0u8 || per_k2.0 == 0u8 || per_k3.0 == 0u8
+        sys_k2 == false || per_k2 == false || per_k3 == false
     })
 }
 
 fn set_pll_power(syspllpower: bool, perpllpower: bool) -> Result<(), ()> {
-    let syspllpower = u8::from(syspllpower);
-    let perpllpower = u8::from(perpllpower);
-
     // SAFETY: PLLPWD is a RW bit, syspllpower takes only values in range [0, 1]
     unsafe {
         SCU.syspllcon0()
-            .modify(|r| r.pllpwd().set(syspllpower.into()))
+            .modify(|r| r.pllpwd().set(syspllpower))
     };
     // SAFETY: PLLPWD is a RW bit, syspllpower takes only values in range [0, 1]
     unsafe {
         SCU.perpllcon0()
-            .modify(|r| r.pllpwd().set(perpllpower.into()))
+            .modify(|r| r.pllpwd().set(perpllpower))
     };
 
     wait_cond(SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT, || {
@@ -98,7 +95,7 @@ fn set_pll_power(syspllpower: bool, perpllpower: bool) -> Result<(), ()> {
         let sys = unsafe { SCU.syspllstat().read() };
         // SAFETY: each bit of PERPLLSTAT is at least R
         let per = unsafe { SCU.perpllstat().read() };
-        (syspllpower) == (sys.pwdstat().get().0) || (perpllpower) == (per.pwdstat().get().0)
+        syspllpower == sys.pwdstat().get() || perpllpower == per.pwdstat().get()
     })
 }
 
@@ -114,7 +111,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     // SAFETY: CLKSEL is RWH and takes values in range [0, 3], UP is a W bit. Written respectively with 0 and 1
     unsafe {
         SCU.ccucon0()
-            .modify(|r| r.clksel().set(CLKSEL_BACKUP.into()).up().set(1u8.into()))
+            .modify(|r| r.clksel().set(CLKSEL_BACKUP.into()).up().set(true))
     };
     wait_ccucon0_lock()?;
 
@@ -229,7 +226,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     wait_cond(OSCCON_PLLLV_OR_HV_TIMEOUT_COUNT, || {
         // SAFETY: each bit of OSCCON is at least R, except for bit OSCRES (W, if read always return 0)
         let osccon = unsafe { SCU.osccon().read() };
-        osccon.plllv().get().0 == 0 && osccon.pllhv().get().0 == 0
+        osccon.plllv().get() == false && osccon.pllhv().get() == false
     })?;
 
     // Start PLL locking for latest set values
@@ -244,7 +241,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
             let sys = unsafe { SCU.syspllstat().read() };
             // SAFETY: each bit of PERPLLSTAT is at least R
             let per = unsafe { SCU.perpllstat().read() };
-            sys.lock().get().0 == 0 || per.lock().get().0 == 0
+            sys.lock().get() == false || per.lock().get() == false
         })?;
     }
 
@@ -377,9 +374,9 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     {
         // SAFETY: each bit of CCUCON1 is at least R
         let mut ccucon1 = unsafe { SCU.ccucon1().read() };
-        if ccucon1.clkselmcan().get().0 != scu::ccucon1::Clkselmcan::CONST_00.0
-            || ccucon1.clkselmsc().get().0 != scu::ccucon1::Clkselmsc::CONST_11.0
-            || ccucon1.clkselqspi().get().0 != scu::ccucon1::Clkselqspi::CONST_22.0
+        if ccucon1.clkselmcan().get() != scu::ccucon1::Clkselmcan::CONST_00.0
+            || ccucon1.clkselmsc().get() != scu::ccucon1::Clkselmsc::CONST_11.0
+            || ccucon1.clkselqspi().get() != scu::ccucon1::Clkselqspi::CONST_22.0
         {
             ccucon1 = ccucon1
                 .mcandiv()
@@ -451,7 +448,7 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         // SAFETY: each bit of CCUCON2 is at least R
         let mut ccucon2 = unsafe { SCU.ccucon2().read() };
 
-        if ccucon2.clkselasclins().get().0 != scu::ccucon2::Clkselasclins::CONST_00.0 {
+        if ccucon2.clkselasclins().get() != scu::ccucon2::Clkselasclins::CONST_00.0 {
             // TODO Why is this read again?
             // SAFETY: each bit of CCUCON2 is at least R
             ccucon2 = unsafe { SCU.ccucon2().read() }
@@ -557,7 +554,7 @@ pub(crate) fn throttle_sys_pll_clock_inline(config: &Config) -> Result<(), ()> {
 
         wait_cond(PLL_KRDY_TIMEOUT_COUNT, || {
             // SAFETY: each bit of SYSPLLSTAT is at least R
-            unsafe { SCU.syspllstat().read() }.k2rdy().get().0 != 1
+            unsafe { SCU.syspllstat().read() }.k2rdy().get() != true
         })?;
 
         #[allow(clippy::indexing_slicing)]
@@ -594,7 +591,7 @@ const SYSCLK_FREQUENCY: u32 = 20_000_000;
 #[inline]
 pub(crate) fn get_osc_frequency() -> f32 {
     // SAFETY: each bit of SYSPLLCON0 is at least R, except for bit RESLD (W, if read always return 0)
-    let f = match unsafe { SCU.syspllcon0().read() }.insel().get().0 {
+    let f = match unsafe { SCU.syspllcon0().read() }.insel().get() {
         0 => EVR_OSC_FREQUENCY,
         1 => XTAL_FREQUENCY,
         2 => SYSCLK_FREQUENCY,
@@ -632,7 +629,7 @@ pub(crate) fn get_per_pll_frequency2() -> u32 {
     // SAFETY: each bit of PERPLLCON1 is at least R
     let perpllcon1 = unsafe { SCU.perpllcon1().read() };
 
-    let multiplier = if perpllcon0.divby().get().0 == 1 {
+    let multiplier = if perpllcon0.divby().get() == true {
         2.0
     } else {
         1.6
@@ -869,11 +866,11 @@ pub(crate) fn get_mcan_frequency() -> u32 {
 
     //info!("clkselmcan: {}, mcandiv: {}", clkselmcan, mcandiv);
 
-    match clkselmcan.0 {
+    match clkselmcan {
         CLKSELMCAN_USEMCANI => {
             let source = get_source_frequency(1);
             debug!("source: {}", source);
-            if mcandiv.0 == MCANDIV_STOPPED {
+            if mcandiv == MCANDIV_STOPPED {
                 source
             } else {
                 let div: u64 = mcandiv.into();
@@ -894,7 +891,7 @@ fn get_source_frequency(source: u32) -> u32 {
     let clksel = unsafe { SCU.ccucon0().read() }.clksel().get();
     //info!("clksel: {}", clksel);
 
-    match clksel.0 {
+    match clksel {
         CLKSEL_BACKUP => get_evr_frequency(),
         CLKSEL_PLL => match source {
             0 => get_pll_frequency(),
@@ -902,7 +899,7 @@ fn get_source_frequency(source: u32) -> u32 {
                 let source_freq = get_per_pll_frequency1();
                 // SAFETY: each bit of CCUCON1 is at least R
                 let ccucon1 = unsafe { SCU.ccucon1().read() };
-                if ccucon1.pll1divdis().get().0 == 1 {
+                if ccucon1.pll1divdis().get() == true {
                     source_freq
                 } else {
                     source_freq / 2
