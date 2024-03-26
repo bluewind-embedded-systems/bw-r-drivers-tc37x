@@ -39,7 +39,7 @@ pub(crate) fn is_application_reset() -> bool {
         v == 2
     } else if v.cb3().get() == true {
         true
-    } else if (unsafe { read_volatile(0xF880D000 as *const u32) } & (0x3 << 1)) != 0 {
+    } else if (unsafe { read_volatile(0xF880_D000 as *const u32) } & (0x3 << 1)) != 0 {
         true
     } else {
         false

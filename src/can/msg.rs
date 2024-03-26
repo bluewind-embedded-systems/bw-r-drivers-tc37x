@@ -1,7 +1,7 @@
 use super::frame::DataLenghtCode;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
-pub enum MessageIdLenght {
+pub enum MessageIdLength {
     Standard,
     Extended,
     Both,
@@ -10,7 +10,7 @@ pub enum MessageIdLenght {
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct MessageId {
     pub data: u32,
-    pub length: MessageIdLenght,
+    pub length: MessageIdLength,
 }
 
 impl From<embedded_can::Id> for MessageId {
@@ -26,7 +26,7 @@ impl From<embedded_can::StandardId> for MessageId {
     fn from(id: embedded_can::StandardId) -> Self {
         MessageId {
             data: id.as_raw().into(),
-            length: MessageIdLenght::Standard,
+            length: MessageIdLength::Standard,
         }
     }
 }
@@ -35,7 +35,7 @@ impl From<embedded_can::ExtendedId> for MessageId {
     fn from(id: embedded_can::ExtendedId) -> Self {
         MessageId {
             data: id.as_raw(),
-            length: MessageIdLenght::Extended,
+            length: MessageIdLength::Extended,
         }
     }
 }
@@ -74,7 +74,7 @@ impl Default for TxMessage {
         Self {
             id: MessageId {
                 data: 0,
-                length: MessageIdLenght::Standard,
+                length: MessageIdLength::Standard,
             },
             buffer_id: Some(TxBufferId(0)),
             remote_transmit_request: false,

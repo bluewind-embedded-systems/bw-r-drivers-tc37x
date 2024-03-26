@@ -156,7 +156,7 @@ macro_rules! impl_can_node {
                 Ok(node)
             }
 
-            pub fn lock_configuration(self) -> Node<$NodeReg, $ModuleReg, I, Configured> {
+            #[must_use] pub fn lock_configuration(self) -> Node<$NodeReg, $ModuleReg, I, Configured> {
                 self.effects.disable_configuration_change();
 
                 Node {

@@ -1,3 +1,5 @@
+#![allow(clippy::module_name_repetitions)]
+
 use crate::can::{
     BitTimingConfig, ClockSource, FastBitTimingConfig, FrameMode, Interrupt, InterruptGroup,
     InterruptLine, Tos,

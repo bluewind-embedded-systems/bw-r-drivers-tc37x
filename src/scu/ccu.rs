@@ -4,6 +4,9 @@
 #![allow(clippy::float_arithmetic)]
 // TODO Remove this once the code is stable
 #![allow(clippy::undocumented_unsafe_blocks)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_precision_loss)]
+#![allow(clippy::cast_sign_loss)]
 
 use super::wdt;
 use crate::log::debug;
@@ -149,7 +152,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
 
         let mode = MODE_EXTERNALCRYSTAL;
         // TODO: xtal_frequency should be in range [16 MHz, 40 MHz]
-        let oscval: u8 = ((plls_params.xtal_frequency / 1000000) - 15)
+        let oscval: u8 = ((plls_params.xtal_frequency / 1_000_000) - 15)
             .try_into()
             .map_err(|_| ())?;
 
@@ -246,7 +249,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         unsafe { SMU.keys().write(RegisterValue::new(0xBC)) };
         // SMU Alarm Status Clear Enable command (SMU_ASCE(ARG), ARG shall be set to 0)
         // SAFETY: CMD and ARG are W, bits 8:31 are written with 0
-        unsafe { SMU.cmd().write(RegisterValue::new(0x00000005)) };
+        unsafe { SMU.cmd().write(RegisterValue::new(0x0000_0005)) };
         // Set SF0, SF2, SF3 and SF4
         // SAFETY: Each bit of AGi is RWh
         unsafe {
@@ -308,11 +311,11 @@ pub struct RGainValues {
     pub rgain_hex: u16,
 }
 
-fn calc_rgain_parameters(modamp: ModulationAmplitude) -> RGainValues {
+fn calc_rgain_parameters(mod_amp: ModulationAmplitude) -> RGainValues {
     const MA_PERCENT: [f32; 6] = [0.5, 1.0, 1.25, 1.5, 2.0, 2.5];
 
     #[allow(clippy::indexing_slicing)]
-    let mod_amp = MA_PERCENT[modamp as usize];
+    let mod_amp = MA_PERCENT[mod_amp as usize];
 
     let fosc_hz = get_osc_frequency();
     // SAFETY: each bit of SYSPLLCON0 is at least R, except for bit RESLD (W, if read always return 0)
@@ -320,7 +323,7 @@ fn calc_rgain_parameters(modamp: ModulationAmplitude) -> RGainValues {
     let fdco_hz = (fosc_hz * (f32::from(syspllcon0.ndiv().get()) + 1.0))
         / (f32::from(syspllcon0.pdiv().get()) + 1.0);
 
-    let rgain_nom = 2.0 * (mod_amp / 100.0) * (fdco_hz / 3600000.0);
+    let rgain_nom = 2.0 * (mod_amp / 100.0) * (fdco_hz / 3_600_000.0);
     let rgain_hex = ((rgain_nom * 32.0) + 0.5) as u16;
 
     RGainValues {
@@ -329,6 +332,7 @@ fn calc_rgain_parameters(modamp: ModulationAmplitude) -> RGainValues {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     wdt::clear_safety_endinit_inline();
 
@@ -769,22 +773,22 @@ pub struct Config {
 pub const DEFAULT_PLL_CONFIG_STEPS: [PllStepConfig; 3] = [
     PllStepConfig {
         k2_step: 4 - 1,
-        wait_time: 0.000100,
+        wait_time: 0.000_100,
     },
     PllStepConfig {
         k2_step: 3 - 1,
-        wait_time: 0.000100,
+        wait_time: 0.000_100,
     },
     PllStepConfig {
         k2_step: 2 - 1,
-        wait_time: 0.000100,
+        wait_time: 0.000_100,
     },
 ];
 
 pub const DEFAULT_CLOCK_CONFIG: Config = Config {
     pll_initial_step: InitialConfigStep {
         plls_parameters: PllsParameterConfig {
-            xtal_frequency: 20000000,
+            xtal_frequency: 20_000_000,
             pll_input_clock_selection: PllInputClockSelection::F0sc0,
             sys_pll: SysPllConfig {
                 p_divider: 1 - 1,
@@ -799,7 +803,7 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
                 k3_divider_bypass: false,
             },
         },
-        wait_time: 0.000200,
+        wait_time: 0.000_200,
     },
     sys_pll_throttle: &DEFAULT_PLL_CONFIG_STEPS,
     clock_distribution: ClockDistributionConfig {
@@ -838,8 +842,8 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
         ccucon8: Con8RegConfig { cpu2_div: 0u8 },
     },
     flash_wait_state: FlashWaitStateConfig {
-        value: 0x00000105,
-        mask: 0x0000073F,
+        value: 0x0000_0105,
+        mask: 0x0000_073F,
     },
     modulation: ModulationConfig {
         enable: ModulationEn::Disabled,

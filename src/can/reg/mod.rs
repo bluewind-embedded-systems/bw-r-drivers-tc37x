@@ -1,3 +1,7 @@
+// TODO Remove once the unsafe blocks are documented
+#![allow(clippy::undocumented_unsafe_blocks)]
+#![allow(clippy::cast_possible_truncation)]
+
 pub(crate) mod msg_rx;
 pub(crate) mod msg_tx;
 

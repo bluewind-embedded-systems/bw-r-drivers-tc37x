@@ -63,7 +63,7 @@ impl<MODE> ErasedPin<MODE> {
     }
 
     /// Convert type erased pin to `Pin` with fixed type
-    pub fn restore<const P: PortIndex, const N: PinIndex>(self) -> Pin<P, N, MODE> {
+    #[must_use] pub fn restore<const P: PortIndex, const N: PinIndex>(self) -> Pin<P, N, MODE> {
         assert_eq!(self.port_id().0, P);
         assert_eq!(self.pin_id().0, N);
         Pin::new()
@@ -109,7 +109,7 @@ impl<MODE> ErasedPin<Output<MODE>> {
 
     /// Is the pin in drive high or low mode?
     #[inline(always)]
-    pub fn get_state(&self) -> PinState {
+    #[must_use] pub fn get_state(&self) -> PinState {
         if self._is_set_low() {
             PinState::Low
         } else {
@@ -151,14 +151,14 @@ where
 {
     /// Is the input pin high?
     #[inline(always)]
-    pub fn is_high(&self) -> bool {
+    #[must_use] pub fn is_high(&self) -> bool {
         let port = unsafe { self.block() };
         pin_input_is_high(port, self.pin)
     }
 
     /// Is the input pin low?
     #[inline(always)]
-    pub fn is_low(&self) -> bool {
+    #[must_use] pub fn is_low(&self) -> bool {
         !self.is_high()
     }
 }

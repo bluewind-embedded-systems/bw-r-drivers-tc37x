@@ -1,3 +1,5 @@
+#![allow(clippy::cast_possible_truncation)]
+
 mod service_request;
 
 use super::can_node::{Node, NodeConfig};
@@ -42,7 +44,7 @@ macro_rules! impl_can_module {
             }
 
             /// Enable the CAN module
-            pub fn enable(self) -> Module<$ModuleId, $ModuleReg, Enabled> {
+            #[must_use] pub fn enable(self) -> Module<$ModuleId, $ModuleReg, Enabled> {
                 scu::wdt::clear_cpu_endinit_inline();
 
                 // SAFETY: DISR is a RW bit, bits 2 and 31:4 are written with 0
