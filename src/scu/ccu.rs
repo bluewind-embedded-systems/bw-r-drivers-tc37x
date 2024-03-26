@@ -189,7 +189,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     unsafe {
         SCU.perpllcon0().modify(|r| {
             r.divby()
-                .set(plls_params.per_pll.k3_divider_bypass.into())
+                .set(plls_params.per_pll.k3_divider_bypass)
                 .pdiv()
                 .set(plls_params.per_pll.p_divider)
                 .ndiv()
@@ -421,7 +421,7 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
             .clkselmcan()
             .set(config.clock_distribution.ccucon1.clksel_mcan.into())
             .pll1divdis()
-            .set(config.clock_distribution.ccucon1.pll1_div_dis.into())
+            .set(config.clock_distribution.ccucon1.pll1_div_dis)
             .i2cdiv()
             .set(config.clock_distribution.ccucon1.i2c_div.into())
             .mscdiv()
@@ -653,7 +653,7 @@ pub struct PerPllConfig {
     pub n_divider: u8,
     pub k2_divider: u8,
     pub k3_divider: u8,
-    pub k3_divider_bypass: u8,
+    pub k3_divider_bypass: bool,
 }
 
 #[repr(u8)]
@@ -695,7 +695,7 @@ pub struct Con0RegConfig {
 pub struct Con1RegConfig {
     pub mcan_div: u8,
     pub clksel_mcan: u8,
-    pub pll1_div_dis: u8,
+    pub pll1_div_dis: bool,
     pub i2c_div: u8,
     pub msc_div: u8,
     pub clksel_msc: u8,
@@ -802,7 +802,7 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
                 n_divider: 32 - 1,
                 k2_divider: 2 - 1,
                 k3_divider: 2 - 1,
-                k3_divider_bypass: 0,
+                k3_divider_bypass: false,
             },
         },
         wait_time: 0.000200,

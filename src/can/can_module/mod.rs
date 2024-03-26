@@ -124,7 +124,7 @@ macro_rules! impl_can_module {
                 // SAFETY: Entire MCR register is readable
                 let mcr = unsafe { $module_reg.mcr().read() };
 
-                let actual_clock_source = match clock_select {
+                let actual_clock_source = match clock_select.0 {
                     0 => mcr.clksel0().get(),
                     1 => mcr.clksel1().get(),
                     2 => mcr.clksel2().get(),

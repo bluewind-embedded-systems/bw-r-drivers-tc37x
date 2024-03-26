@@ -73,14 +73,13 @@ macro_rules! impl_can_node_effect {
                     self.reg
                         .rx()
                         .rxf0ci()
-                        .modify(|r| r.f0wm().set(level))
+                        .modify(|r| r.f0wm().set(level.into()))
                 };
             }
 
             // TODO Move logic to the caller
             pub(crate) fn set_rx_fifo0_operating_mode(&self, mode: RxFifoMode) {
                 let overwrite = mode == RxFifoMode::Overwrite;
-                let overwrite = u8::from(overwrite);
                 // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
                 // bits 1:0, 23 are written with 0, overwrite is in range [0, 1]
                 unsafe {
@@ -94,7 +93,6 @@ macro_rules! impl_can_node_effect {
             // TODO Move logic to the caller
             pub(crate) fn set_rx_fifo1_operating_mode(&self, mode: RxFifoMode) {
                 let overwrite = mode == RxFifoMode::Overwrite;
-                let overwrite = u8::from(overwrite);
                 // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
                 // bits 1:0, 23 are written with 0, overwrite is in range [0, 1]
                 unsafe {
@@ -125,7 +123,7 @@ macro_rules! impl_can_node_effect {
                     self.reg
                         .tx()
                         .txbci()
-                        .modify(|r| r.ndtb().set(number))
+                        .modify(|r| r.ndtb().set(number.into()))
                 };
             }
 
@@ -145,13 +143,12 @@ macro_rules! impl_can_node_effect {
             pub(crate) fn set_tx_event_fifo_size(&self, size: u8) {
                 // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_tx after node.effects.enable_configuration_change has been called in Node::new.
                 // bits 1:0, 23:22 and 31:30 are written with 0, TODO size should be in range [0, 2^7)
-                unsafe { self.reg.tx().txefci().modify(|r| r.efs().set(size)) };
+                unsafe { self.reg.tx().txefci().modify(|r| r.efs().set(size.into())) };
             }
 
             // TODO Move logic to the caller
             pub(crate) fn set_transmit_fifo_queue_mode(&self, mode: TxMode) {
                 let val = mode != TxMode::DedicatedBuffers;
-                let val = u8::from(val);
                 // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_tx after node.effects.enable_configuration_change has been called in Node::new.
                 // bits 1:0, 23:22 and 31:30 are written with 0, val is in range [0, 1]
                 unsafe { self.reg.tx().txbci().modify(|r| r.tfqm().set(val)) };
@@ -164,7 +161,7 @@ macro_rules! impl_can_node_effect {
                     self.reg
                         .tx()
                         .txbci()
-                        .modify(|r| r.tfqs().set(number))
+                        .modify(|r| r.tfqs().set(number.into()))
                 };
             }
 
@@ -350,14 +347,12 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn set_frame_mode(&self, fdoe: bool, brse: bool) {
-                let fdoe = u8::from(fdoe);
-                let brse = u8::from(brse);
                 // SAFETY: write is CCE and INIT protected: called in Node<Configurable>. after node.effects.enable_configuration_change has been called in Node::new.
                 // bits 11:10 and 31:16 are written with 0, fdoe and brse are in range [0, 1]
                 unsafe {
                     self.reg
                         .cccri()
-                        .modify(|r| r.fdoe().set(fdoe.into()).brse().set(brse.into()))
+                        .modify(|r| r.fdoe().set(fdoe).brse().set(brse))
                 };
             }
 
@@ -501,7 +496,7 @@ macro_rules! impl_can_node_effect {
                 unsafe {
                     self.reg
                         .gfci()
-                        .modify(|r| r.rrfs().set(u8::from(true).into()))
+                        .modify(|r| r.rrfs().set(true))
                 };
             }
 
@@ -517,7 +512,7 @@ macro_rules! impl_can_node_effect {
                 unsafe {
                     self.reg
                         .xidfci()
-                        .modify(|r| r.lse().set(u8::from(size).into()))
+                        .modify(|r| r.lse().set(size.into()))
                 };
             }
 
