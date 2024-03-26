@@ -40,7 +40,7 @@ impl ServiceRequest {
 }
 
 fn module_service_request(module_id: usize, interrupt_line: InterruptLine) -> ServiceRequest {
-    let modules = SRC.can().can_can();
+    let modules = SRC.can().can();
 
     // SAFETY: module_id is in range [0, 1] because
     let module: &CanCan = unsafe { modules.get_unchecked(module_id) };
