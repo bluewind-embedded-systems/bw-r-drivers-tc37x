@@ -8,12 +8,6 @@
 use super::wdt;
 use crate::log::debug;
 use crate::pac::scu;
-use crate::pac::scu::ccucon0::{Bbbdiv, Fsi2Div, Fsidiv, Gtmdiv, Lpdiv, Spbdiv, Sridiv, Stmdiv};
-use crate::pac::scu::ccucon1::{
-    Clkselmcan, Clkselmsc, Clkselqspi, I2Cdiv, Mcandiv, Mscdiv, Pll1Divdis, Qspidiv,
-};
-use crate::pac::scu::ccucon2::{Asclinfdiv, Asclinsdiv, Clkselasclins};
-use crate::pac::scu::ccucon5::{Gethdiv, Mcanhdiv};
 use crate::pac::{RegisterValue, SCU, SMU};
 
 const SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT: usize = 0x3000;
@@ -267,9 +261,9 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         // SAFETY: each bit of CCUCON0 is at least R, UP is a W bit and CLKSEL is RWH and takes values in range [0, 1]
         let ccucon0 = unsafe { SCU.ccucon0().read() }
             .clksel()
-            .set(scu::ccucon0::Clksel::CONST_11)
+            .set(1)
             .up()
-            .set(scu::ccucon0::Up::CONST_11);
+            .set(true);
 
         wait_ccucon0_lock()?;
 
@@ -302,7 +296,7 @@ pub(crate) fn modulation_init(config: &Config) {
         // SAFETY: MODEN is a RW bit
         unsafe {
             SCU.syspllcon0()
-                .modify(|r| r.moden().set(scu::syspllcon0::Moden::CONST_11))
+                .modify(|r| r.moden().set(true))
         };
 
         wdt::set_safety_endinit_inline();
@@ -374,9 +368,9 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
     {
         // SAFETY: each bit of CCUCON1 is at least R
         let mut ccucon1 = unsafe { SCU.ccucon1().read() };
-        if ccucon1.clkselmcan().get() != scu::ccucon1::Clkselmcan::CONST_00.0
-            || ccucon1.clkselmsc().get() != scu::ccucon1::Clkselmsc::CONST_11.0
-            || ccucon1.clkselqspi().get() != scu::ccucon1::Clkselqspi::CONST_22.0
+        if ccucon1.clkselmcan().get() != 0
+            || ccucon1.clkselmsc().get() != 1
+            || ccucon1.clkselqspi().get() != 2
         {
             ccucon1 = ccucon1
                 .mcandiv()
@@ -398,11 +392,11 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
 
             ccucon1 = ccucon1
                 .clkselmcan()
-                .set(scu::ccucon1::Clkselmcan::CONST_00)
+                .set(0)
                 .clkselmsc()
-                .set(scu::ccucon1::Clkselmsc::CONST_11)
+                .set(1)
                 .clkselqspi()
-                .set(scu::ccucon1::Clkselqspi::CONST_22);
+                .set(2);
 
             wait_ccucon1_lock()?;
 
@@ -448,7 +442,7 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         // SAFETY: each bit of CCUCON2 is at least R
         let mut ccucon2 = unsafe { SCU.ccucon2().read() };
 
-        if ccucon2.clkselasclins().get() != scu::ccucon2::Clkselasclins::CONST_00.0 {
+        if ccucon2.clkselasclins().get() != 0 {
             // TODO Why is this read again?
             // SAFETY: each bit of CCUCON2 is at least R
             ccucon2 = unsafe { SCU.ccucon2().read() }
@@ -461,7 +455,7 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
 
             ccucon2 = ccucon2
                 .clkselasclins()
-                .set(scu::ccucon2::Clkselasclins::CONST_00);
+                .set(0);
 
             wait_ccucon2_lock()?;
 
@@ -501,7 +495,7 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
             .mcanhdiv()
             .set(config.clock_distribution.ccucon5.mcanh_div.into());
 
-        ccucon5 = ccucon5.up().set(scu::ccucon5::Up::CONST_11);
+        ccucon5 = ccucon5.up().set(true);
 
         wait_ccucon5_lock()?;
 
@@ -810,34 +804,34 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
     sys_pll_throttle: &DEFAULT_PLL_CONFIG_STEPS,
     clock_distribution: ClockDistributionConfig {
         ccucon0: Con0RegConfig {
-            stm_div: Stmdiv::CONST_33.0,
-            gtm_div: Gtmdiv::CONST_11.0,
-            sri_div: Sridiv::CONST_11.0,
-            lp_div: Lpdiv::CONST_00.0,
-            spb_div: Spbdiv::CONST_33.0,
-            bbb_div: Bbbdiv::CONST_22.0,
-            fsi_div: Fsidiv::CONST_33.0,
-            fsi2_div: Fsi2Div::CONST_11.0,
+            stm_div: 3,
+            gtm_div: 1,
+            sri_div: 1,
+            lp_div: 0,
+            spb_div: 3,
+            bbb_div: 2,
+            fsi_div: 3,
+            fsi2_div: 1,
         },
         ccucon1: Con1RegConfig {
-            mcan_div: Mcandiv::CONST_22.0,
-            clksel_mcan: Clkselmcan::CONST_11.0,
-            pll1_div_dis: Pll1Divdis::CONST_00.0,
-            i2c_div: I2Cdiv::CONST_22.0,
-            msc_div: Mscdiv::CONST_11.0,
-            clksel_msc: Clkselmsc::CONST_11.0,
-            qspi_div: Qspidiv::CONST_11.0,
-            clksel_qspi: Clkselqspi::CONST_22.0,
+            mcan_div: 2,
+            clksel_mcan: 1,
+            pll1_div_dis: false,
+            i2c_div: 2,
+            msc_div: 1,
+            clksel_msc: 1,
+            qspi_div: 1,
+            clksel_qspi: 2,
         },
         ccucon2: Con2RegConfig {
-            asclinf_div: Asclinfdiv::CONST_11.0,
-            asclins_div: Asclinsdiv::CONST_22.0,
-            clksel_asclins: Clkselasclins::CONST_11.0,
+            asclinf_div: 1,
+            asclins_div: 2,
+            clksel_asclins: 1,
         },
         ccucon5: Con5RegConfig {
-            geth_div: Gethdiv::CONST_22.0,
-            mcanh_div: Mcanhdiv::CONST_33.0,
-            adas_div: Mcanhdiv::CONST_00.0,
+            geth_div: 2,
+            mcanh_div: 3,
+            adas_div: 0,
         },
         ccucon6: Con6RegConfig { cpu0_div: 0u8 },
         ccucon7: Con7RegConfig { cpu1_div: 0u8 },

@@ -1,8 +1,6 @@
-use tc37x::src::can::CanCan;
-
 use crate::can::{InterruptLine, Module0, Module1, Tos};
 use crate::cpu::Priority;
-use crate::pac::src::can::can_can::CaNxInTy_SPEC;
+use crate::pac::src::can::{can_can::CaNxInTy_SPEC, CanCan};
 use crate::pac::{Reg, RW, SRC};
 
 pub(crate) struct ServiceRequest(Reg<CaNxInTy_SPEC, RW>);
