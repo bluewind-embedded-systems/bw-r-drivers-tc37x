@@ -1,6 +1,3 @@
-// TODO Remove this once the code is stable
-#![allow(clippy::undocumented_unsafe_blocks)]
-
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::unused_self)]
 
