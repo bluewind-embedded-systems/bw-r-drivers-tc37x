@@ -85,8 +85,10 @@ impl<MODE> ErasedPin<MODE> {
         #[allow(clippy::useless_conversion)]
         let port_index: usize = self.port_id().0.into();
         let offset = PORT_REGISTER_OFFSET * port_index;
+        // SAFETY: The following operation is safe if the assumptions above hold TODO: check
         let block_ptr = unsafe { (&PORT as *const Port).add(offset) };
 
+        // SAFETY: All Port instances have the same layout as P00
         unsafe { &*block_ptr }
     }
 }
@@ -117,6 +119,7 @@ impl<MODE> ErasedPin<Output<MODE>> {
     /// Drives the pin high or low depending on the provided value
     #[inline(always)]
     pub fn set_state(&mut self, state: PinState) {
+        // SAFETY: All Port instances have the same layout as Port00
         let port = unsafe { self.block() };
         pin_set_state(port, self.pin, state);
     }
@@ -124,6 +127,7 @@ impl<MODE> ErasedPin<Output<MODE>> {
     /// Is the pin in drive high mode?
     #[inline(always)]
     pub(crate) fn _is_set_high(&self) -> bool {
+        // SAFETY: All Port instances have the same layout as Port00
         let port = unsafe { self.block() };
         pin_output_is_high(port, self.pin)
     }
@@ -137,6 +141,7 @@ impl<MODE> ErasedPin<Output<MODE>> {
     /// Toggle pin output
     #[inline(always)]
     pub fn toggle(&mut self) {
+        // SAFETY: All Port instances have the same layout as Port00
         let port = unsafe { self.block() };
         pin_toggle_state(port, self.pin)
     }
@@ -149,6 +154,7 @@ where
     /// Is the input pin high?
     #[inline(always)]
     #[must_use] pub fn is_high(&self) -> bool {
+        // SAFETY: All Port instances have the same layout as Port00
         let port = unsafe { self.block() };
         pin_input_is_high(port, self.pin)
     }

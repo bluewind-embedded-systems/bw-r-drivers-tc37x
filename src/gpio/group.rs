@@ -34,8 +34,10 @@ macro_rules! pin_group {
             #[doc=concat!("Set/reset pins according to `", $n, "` lower bits")]
             #[inline(never)]
             pub fn write(&mut self, word: u32) {
+                // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
                 let port = unsafe { (*Gpio::<P>::ptr()) };
                 let raw = Self::value_for_write_bsrr(word);
+                // SAFETY: Each bit of OMR is W0
                 unsafe {
                     port.omr().init(|mut r| r.set_raw(raw));
                 }
@@ -43,8 +45,10 @@ macro_rules! pin_group {
 
             /// Set all pins to `PinState::High`
             pub fn set_high(&mut self) {
+                // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
                 let port = unsafe { (*Gpio::<P>::ptr()) };
                 let raw = Self::mask();
+                // SAFETY: Each bit of OMR is W0
                 unsafe {
                     port.omr().init(|mut r| r.set_raw(raw));
                 }
@@ -52,8 +56,10 @@ macro_rules! pin_group {
 
             /// Reset all pins to `PinState::Low`
             pub fn set_low(&mut self) {
+                // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
                 let port = unsafe { (*Gpio::<P>::ptr()) };
                 let raw = Self::mask() << 16;
+                // SAFETY: Each bit of OMR is W0
                 unsafe {
                     port.omr().init(|mut r| r.set_raw(raw));
                 }
@@ -61,8 +67,10 @@ macro_rules! pin_group {
 
             /// Set all pins' state
             pub fn set_state(&mut self, states: [PinState; $n]) {
+                // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
                 let port = unsafe { (*Gpio::<P>::ptr()) };
                 let raw = 0 $( | (1 << (if states[$i] == PinState::High { $N } else { $N + 16 })))+;
+                // SAFETY: Each bit of OMR is W0
                 unsafe {
                     port.omr().init(|mut r| r.set_raw(raw));
                 }
@@ -111,8 +119,10 @@ impl<const P: PortIndex, const SIZE: usize> PinArray<P, SIZE> {
     /// Set/reset pins according to `SIZE` lower bits
     #[inline(never)]
     pub fn write(&mut self, word: u32) {
+        // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
         let port = unsafe { (*Gpio::<P>::ptr()) };
         let raw = self.value_for_write_bsrr(word);
+        // SAFETY: Each bit of OMR is W0
         unsafe {
             port.omr().init(|mut r| r.set_raw(raw));
         }
@@ -120,9 +130,11 @@ impl<const P: PortIndex, const SIZE: usize> PinArray<P, SIZE> {
 
     /// Set all pins to `PinState::High`
     pub fn set_high(&mut self) {
+        // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
         let port = unsafe { (*Gpio::<P>::ptr()) };
         let raw = self.mask();
 
+        // SAFETY: Each bit of OMR is W0
         unsafe {
             port.omr().init(|mut r| r.set_raw(raw));
         }
@@ -130,9 +142,11 @@ impl<const P: PortIndex, const SIZE: usize> PinArray<P, SIZE> {
 
     /// Reset all pins to `PinState::Low`
     pub fn set_low(&mut self) {
+        // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
         let port = unsafe { (*Gpio::<P>::ptr()) };
         let raw = self.mask() << 16;
 
+        // SAFETY: Each bit of OMR is W0
         unsafe {
             port.omr().init(|mut r| r.set_raw(raw));
         }
@@ -140,6 +154,7 @@ impl<const P: PortIndex, const SIZE: usize> PinArray<P, SIZE> {
 
     /// Set all pins' state
     pub fn set_state(&mut self, states: [PinState; SIZE]) {
+        // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
         let port = unsafe { (*Gpio::<P>::ptr()) };
         let mut raw = 0;
 
@@ -148,6 +163,7 @@ impl<const P: PortIndex, const SIZE: usize> PinArray<P, SIZE> {
             raw |= pcl_ps_bits(pclx, psx, pin.pin.0.into());
         }
 
+        // SAFETY: Each bit of OMR is W0
         unsafe {
             port.omr().init(|mut r| r.set_raw(raw));
         }
