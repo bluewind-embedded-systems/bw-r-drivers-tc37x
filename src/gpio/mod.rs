@@ -1,15 +1,18 @@
 // TODO Remove this once the code is stable
 #![allow(clippy::undocumented_unsafe_blocks)]
 
+#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::unused_self)]
+
 //! General Purpose Input / Output
 //!
-//! The GPIO pins are organised into groups of 16 pins which can be accessed through the
-//! `gpioa`, `gpiob`... modules. To get access to the pins, you first need to convert them into a
+//! The GPIO pins are organised into groups of pins which can be accessed through the
+//! `P00`, `P01`... constants. To get access to the pins, you first need to convert them into a
 //! HAL designed struct from the `pac` struct using the [split](trait.GpioExt.html#tymethod.split) function.
 //! ```rust
-//! use tc37x::P00;
-//! use bw_r_driver_tc37x::gpio::GpioExt;
-//! let mut gpio00 = P00.split();
+//! use bw_r_drivers_tc37x::pac::P00;
+//! use bw_r_drivers_tc37x::gpio::GpioExt;
+//! let mut port00 = P00.split();
 //! ```
 //!
 //! This gives you a struct containing all the pins `px0..px15`.
@@ -17,11 +20,11 @@
 //! For example, to set `pa5` high, you would call
 //!
 //! ```rust
-//! use tc37x::P00;
-//! use bw_r_driver_tc37x::gpio::GpioExt;
-//! let mut gpio00 = P00.split();
-//! let mut output = gpio00.p00_5.into_push_pull_output();
-//! output.set_high();
+//! use bw_r_drivers_tc37x::pac::P00;
+//! use bw_r_drivers_tc37x::gpio::GpioExt;
+//! let mut port00 = P00.split();
+//! let mut p00_5 = port00.p00_5.into_push_pull_output();
+//! p00_5.set_high();
 //! ```
 //!
 //! ## Modes
@@ -67,8 +70,8 @@ use core::fmt;
 use core::marker::PhantomData;
 use core::mem::transmute;
 
+use crate::pac::RegisterValue;
 pub use embedded_hal::digital::PinState;
-use tc37x::RegisterValue;
 
 pub use convert::PinMode;
 pub use dynamic::{Dynamic, DynamicPin};
@@ -96,7 +99,7 @@ mod hal;
 pub struct NoPin<Otype = PushPull>(PhantomData<Otype>);
 
 impl<Otype> NoPin<Otype> {
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self(PhantomData)
     }
 }
@@ -319,6 +322,7 @@ pub trait PinSpeed: Sized {
     /// Set pin speed
     fn set_speed(&mut self, speed: Speed);
 
+    #[must_use]
     #[inline(always)]
     fn speed(mut self, speed: Speed) -> Self {
         self.set_speed(speed);
@@ -330,6 +334,7 @@ pub trait PinPull: Sized {
     /// Set the internal pull-up and pull-down resistor
     fn set_internal_resistor(&mut self, resistor: Pull);
 
+    #[must_use]
     #[inline(always)]
     fn internal_resistor(mut self, resistor: Pull) -> Self {
         self.set_internal_resistor(resistor);
@@ -364,7 +369,7 @@ where
     }
 
     /// Set pin speed
-    pub fn speed(mut self, speed: Speed) -> Self {
+    #[must_use] pub fn speed(mut self, speed: Speed) -> Self {
         self.set_speed(speed);
         self
     }
@@ -432,13 +437,13 @@ where
     }
 
     /// Set the internal pull-up and pull-down resistor
-    pub fn internal_resistor(mut self, resistor: Pull) -> Self {
+    #[must_use] pub fn internal_resistor(mut self, resistor: Pull) -> Self {
         self.set_internal_resistor(resistor);
         self
     }
 
     /// Enables / disables the internal pull up
-    pub fn internal_pull_up(self, on: bool) -> Self {
+    #[must_use] pub fn internal_pull_up(self, on: bool) -> Self {
         if on {
             self.internal_resistor(Pull::Up)
         } else {
@@ -447,7 +452,7 @@ where
     }
 
     /// Enables / disables the internal pull down
-    pub fn internal_pull_down(self, on: bool) -> Self {
+    #[must_use] pub fn internal_pull_down(self, on: bool) -> Self {
         if on {
             self.internal_resistor(Pull::Down)
         } else {
@@ -461,7 +466,7 @@ impl<const P: PortIndex, const N: PinIndex, MODE> Pin<P, N, MODE> {
     ///
     /// This is useful when you want to collect the pins into an array where you
     /// need all the elements to have the same type
-    pub fn erase_number(self) -> PartiallyErasedPin<P, MODE> {
+    #[must_use] pub fn erase_number(self) -> PartiallyErasedPin<P, MODE> {
         PartiallyErasedPin::new(PinId(N))
     }
 
@@ -469,7 +474,7 @@ impl<const P: PortIndex, const N: PinIndex, MODE> Pin<P, N, MODE> {
     ///
     /// This is useful when you want to collect the pins into an array where you
     /// need all the elements to have the same type
-    pub fn erase(self) -> ErasedPin<MODE> {
+    #[must_use] pub fn erase(self) -> ErasedPin<MODE> {
         ErasedPin::new(PortId(P), PinId(N))
     }
 }
@@ -547,7 +552,7 @@ impl<const P: PortIndex, const N: PinIndex, MODE> Pin<P, N, Output<MODE>> {
 
     /// Is the pin in drive high or low mode?
     #[inline(always)]
-    pub fn get_state(&self) -> PinState {
+    #[must_use] pub fn get_state(&self) -> PinState {
         if self._is_high() {
             PinState::High
         } else {
@@ -592,13 +597,13 @@ where
 {
     /// Is the input pin high?
     #[inline(always)]
-    pub fn is_high(&self) -> bool {
+    #[must_use] pub fn is_high(&self) -> bool {
         self._is_high()
     }
 
     /// Is the input pin low?
     #[inline(always)]
-    pub fn is_low(&self) -> bool {
+    #[must_use] pub fn is_low(&self) -> bool {
         !self._is_high()
     }
 }
@@ -744,37 +749,37 @@ pub(crate) fn pin_toggle_state(port: &AnyPort, pin: PinId) {
 pub(crate) fn pin_input_is_high(port: &AnyPort, pin: PinId) -> bool {
     match pin.0 {
         // SAFETY: each bit of IN is at least R
-        0 => unsafe { port.r#in().read().p0().get() }.0 == 1,
+        0 => unsafe { port.r#in().read().p0().get() == true },
         // SAFETY: each bit of IN is at least R
-        1 => unsafe { port.r#in().read().p1().get() }.0 == 1,
+        1 => unsafe { port.r#in().read().p1().get() == true },
         // SAFETY: each bit of IN is at least R
-        2 => unsafe { port.r#in().read().p2().get() }.0 == 1,
+        2 => unsafe { port.r#in().read().p2().get() == true },
         // SAFETY: each bit of IN is at least R
-        3 => unsafe { port.r#in().read().p3().get() }.0 == 1,
+        3 => unsafe { port.r#in().read().p3().get() == true },
         // SAFETY: each bit of IN is at least R
-        4 => unsafe { port.r#in().read().p4().get() }.0 == 1,
+        4 => unsafe { port.r#in().read().p4().get() == true },
         // SAFETY: each bit of IN is at least R
-        5 => unsafe { port.r#in().read().p5().get() }.0 == 1,
+        5 => unsafe { port.r#in().read().p5().get() == true },
         // SAFETY: each bit of IN is at least R
-        6 => unsafe { port.r#in().read().p6().get() }.0 == 1,
+        6 => unsafe { port.r#in().read().p6().get() == true },
         // SAFETY: each bit of IN is at least R
-        7 => unsafe { port.r#in().read().p7().get() }.0 == 1,
+        7 => unsafe { port.r#in().read().p7().get() == true },
         // SAFETY: each bit of IN is at least R
-        8 => unsafe { port.r#in().read().p8().get() }.0 == 1,
+        8 => unsafe { port.r#in().read().p8().get() == true },
         // SAFETY: each bit of IN is at least R
-        9 => unsafe { port.r#in().read().p9().get() }.0 == 1,
+        9 => unsafe { port.r#in().read().p9().get() == true },
         // SAFETY: each bit of IN is at least R
-        10 => unsafe { port.r#in().read().p10().get() }.0 == 1,
+        10 => unsafe { port.r#in().read().p10().get() == true },
         // SAFETY: each bit of IN is at least R
-        11 => unsafe { port.r#in().read().p11().get() }.0 == 1,
+        11 => unsafe { port.r#in().read().p11().get() == true },
         // SAFETY: each bit of IN is at least R
-        12 => unsafe { port.r#in().read().p12().get() }.0 == 1,
+        12 => unsafe { port.r#in().read().p12().get() == true },
         // SAFETY: each bit of IN is at least R
-        13 => unsafe { port.r#in().read().p13().get() }.0 == 1,
+        13 => unsafe { port.r#in().read().p13().get() == true },
         // SAFETY: each bit of IN is at least R
-        14 => unsafe { port.r#in().read().p14().get() }.0 == 1,
+        14 => unsafe { port.r#in().read().p14().get() == true },
         // SAFETY: each bit of IN is at least R
-        15 => unsafe { port.r#in().read().p15().get() }.0 == 1,
+        15 => unsafe { port.r#in().read().p15().get() == true },
         _ => {
             // Just return false for invalid pin numbers
             // TODO (alepez) should we panic here?
@@ -787,37 +792,37 @@ pub(crate) fn pin_input_is_high(port: &AnyPort, pin: PinId) -> bool {
 pub(crate) fn pin_output_is_high(port: &AnyPort, pin: PinId) -> bool {
     match pin.0 {
         // SAFETY: each bit of OUT is at least R
-        0 => unsafe { port.out().read().p0().get() }.0 == 1,
+        0 => unsafe { port.out().read().p0().get() == true },
         // SAFETY: each bit of OUT is at least R
-        1 => unsafe { port.out().read().p1().get() }.0 == 1,
+        1 => unsafe { port.out().read().p1().get() == true },
         // SAFETY: each bit of OUT is at least R
-        2 => unsafe { port.out().read().p2().get() }.0 == 1,
+        2 => unsafe { port.out().read().p2().get() == true },
         // SAFETY: each bit of OUT is at least R
-        3 => unsafe { port.out().read().p3().get() }.0 == 1,
+        3 => unsafe { port.out().read().p3().get() == true },
         // SAFETY: each bit of OUT is at least R
-        4 => unsafe { port.out().read().p4().get() }.0 == 1,
+        4 => unsafe { port.out().read().p4().get() == true },
         // SAFETY: each bit of OUT is at least R
-        5 => unsafe { port.out().read().p5().get() }.0 == 1,
+        5 => unsafe { port.out().read().p5().get() == true },
         // SAFETY: each bit of OUT is at least R
-        6 => unsafe { port.out().read().p6().get() }.0 == 1,
+        6 => unsafe { port.out().read().p6().get() == true },
         // SAFETY: each bit of OUT is at least R
-        7 => unsafe { port.out().read().p7().get() }.0 == 1,
+        7 => unsafe { port.out().read().p7().get() == true },
         // SAFETY: each bit of OUT is at least R
-        8 => unsafe { port.out().read().p8().get() }.0 == 1,
+        8 => unsafe { port.out().read().p8().get() == true },
         // SAFETY: each bit of OUT is at least R
-        9 => unsafe { port.out().read().p9().get() }.0 == 1,
+        9 => unsafe { port.out().read().p9().get() == true },
         // SAFETY: each bit of OUT is at least R
-        10 => unsafe { port.out().read().p10().get() }.0 == 1,
+        10 => unsafe { port.out().read().p10().get() == true },
         // SAFETY: each bit of OUT is at least R
-        11 => unsafe { port.out().read().p11().get() }.0 == 1,
+        11 => unsafe { port.out().read().p11().get() == true },
         // SAFETY: each bit of OUT is at least R
-        12 => unsafe { port.out().read().p12().get() }.0 == 1,
+        12 => unsafe { port.out().read().p12().get() == true },
         // SAFETY: each bit of OUT is at least R
-        13 => unsafe { port.out().read().p13().get() }.0 == 1,
+        13 => unsafe { port.out().read().p13().get() == true },
         // SAFETY: each bit of OUT is at least R
-        14 => unsafe { port.out().read().p14().get() }.0 == 1,
+        14 => unsafe { port.out().read().p14().get() == true },
         // SAFETY: each bit of OUT is at least R
-        15 => unsafe { port.out().read().p15().get() }.0 == 1,
+        15 => unsafe { port.out().read().p15().get() == true },
         _ => {
             // Just return false for invalid pin numbers
             // TODO (alepez) should we panic here?

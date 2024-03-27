@@ -5,14 +5,14 @@ use super::*;
 
 impl<const P: PortIndex, const N: PinIndex, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
     /// Turns pin alternate configuration pin into open drain
-    pub fn set_open_drain(self) -> Pin<P, N, Alternate<A, OpenDrain>> {
+    #[must_use] pub fn set_open_drain(self) -> Pin<P, N, Alternate<A, OpenDrain>> {
         self.into_mode()
     }
 }
 
 impl<const P: PortIndex, const N: PinIndex, MODE: PinMode> Pin<P, N, MODE> {
     /// Configures the pin to operate alternate mode
-    pub fn into_alternate<const A: u8>(self) -> Pin<P, N, Alternate<A, PushPull>>
+    #[must_use] pub fn into_alternate<const A: u8>(self) -> Pin<P, N, Alternate<A, PushPull>>
     where
         Self: marker::IntoAf<A>,
     {
@@ -21,7 +21,7 @@ impl<const P: PortIndex, const N: PinIndex, MODE: PinMode> Pin<P, N, MODE> {
 
     /// Configures the pin to operate in alternate open drain mode
     #[allow(path_statements)]
-    pub fn into_alternate_open_drain<const A: u8>(self) -> Pin<P, N, Alternate<A, OpenDrain>>
+    #[must_use] pub fn into_alternate_open_drain<const A: u8>(self) -> Pin<P, N, Alternate<A, OpenDrain>>
     where
         Self: marker::IntoAf<A>,
     {
@@ -29,34 +29,34 @@ impl<const P: PortIndex, const N: PinIndex, MODE: PinMode> Pin<P, N, MODE> {
     }
 
     /// Configures the pin to operate as a input pin
-    pub fn into_input(self) -> Pin<P, N, Input> {
+    #[must_use] pub fn into_input(self) -> Pin<P, N, Input> {
         self.into_mode()
     }
 
     /// Configures the pin to operate as a floating input pin
-    pub fn into_floating_input(self) -> Pin<P, N, Input> {
+    #[must_use] pub fn into_floating_input(self) -> Pin<P, N, Input> {
         self.into_mode().internal_resistor(Pull::None)
     }
 
     /// Configures the pin to operate as a pulled down input pin
-    pub fn into_pull_down_input(self) -> Pin<P, N, Input> {
+    #[must_use] pub fn into_pull_down_input(self) -> Pin<P, N, Input> {
         self.into_mode().internal_resistor(Pull::Down)
     }
 
     /// Configures the pin to operate as a pulled up input pin
-    pub fn into_pull_up_input(self) -> Pin<P, N, Input> {
+    #[must_use] pub fn into_pull_up_input(self) -> Pin<P, N, Input> {
         self.into_mode().internal_resistor(Pull::Up)
     }
 
     /// Configures the pin to operate as an open drain output pin
     /// Initial state will be low.
-    pub fn into_open_drain_output(self) -> Pin<P, N, Output<OpenDrain>> {
+    #[must_use] pub fn into_open_drain_output(self) -> Pin<P, N, Output<OpenDrain>> {
         self.into_mode()
     }
 
     /// Configures the pin to operate as an open-drain output pin.
     /// `initial_state` specifies whether the pin should be initially high or low.
-    pub fn into_open_drain_output_in_state(
+    #[must_use] pub fn into_open_drain_output_in_state(
         mut self,
         initial_state: PinState,
     ) -> Pin<P, N, Output<OpenDrain>> {
@@ -66,14 +66,14 @@ impl<const P: PortIndex, const N: PinIndex, MODE: PinMode> Pin<P, N, MODE> {
 
     /// Configures the pin to operate as an push pull output pin
     /// Initial state will be low.
-    pub fn into_push_pull_output(mut self) -> Pin<P, N, Output<PushPull>> {
+    #[must_use] pub fn into_push_pull_output(mut self) -> Pin<P, N, Output<PushPull>> {
         self._set_low();
         self.into_mode()
     }
 
     /// Configures the pin to operate as an push-pull output pin.
     /// `initial_state` specifies whether the pin should be initially high or low.
-    pub fn into_push_pull_output_in_state(
+    #[must_use] pub fn into_push_pull_output_in_state(
         mut self,
         initial_state: PinState,
     ) -> Pin<P, N, Output<PushPull>> {
@@ -84,7 +84,7 @@ impl<const P: PortIndex, const N: PinIndex, MODE: PinMode> Pin<P, N, MODE> {
     /// Configures the pin as a pin that can change between input
     /// and output without changing the type. It starts out
     /// as a floating input
-    pub fn into_dynamic(self) -> DynamicPin<P, N> {
+    #[must_use] pub fn into_dynamic(self) -> DynamicPin<P, N> {
         self.into_floating_input();
         DynamicPin::new(Dynamic::InputFloating)
     }
@@ -104,7 +104,7 @@ impl<const P: PortIndex, const N: PinIndex, MODE: PinMode> Pin<P, N, MODE> {
 
     #[inline(always)]
     /// Converts pin into specified mode
-    pub fn into_mode<M: PinMode>(mut self) -> Pin<P, N, M> {
+    #[must_use] pub fn into_mode<M: PinMode>(mut self) -> Pin<P, N, M> {
         self.mode::<M>();
         Pin::new()
     }
@@ -173,7 +173,7 @@ impl<MODE: PinMode> ErasedPin<MODE> {
 
     #[inline(always)]
     /// Converts pin into specified mode
-    pub fn into_mode<M: PinMode>(mut self) -> ErasedPin<M> {
+    #[must_use] pub fn into_mode<M: PinMode>(mut self) -> ErasedPin<M> {
         self.mode::<M>();
         ErasedPin::new(self.port_id(), self.pin_id())
     }
@@ -189,7 +189,7 @@ impl<const P: PortIndex, MODE: PinMode> PartiallyErasedPin<P, MODE> {
 
     #[inline(always)]
     /// Converts pin into specified mode
-    pub fn into_mode<M: PinMode>(mut self) -> PartiallyErasedPin<P, M> {
+    #[must_use] pub fn into_mode<M: PinMode>(mut self) -> PartiallyErasedPin<P, M> {
         self.mode::<M>();
         PartiallyErasedPin::new(self.pin)
     }

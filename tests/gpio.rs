@@ -1,9 +1,8 @@
+use bw_r_drivers_tc37x::gpio::{ErasedPin, GpioExt};
+use bw_r_drivers_tc37x::pac::P01;
+use bw_r_drivers_tc37x::pac::{P00, P20};
+use bw_r_drivers_tc37x::tracing;
 use embedded_hal::digital::PinState;
-use tc37x::P01;
-use tc37x::{P00, P20};
-
-use bw_r_driver_tc37x::gpio::{ErasedPin, GpioExt};
-use bw_r_driver_tc37x::tracing;
 use tracing::log::Report;
 
 #[test]
@@ -66,11 +65,11 @@ fn test_input_pin() {
     let port = P00.split();
     let pin = port.p00_7.into_input();
 
-    report.expect_read(0xF003A024, 4, 0b00000000000000000000000000000000);
+    report.expect_read(P00.r#in().ptr() as u32, 4, 0b00000000000000000000000000000000);
     let is_high = pin.is_high();
     assert!(!is_high);
 
-    report.expect_read(0xF003A024, 4, 0b00000000000000000000000010000000);
+    report.expect_read(P00.r#in().ptr() as u32, 4, 0b00000000000000000000000010000000);
     let is_high = pin.is_high();
     assert!(is_high);
 
@@ -124,11 +123,11 @@ fn test_input_pin_type_erasure_number() {
     let pin = port.p00_7.into_input();
     let pin = pin.erase_number();
 
-    report.expect_read(0xF003A024, 4, 0b00000000000000000000000000000000);
+    report.expect_read(P00.r#in().ptr() as u32, 4, 0b00000000000000000000000000000000);
     let is_high = pin.is_high();
     assert!(!is_high);
 
-    report.expect_read(0xF003A024, 4, 0b00000000000000000000000010000000);
+    report.expect_read(P00.r#in().ptr() as u32, 4, 0b00000000000000000000000010000000);
     let is_high = pin.is_high();
     assert!(is_high);
 
@@ -143,11 +142,11 @@ fn test_input_pin_type_erasure_port_and_number() {
     let pin = port.p00_7.into_input();
     let pin = pin.erase();
 
-    report.expect_read(0xF003A024, 4, 0b00000000000000000000000000000000);
+    report.expect_read(P00.r#in().ptr() as u32, 4, 0b00000000000000000000000000000000);
     let is_high = pin.is_high();
     assert!(!is_high);
 
-    report.expect_read(0xF003A024, 4, 0b00000000000000000000000010000000);
+    report.expect_read(P00.r#in().ptr() as u32, 4, 0b00000000000000000000000010000000);
     let is_high = pin.is_high();
     assert!(is_high);
 
@@ -205,7 +204,7 @@ fn toggle_stateful_output_pin_stateful() {
     let port = P00.split();
     let output = port.p00_5.into_push_pull_output();
 
-    report.expect_read(0xF003A000, 4, 0b00000000000000000000000000100000);
+    report.expect_read(P00.out().ptr() as u32, 4, 0b00000000000000000000000000100000);
 
     assert!(stateful_output_pin_is_set_high(output));
 
@@ -220,7 +219,7 @@ fn toggle_stateful_output_pin_type_erasure_number() {
     let output = port.p00_5.into_push_pull_output();
     let output = output.erase_number();
 
-    report.expect_read(0xF003A000, 4, 0b00000000000000000000000000100000);
+    report.expect_read(P00.out().ptr() as u32, 4, 0b00000000000000000000000000100000);
 
     assert!(stateful_output_pin_is_set_high(output));
 
@@ -235,7 +234,7 @@ fn toggle_stateful_output_pin_type_erasure_port_and_number() {
     let output = port.p00_5.into_push_pull_output();
     let output = output.erase();
 
-    report.expect_read(0xF003A000, 4, 0b00000000000000000000000000100000);
+    report.expect_read(P00.out().ptr() as u32, 4, 0b00000000000000000000000000100000);
 
     assert!(stateful_output_pin_is_set_high(output));
 
@@ -244,6 +243,8 @@ fn toggle_stateful_output_pin_type_erasure_port_and_number() {
 
 #[test]
 fn type_erasure_with_into() {
+    let _report = Report::new();
+
     let port = P00.split();
     let output = port.p00_5.into_push_pull_output();
     let output = output.erase();
@@ -252,6 +253,8 @@ fn type_erasure_with_into() {
 
 #[test]
 fn pin_can_type_match_with_peripheral() {
+    let _report = Report::new();
+
     use self::mock_can::*;
 
     let port = P20.split();
@@ -262,7 +265,7 @@ fn pin_can_type_match_with_peripheral() {
 }
 
 mod mock_can {
-    use bw_r_driver_tc37x::gpio::*;
+    use bw_r_drivers_tc37x::gpio::*;
 
     pub struct Can<CAN: alt::CanCommon> {
         _tx_pin: CAN::Tx,
@@ -322,7 +325,7 @@ mod mock_can {
 // implement bit banging.
 #[test]
 fn test_gpio_outport_array() {
-    use bw_r_driver_tc37x::gpio::group::PinArray;
+    use bw_r_drivers_tc37x::gpio::group::PinArray;
 
     let report = Report::new();
     let port = P00.split();
@@ -345,7 +348,7 @@ fn test_gpio_outport_array() {
 // implement bit banging.
 #[test]
 fn test_gpio_outport_tuple() {
-    use bw_r_driver_tc37x::gpio::group::PinGroup;
+    use bw_r_drivers_tc37x::gpio::group::PinGroup;
 
     let report = Report::new();
 

@@ -1,12 +1,12 @@
 // TODO Remove this once the code is stable
 #![allow(clippy::undocumented_unsafe_blocks)]
 
-use crate::can::msg::{MessageId, MessageIdLenght, TxBufferId};
+use crate::can::msg::{MessageId, MessageIdLength, TxBufferId};
 use crate::can::{frame::DataLenghtCode, reg, FrameMode};
 use core::mem::transmute;
 
 pub(crate) struct Tx {
-    inner: reg::TxMsg,
+    inner: reg::msg_tx::TxMsg,
 }
 
 impl Tx {
@@ -31,7 +31,7 @@ impl Tx {
 
     #[inline]
     pub(crate) fn set_msg_id(&self, message_id: MessageId) {
-        let shift = if message_id.length == MessageIdLenght::Standard {
+        let shift = if message_id.length == MessageIdLength::Standard {
             18
         } else {
             0
@@ -40,7 +40,7 @@ impl Tx {
         unsafe {
             self.inner.t0().modify(|r| {
                 r.xtd()
-                    .set(message_id.length == MessageIdLenght::Extended)
+                    .set(message_id.length == MessageIdLength::Extended)
                     .id()
                     .set(id)
             })

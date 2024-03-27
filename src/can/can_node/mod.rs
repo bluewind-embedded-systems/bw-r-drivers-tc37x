@@ -156,7 +156,7 @@ macro_rules! impl_can_node {
                 Ok(node)
             }
 
-            pub fn lock_configuration(self) -> Node<$NodeReg, $ModuleReg, I, Configured> {
+            #[must_use] pub fn lock_configuration(self) -> Node<$NodeReg, $ModuleReg, I, Configured> {
                 self.effects.disable_configuration_change();
 
                 Node {
@@ -812,7 +812,7 @@ pub enum PadDriver {
 }
 
 struct Port {
-    inner: tc37x::p00::P00,
+    inner: crate::pac::p00::P00,
 }
 
 #[derive(Clone, Copy)]
@@ -847,8 +847,8 @@ enum State {
 // TODO Is this needed? Can we get rid of it? Seems to be a duplicate of gpio
 impl Port {
     fn new(port: PortNumber) -> Self {
-        use tc37x::p00::P00;
-        use tc37x::*;
+        use crate::pac::p00::P00;
+        use crate::pac::*;
 
         let inner: P00 = match port {
             PortNumber::_00 => P00,
@@ -927,13 +927,11 @@ impl Port {
             unsafe { transmute(addr) }
         };
 
-        let v : u32 = (mode.0) << shift;
-        let m : u32 = 0xFFu32 << shift;
+        let v: u32 = (mode.0) << shift;
+        let m: u32 = 0xFFu32 << shift;
 
-        // TODO This bypass tracing, so it is not catched by tests
-        #[cfg(target_arch = "tricore")]
         unsafe {
-            core::arch::tricore::intrinsics::__ldmst(iocr.ptr(), v, m);
+            crate::intrinsics::load_modify_store(iocr.ptr(), v, m);
         }
     }
 
@@ -948,12 +946,10 @@ impl Port {
         };
 
         wdt_call::call_without_cpu_endinit(|| {
-            let v : u32 = (driver as u32) << shift;
-            let m : u32 = 0xF << shift;
-            // TODO This bypass tracing, so it is not catched by tests
-            #[cfg(target_arch = "tricore")]
+            let v: u32 = (driver as u32) << shift;
+            let m: u32 = 0xF << shift;
             unsafe {
-                core::arch::tricore::intrinsics::__ldmst(pdr.ptr(), v, m);
+                crate::intrinsics::load_modify_store(pdr.ptr(), v, m);
             }
         });
     }

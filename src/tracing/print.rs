@@ -1,3 +1,5 @@
+//! A simple tracer that prints all memory accesses.
+
 #![allow(clippy::print_stdout)]
 
 use super::TraceGuard;

@@ -1,30 +1,21 @@
 use crate::can::{InterruptLine, Module0, Module1, Tos};
 use crate::cpu::Priority;
-use tc37x::src::can::can_can::CaNxInTy_SPEC;
-use tc37x::{Reg, RW};
+use crate::pac::src::can::{can_can::CaNxInTy_SPEC, CanCan};
+use crate::pac::{Reg, RW, SRC};
 
-// Note: for simplicity, this wraps a value of Can0Int0 type, even if the
-// underlying registers have different types in the PAC crate.
-// TODO This is technically correct, but it is bypassing PAC type-safety. We should discuss about this.
 pub(crate) struct ServiceRequest(Reg<CaNxInTy_SPEC, RW>);
 
 impl Module0 {
+    #[inline(always)]
     pub(crate) fn service_request(line: InterruptLine) -> ServiceRequest {
-        let line_index = usize::from(line as u8);
-        let x = tc37x::SRC.can().can_can()[0].canxinty()[line_index];
-        ServiceRequest(x)
+        module_service_request(0, line)
     }
 }
 
 impl Module1 {
+    #[inline(always)]
     pub(crate) fn service_request(line: InterruptLine) -> ServiceRequest {
-        let line_index = usize::from(line as u8);
-        let x = tc37x::SRC.can().can_can()[1].canxinty()[line_index];
-        ServiceRequest(x)
-        // ServiceRequest(match line {
-        //     // SAFETY: The following transmutes are safe because the underlying registers have the same layout
-        //     InterruptLine::Line0 => unsafe { transmute(tc37x::SRC.can1int0()) },
-        // })
+        module_service_request(1, line)
     }
 }
 
@@ -35,15 +26,29 @@ impl ServiceRequest {
 
         // Set priority and type of service
         // SAFETY: FIXME Check Aurix manual, tos is in range [0, 3], bits 9:8, 15:14, 23:21, 31 are written with 0
-        // TODO .tos() non è disponibile nel pac originale, necessita di nostra patch
-        unsafe { self.0.modify(|r| r.srpn().set(priority).tos().set(tos.into())) };
+        // TODO .tos() is only available in patched pac. If Infineon does not fix it, we need to use set_raw
+        unsafe { self.0.modify(|r| r.srpn().set(priority).tos().set(tos)) };
 
         // Clear request
         // SAFETY: CLRR is a W bit, bits 9:8, 15:14, 23:21, 31 are written with 0
-        unsafe { self.0.modify(|r| r.clrr().set(1u8.into())) };
+        unsafe { self.0.modify(|r| r.clrr().set(true)) };
 
         // Enable service request
         // SAFETY: SRE is a RW bit, bits 9:8, 15:14, 23:21, 31 are written with 0
-        unsafe { self.0.modify(|r| r.sre().set(1u8.into())) };
+        unsafe { self.0.modify(|r| r.sre().set(true)) };
     }
+}
+
+fn module_service_request(module_id: usize, interrupt_line: InterruptLine) -> ServiceRequest {
+    let modules = SRC.can().can();
+
+    // SAFETY: module_id is in range [0, 1] because
+    let module: &CanCan = unsafe { modules.get_unchecked(module_id) };
+
+    let line_index = usize::from(u8::from(interrupt_line));
+
+    // SAFETY: line_index is in range [0, 15] because InterruptLine is an enum with 16 variants
+    let x = unsafe { *module.canxinty().get_unchecked(line_index) };
+
+    ServiceRequest(x)
 }

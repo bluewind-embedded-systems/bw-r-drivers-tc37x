@@ -39,7 +39,7 @@ impl embedded_hal::digital::Error for PinModeError {
 
 impl Dynamic {
     /// Is pin in readable mode
-    pub fn is_input(&self) -> bool {
+    #[must_use] pub fn is_input(&self) -> bool {
         match self {
             Dynamic::InputFloating
             | Dynamic::InputPullUp
@@ -50,7 +50,7 @@ impl Dynamic {
     }
 
     /// Is pin in writable mode
-    pub fn is_output(&self) -> bool {
+    #[must_use] pub fn is_output(&self) -> bool {
         match self {
             Dynamic::InputFloating | Dynamic::InputPullUp | Dynamic::InputPullDown => false,
             Dynamic::OutputPushPull | Dynamic::OutputOpenDrain => true,

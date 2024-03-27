@@ -1,7 +1,7 @@
 use crate::scu::wdt;
 
 #[allow(dead_code)]
-pub(crate) fn call_without_endinit<R>(f: impl FnOnce() -> R) -> R {
+pub fn call_without_endinit<R>(f: impl FnOnce() -> R) -> R {
     call_without_cpu_endinit(|| call_without_safety_endinit(f))
 }
 

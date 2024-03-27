@@ -1,3 +1,5 @@
+//! Controller Area Network (CAN) bus
+
 // TODO Remove this once the module is more complete
 #![allow(dead_code)]
 

@@ -1,3 +1,6 @@
+//! Log effect reporter for testing purposes. It records all effects and allows
+//! to check them later.
+
 #![allow(clippy::expect_used)]
 
 use super::TraceGuard;
@@ -60,7 +63,7 @@ impl Report {
         self.shared_data()
             .read_fifo
             .0
-            .push_front(ReadFifoEntry { addr, len, val })
+            .push_back(ReadFifoEntry { addr, len, val })
     }
 
     pub fn comment(&self, s: impl Into<String>) {
@@ -84,19 +87,19 @@ impl Reporter {
 
 impl super::Reporter for Reporter {
     fn read_volatile(&self, addr: usize, len: usize) -> u64 {
-        let entry = self
-            .shared_data()
-            .read_fifo
-            .0
-            .pop_front()
-            .expect("Unexpected read");
+        let Some(entry) = self.shared_data().read_fifo.0.pop_front() else {
+            panic!("Unexpected read at address 0x{:08X} and len {}", addr, len)
+        };
 
         if entry.addr == addr && entry.len == len {
             let val = entry.val;
             self.push(ReportEntry::Read(ReadEntry { addr, len, val }));
             val
         } else {
-            panic!("Unexpected read at address 0x{:08X} and len {}", addr, len)
+            panic!(
+                "Expected read at address 0x{:08X} and len {}, found 0x{:08X} len {}",
+                entry.addr, entry.len, addr, len
+            );
         }
     }
 

@@ -1,8 +1,10 @@
+//! Tracing module for tracking memory accesses
+
 #![allow(unused)]
 
+use crate::pac;
 use core::cell::RefCell;
 use dummy::DummyEffectReporter;
-use tc37x as pac;
 
 pub mod dummy;
 pub mod log;
@@ -62,9 +64,9 @@ impl TraceGuard {
     pub fn new<T: Reporter + 'static>(reporter: T) -> Self {
         eprintln!("TraceGuard::new");
 
-        pac::tracing::set_read_fn(read);
-        pac::tracing::set_write_fn(write);
-        pac::tracing::set_ldmst_fn(ldmst);
+        pac::tracing::set_read_fn(read_volatile);
+        pac::tracing::set_write_fn(write_volatile);
+        pac::tracing::set_ldmst_fn(load_modify_store);
 
         EFFECT_REPORTER.with(|r| *r.borrow_mut() = Box::new(reporter));
         Self
@@ -77,14 +79,14 @@ impl Drop for TraceGuard {
     }
 }
 
-fn ldmst(addr: usize, val: u64) {
+pub(crate) fn load_modify_store(addr: usize, val: u64) {
     EFFECT_REPORTER.with(|r| r.borrow().load_modify_store(addr, val));
 }
 
-fn write(addr: usize, len: usize, val: u64) {
+pub(crate) fn write_volatile(addr: usize, len: usize, val: u64) {
     EFFECT_REPORTER.with(|r| r.borrow().write_volatile(addr, len, val));
 }
 
-fn read(addr: usize, len: usize) -> u64 {
+pub(crate) fn read_volatile(addr: usize, len: usize) -> u64 {
     EFFECT_REPORTER.with(|r| r.borrow().read_volatile(addr, len))
 }

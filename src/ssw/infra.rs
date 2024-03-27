@@ -7,12 +7,12 @@
 // TODO Remove this once the code is stable
 #![allow(clippy::if_same_then_else)]
 
-// TODO Are we sure we want to publish this function?
-#[cfg(target_arch = "tricore")]
+use crate::intrinsics::read_volatile;
+
 #[inline]
 pub(crate) fn is_application_reset() -> bool {
-    use tc37x::RegisterValue;
-    use tc37x::SCU;
+    use crate::pac::RegisterValue;
+    use crate::pac::SCU;
 
     const APP_RESET_MSK: u32 = ((0x1) << (4))
         | ((0x1) << (7))
@@ -24,31 +24,24 @@ pub(crate) fn is_application_reset() -> bool {
 
     let v = unsafe { SCU.rststat().read() };
 
-    if v.stbyr().get().0 == 1
-        || v.swd().get().0 == 1
-        || v.evr33().get().0 == 1
-        || v.evrc().get().0 == 1
-        || v.cb1().get().0 == 1
-        || v.cb0().get().0 == 1
-        || v.porst().get().0 == 1
+    if v.stbyr().get() == true
+        || v.swd().get() == true
+        || v.evr33().get() == true
+        || v.evrc().get() == true
+        || v.cb1().get() == true
+        || v.cb0().get() == true
+        || v.porst().get() == true
     {
         false
     } else if (v.get_raw() & APP_RESET_MSK) > 0 {
         let v = v.get_raw() & APP_RESET_MSK;
         let v = (unsafe { SCU.rstcon().read() }.get_raw() >> ((31 - v.leading_zeros()) << 1)) & 3;
         v == 2
-    } else if v.cb3().get().0 == 1 {
+    } else if v.cb3().get() == true {
         true
-    } else if (unsafe { (0xF880D000 as *const u32).read_volatile() } & (0x3 << 1)) != 0 {
+    } else if (unsafe { read_volatile(0xF880_D000 as *const u32) } & (0x3 << 1)) != 0 {
         true
     } else {
         false
     }
-}
-
-// TODO Are we sure we want to publish this function?
-#[cfg(not(target_arch = "tricore"))]
-#[inline]
-pub(crate) fn is_application_reset() -> bool {
-    false
 }

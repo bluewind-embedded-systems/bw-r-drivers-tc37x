@@ -1,7 +1,7 @@
 // TODO Remove this once the code is stable
 #![allow(clippy::undocumented_unsafe_blocks)]
 
-use crate::can::msg::MessageIdLenght;
+use crate::can::msg::MessageIdLength;
 use crate::can::{frame::DataLenghtCode, reg, FrameMode};
 use crate::log::debug;
 use core::mem::transmute;
@@ -9,7 +9,7 @@ use core::mem::transmute;
 // create RxMsg using pac structure and unsafe transmute
 
 pub(crate) struct Rx {
-    inner: reg::RxMsg,
+    inner: reg::msg_rx::RxMsg,
 }
 
 impl Rx {
@@ -26,13 +26,13 @@ impl Rx {
         // SAFETY: each bit of R0 is RWH
         let r0 = unsafe { self.inner.r0().read() };
         let message_length = if r0.xtd().get() {
-            MessageIdLenght::Extended
+            MessageIdLength::Extended
         } else {
-            MessageIdLenght::Standard
+            MessageIdLength::Standard
         };
 
         let id = r0.id().get();
-        let shift = if message_length == MessageIdLenght::Standard {
+        let shift = if message_length == MessageIdLength::Standard {
             18
         } else {
             0
@@ -41,12 +41,12 @@ impl Rx {
     }
 
     #[inline]
-    pub(crate) fn get_message_id_length(&self) -> MessageIdLenght {
+    pub(crate) fn get_message_id_length(&self) -> MessageIdLength {
         // SAFETY: each bit of R0 is RWH
         if unsafe { self.inner.r0().read() }.xtd().get() {
-            MessageIdLenght::Extended
+            MessageIdLength::Extended
         } else {
-            MessageIdLenght::Standard
+            MessageIdLength::Standard
         }
     }
 

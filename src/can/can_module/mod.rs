@@ -1,3 +1,5 @@
+#![allow(clippy::cast_possible_truncation)]
+
 mod service_request;
 
 use super::can_node::{Node, NodeConfig};
@@ -5,7 +7,6 @@ use crate::can::NodeId;
 use crate::util::wait_nop_cycles;
 use crate::{pac, scu};
 use core::marker::PhantomData;
-
 
 pub trait ModuleId {}
 
@@ -43,7 +44,7 @@ macro_rules! impl_can_module {
             }
 
             /// Enable the CAN module
-            pub fn enable(self) -> Module<$ModuleId, $ModuleReg, Enabled> {
+            #[must_use] pub fn enable(self) -> Module<$ModuleId, $ModuleReg, Enabled> {
                 scu::wdt::clear_cpu_endinit_inline();
 
                 // SAFETY: DISR is a RW bit, bits 2 and 31:4 are written with 0
@@ -91,9 +92,9 @@ macro_rules! impl_can_module {
                 // Enable CCCE and CI
                 let mcr = mcr
                     .ccce()
-                    .set(1u8.into())
+                    .set(true)
                     .ci()
-                    .set(1u8.into());
+                    .set(true);
 
                 // SAFETY: CCCE and CI are RW bits, bits 23:8 are written with 0
                 unsafe { $module_reg.mcr().write(mcr) }
@@ -113,7 +114,7 @@ macro_rules! impl_can_module {
                 unsafe { $module_reg.mcr().write(mcr) }
 
                 // Disable CCCE and CI
-                let mcr = mcr.ccce().set(0u8.into()).ci().set(0u8.into());
+                let mcr = mcr.ccce().set(false).ci().set(false);
                 // SAFETY: CCCE and CI are RW bits, bits 23:8 are written with 0
                 unsafe { $module_reg.mcr().write(mcr) }
 
@@ -126,10 +127,10 @@ macro_rules! impl_can_module {
                 let mcr = unsafe { $module_reg.mcr().read() };
 
                 let actual_clock_source = match clock_select.0 {
-                    0 => mcr.clksel0().get().0,
-                    1 => mcr.clksel1().get().0,
-                    2 => mcr.clksel2().get().0,
-                    3 => mcr.clksel3().get().0,
+                    0 => mcr.clksel0().get(),
+                    1 => mcr.clksel1().get(),
+                    2 => mcr.clksel2().get(),
+                    3 => mcr.clksel3().get(),
                     _ => unreachable!(),
                 };
 
@@ -147,7 +148,7 @@ macro_rules! impl_can_module {
             pub(crate) fn ram_base_address(&self) -> u32 {
                 // TODO Ugly hack to obtain the ram base addresssize
                 // This is needed because current pac does not provide it
-                ($module_reg.accen0().addr() as u32) - 33020u32
+                ($module_reg.accen0().ptr() as u32) - 33020u32
             }
         }
     };
