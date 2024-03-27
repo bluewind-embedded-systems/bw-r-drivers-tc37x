@@ -527,7 +527,7 @@ macro_rules! impl_can_node {
 
             fn get_tx_fifo_queue_put_index(&self) -> TxBufferId {
                 let id = self.effects.get_tx_fifo_queue_put_index() & 0x1F;
-                // SAFETY The value is in range because it is read from a register and masked with 0x1F
+                // SAFETY: The value is in range because it is read from a register and masked with 0x1F
                 unsafe { TxBufferId::try_from(id).unwrap_unchecked() }
             }
 
@@ -852,27 +852,44 @@ impl Port {
 
         let inner: P00 = match port {
             PortNumber::_00 => P00,
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             PortNumber::_01 => unsafe { transmute(P01) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             PortNumber::_02 => unsafe { transmute(P02) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             PortNumber::_10 => unsafe { transmute(P10) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             PortNumber::_11 => unsafe { transmute(P11) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             PortNumber::_12 => unsafe { transmute(P12) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             PortNumber::_13 => unsafe { transmute(P13) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             PortNumber::_14 => unsafe { transmute(P14) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             PortNumber::_15 => unsafe { transmute(P15) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             PortNumber::_20 => unsafe { transmute(P20) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             PortNumber::_21 => unsafe { transmute(P21) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             PortNumber::_22 => unsafe { transmute(P22) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             PortNumber::_23 => unsafe { transmute(P23) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             PortNumber::_32 => unsafe { transmute(P32) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             PortNumber::_33 => unsafe { transmute(P33) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             PortNumber::_34 => unsafe { transmute(P34) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             PortNumber::_40 => unsafe { transmute(P40) },
         };
         Self { inner }
     }
 
     fn set_pin_state(&self, index: u8, action: State) {
+        // SAFETY: Each bit of OMR is W0, TODO: index should be in range [0, 32)?
         unsafe {
             self.inner.omr().init(|r| {
                 let v = (action as u32) << index;
@@ -906,6 +923,7 @@ impl Port {
             unsafe { transmute::<_, usize>(self.inner) } == unsafe { transmute(crate::pac::P40) };
 
         if is_supervisor {
+            // SAFETY: Bits 0:16 of PDISC are RW, TODO: index should be in range [0, 16)?
             wdt_call::call_without_cpu_endinit(|| unsafe {
                 self.inner.pdisc().modify(|r| {
                     // TODO Check if the new version is compatible with the previous one:
