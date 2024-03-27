@@ -410,6 +410,11 @@ macro_rules! impl_can_node_effect {
                 };
             }
 
+            pub(crate) fn enable_loopback(&self) {
+                // SAFETY: bits 7:3 and 31:11 are written with 0, LBM is a RW bit
+                unsafe { self.reg.npcri().modify(|r| r.lbm().set(true)) };
+            }
+
             pub(crate) fn connect_pin_rx(&self, rx_sel: RxSel) {
                 // SAFETY: bits 7:3 and 31:11 are written with 0, rx_sel is guaranteed to take only allowed values
                 unsafe { self.reg.npcri().modify(|r| r.rxsel().set(rx_sel.into())) };
