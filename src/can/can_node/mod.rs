@@ -1,5 +1,3 @@
-// TODO Remove this once the code is stable
-#![allow(clippy::undocumented_unsafe_blocks)]
 // TODO Remove asap
 #![allow(dead_code)]
 
@@ -915,11 +913,13 @@ impl Port {
     }
 
     fn set_pin_mode(&self, index: u8, mode: Mode) {
+        // TODO: index should be in range [0, 16)
         let ioc_index = index / 4;
         let shift = (index & 0x3) * 8;
 
         // TODO This unsafe code could be made safe by comparing the address (usize) of the port if only self.inner.0 was public
         let is_supervisor =
+            // SAFETY: The following transmute is safe because the underlying registers have the same layout
             unsafe { transmute::<_, usize>(self.inner) } == unsafe { transmute(crate::pac::P40) };
 
         if is_supervisor {
@@ -940,32 +940,41 @@ impl Port {
         // TODO Use change_pin_mode_port_pin from gpio module instead?
         let iocr: crate::pac::Reg<crate::pac::p00::Iocr0_SPEC, crate::pac::RW> = {
             let iocr0 = self.inner.iocr0();
+            // SAFETY: The following transmute is safe, IOCR0 is a 32 bit register
             let addr: *mut u32 = unsafe { transmute(iocr0) };
+            // SAFETY: The following operation is safe since ioc_index is in range [0, 4) TODO: see line 918
             let addr = unsafe { addr.add(ioc_index as usize) };
+            // SAFETY: The following transmute is safe because IOCR0, IOCR4, IOCR8 and IOCR12 have the same layout
             unsafe { transmute(addr) }
         };
 
         let v: u32 = (mode.0) << shift;
         let m: u32 = 0xFFu32 << shift;
 
+        // SAFETY: Writing PCx (RW) for ioc_index
         unsafe {
             crate::intrinsics::load_modify_store(iocr.ptr(), v, m);
         }
     }
 
     fn set_pin_pad_driver(&self, index: u8, driver: PadDriver) {
+        // TODO: index should be in range [0, 16)
         let pdr_index = index / 8;
         let shift = (index & 0x7) * 4;
         let pdr: crate::pac::Reg<crate::pac::p00::Pdr0_SPEC, crate::pac::RW> = {
             let pdr0 = self.inner.pdr0();
+            // SAFETY: The following transmute is safe, PDR0 is a 32 bit register
             let addr: *mut u32 = unsafe { transmute(pdr0) };
+            // SAFETY: The following operation is safe since pdr_index is in range [0, 1] TODO: see line 957
             let addr = unsafe { addr.add(pdr_index as usize) };
+            // SAFETY: The following transmute is safe because PDR0 and PDR1 have the same layout
             unsafe { transmute(addr) }
         };
 
         wdt_call::call_without_cpu_endinit(|| {
             let v: u32 = (driver as u32) << shift;
             let m: u32 = 0xF << shift;
+            // SAFETY: Writing PDx and PLx (RW) for pdr_index
             unsafe {
                 crate::intrinsics::load_modify_store(pdr.ptr(), v, m);
             }
