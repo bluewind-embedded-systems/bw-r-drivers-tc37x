@@ -40,7 +40,7 @@ jobs:
       - name: Clean docs folder
         run: cargo clean --doc
       - name: Build docs
-        run: cargo doc --no-deps
+        run: cargo doc --no-deps -Ftracing
       - name: Add redirect
         run: echo '<meta http-equiv="refresh" content="0;url=/bw-r-drivers-tc37x/bw_r_drivers_tc37x">' > target/doc/index.html
       - name: Remove lock file
