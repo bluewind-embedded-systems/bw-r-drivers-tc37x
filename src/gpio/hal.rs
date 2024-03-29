@@ -5,9 +5,7 @@ use super::{
     dynamic::PinModeError, marker, DynamicPin, ErasedPin, Output, PartiallyErasedPin, Pin,
 };
 
-use embedded_hal::digital::{
-    ErrorType, InputPin, OutputPin, PinState, StatefulOutputPin,
-};
+use embedded_hal::digital::{ErrorType, InputPin, OutputPin, PinState, StatefulOutputPin};
 
 // Implementations for `Pin`
 impl<const P: PortIndex, const N: PinIndex, MODE> ErrorType for Pin<P, N, MODE> {
@@ -52,12 +50,12 @@ where
 {
     #[inline(always)]
     fn is_high(&mut self) -> Result<bool, Self::Error> {
-        self.is_high()
+        Ok(Pin::is_high(self))
     }
 
     #[inline(always)]
     fn is_low(&mut self) -> Result<bool, Self::Error> {
-        self.is_low()
+        Ok(Pin::is_low(self))
     }
 }
 
@@ -104,12 +102,12 @@ where
 {
     #[inline(always)]
     fn is_high(&mut self) -> Result<bool, Self::Error> {
-        self.is_high()
+        Ok(ErasedPin::is_high(self))
     }
 
     #[inline(always)]
     fn is_low(&mut self) -> Result<bool, Self::Error> {
-        self._is_low()
+        Ok(ErasedPin::is_low(self))
     }
 }
 
@@ -121,13 +119,13 @@ impl<const P: PortIndex, MODE> ErrorType for PartiallyErasedPin<P, MODE> {
 impl<const P: PortIndex, MODE> OutputPin for PartiallyErasedPin<P, Output<MODE>> {
     #[inline(always)]
     fn set_high(&mut self) -> Result<(), Self::Error> {
-        self.set_state(PinState::High);
+        self.set_high();
         Ok(())
     }
 
     #[inline(always)]
     fn set_low(&mut self) -> Result<(), Self::Error> {
-        self.set_state(PinState::Low);
+        self.set_low();
         Ok(())
     }
 }
@@ -139,7 +137,7 @@ impl<const P: PortIndex, MODE> StatefulOutputPin for PartiallyErasedPin<P, Outpu
     }
 
     #[inline(always)]
-    fn is_set_low(& mut self) -> Result<bool, Self::Error> {
+    fn is_set_low(&mut self) -> Result<bool, Self::Error> {
         Ok(self._is_set_low())
     }
 
@@ -156,12 +154,12 @@ where
 {
     #[inline(always)]
     fn is_high(&mut self) -> Result<bool, Self::Error> {
-        self.is_high()
+        Ok(PartiallyErasedPin::is_high(self))
     }
 
     #[inline(always)]
     fn is_low(&mut self) -> Result<bool, Self::Error> {
-        self.is_low()
+        Ok(PartiallyErasedPin::is_low(self))
     }
 }
 
@@ -181,9 +179,9 @@ impl<const P: PortIndex, const N: PinIndex> OutputPin for DynamicPin<P, N> {
 
 impl<const P: PortIndex, const N: PinIndex> InputPin for DynamicPin<P, N> {
     fn is_high(&mut self) -> Result<bool, Self::Error> {
-        self.is_high()
+        DynamicPin::is_high(self)
     }
     fn is_low(&mut self) -> Result<bool, Self::Error> {
-        self.is_low()
+        DynamicPin::is_low(self)
     }
 }
