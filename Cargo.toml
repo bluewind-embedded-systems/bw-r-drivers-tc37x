@@ -12,10 +12,9 @@ package = "embedded-hal"
 git = "https://github.com/rust-embedded/embedded-hal.git"
 rev = "v1.0.0-rc.1"
 
-# [dependencies.tc37x]
 [dependencies.tc375-pac]
-git = "https://github.com/Infineon/tc375-pac"
-rev = "066d3327c39819b2f28bc8b341d75564d98c0af8"
+git = "https://github.com/bluewind-embedded-systems/tc375-pac"
+rev = "201961c0c6a5d3f80e1cd56099bad3544a580493"
 features = [
     "scu",
     "smu",
@@ -72,4 +71,4 @@ version = "=0.3.6"
 default = []
 log_with_defmt = ["dep:defmt", "dep:defmt-rtt", "dep:critical-section"]
 log_with_env_logger = ["dep:log", "dep:env_logger"]
-# tracing = ["dep:insta", "tc37x/tracing"]
+tracing = ["dep:insta", "tc375-pac/tracing"]
