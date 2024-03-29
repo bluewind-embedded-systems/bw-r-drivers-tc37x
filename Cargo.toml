@@ -8,9 +8,7 @@ license = "BSL-1.0"
 version = "=0.4.1"
 
 [dependencies.embedded-hal]
-package = "embedded-hal"
-git = "https://github.com/rust-embedded/embedded-hal.git"
-rev = "v1.0.0-rc.1"
+version = "1.0.0"
 
 [dependencies.tc375-pac]
 git = "https://github.com/bluewind-embedded-systems/tc375-pac"
