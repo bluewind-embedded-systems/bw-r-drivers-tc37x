@@ -778,37 +778,37 @@ pub(crate) fn pin_toggle_state(port: &AnyPort, pin: PinId) {
 pub(crate) fn pin_input_is_high(port: &AnyPort, pin: PinId) -> bool {
     match pin.0 {
         // SAFETY: each bit of IN is at least R
-        0 => unsafe { port.r#in().read().p0().get() == true },
+        0 => unsafe { port.r#in().read().p0().get() },
         // SAFETY: each bit of IN is at least R
-        1 => unsafe { port.r#in().read().p1().get() == true },
+        1 => unsafe { port.r#in().read().p1().get() },
         // SAFETY: each bit of IN is at least R
-        2 => unsafe { port.r#in().read().p2().get() == true },
+        2 => unsafe { port.r#in().read().p2().get() },
         // SAFETY: each bit of IN is at least R
-        3 => unsafe { port.r#in().read().p3().get() == true },
+        3 => unsafe { port.r#in().read().p3().get() },
         // SAFETY: each bit of IN is at least R
-        4 => unsafe { port.r#in().read().p4().get() == true },
+        4 => unsafe { port.r#in().read().p4().get() },
         // SAFETY: each bit of IN is at least R
-        5 => unsafe { port.r#in().read().p5().get() == true },
+        5 => unsafe { port.r#in().read().p5().get() },
         // SAFETY: each bit of IN is at least R
-        6 => unsafe { port.r#in().read().p6().get() == true },
+        6 => unsafe { port.r#in().read().p6().get() },
         // SAFETY: each bit of IN is at least R
-        7 => unsafe { port.r#in().read().p7().get() == true },
+        7 => unsafe { port.r#in().read().p7().get() },
         // SAFETY: each bit of IN is at least R
-        8 => unsafe { port.r#in().read().p8().get() == true },
+        8 => unsafe { port.r#in().read().p8().get() },
         // SAFETY: each bit of IN is at least R
-        9 => unsafe { port.r#in().read().p9().get() == true },
+        9 => unsafe { port.r#in().read().p9().get() },
         // SAFETY: each bit of IN is at least R
-        10 => unsafe { port.r#in().read().p10().get() == true },
+        10 => unsafe { port.r#in().read().p10().get() },
         // SAFETY: each bit of IN is at least R
-        11 => unsafe { port.r#in().read().p11().get() == true },
+        11 => unsafe { port.r#in().read().p11().get() },
         // SAFETY: each bit of IN is at least R
-        12 => unsafe { port.r#in().read().p12().get() == true },
+        12 => unsafe { port.r#in().read().p12().get() },
         // SAFETY: each bit of IN is at least R
-        13 => unsafe { port.r#in().read().p13().get() == true },
+        13 => unsafe { port.r#in().read().p13().get() },
         // SAFETY: each bit of IN is at least R
-        14 => unsafe { port.r#in().read().p14().get() == true },
+        14 => unsafe { port.r#in().read().p14().get() },
         // SAFETY: each bit of IN is at least R
-        15 => unsafe { port.r#in().read().p15().get() == true },
+        15 => unsafe { port.r#in().read().p15().get() },
         _ => {
             // Just return false for invalid pin numbers
             // TODO (alepez) should we panic here?
@@ -821,37 +821,37 @@ pub(crate) fn pin_input_is_high(port: &AnyPort, pin: PinId) -> bool {
 pub(crate) fn pin_output_is_high(port: &AnyPort, pin: PinId) -> bool {
     match pin.0 {
         // SAFETY: each bit of OUT is at least R
-        0 => unsafe { port.out().read().p0().get() == true },
+        0 => unsafe { port.out().read().p0().get() },
         // SAFETY: each bit of OUT is at least R
-        1 => unsafe { port.out().read().p1().get() == true },
+        1 => unsafe { port.out().read().p1().get() },
         // SAFETY: each bit of OUT is at least R
-        2 => unsafe { port.out().read().p2().get() == true },
+        2 => unsafe { port.out().read().p2().get() },
         // SAFETY: each bit of OUT is at least R
-        3 => unsafe { port.out().read().p3().get() == true },
+        3 => unsafe { port.out().read().p3().get() },
         // SAFETY: each bit of OUT is at least R
-        4 => unsafe { port.out().read().p4().get() == true },
+        4 => unsafe { port.out().read().p4().get() },
         // SAFETY: each bit of OUT is at least R
-        5 => unsafe { port.out().read().p5().get() == true },
+        5 => unsafe { port.out().read().p5().get() },
         // SAFETY: each bit of OUT is at least R
-        6 => unsafe { port.out().read().p6().get() == true },
+        6 => unsafe { port.out().read().p6().get() },
         // SAFETY: each bit of OUT is at least R
-        7 => unsafe { port.out().read().p7().get() == true },
+        7 => unsafe { port.out().read().p7().get() },
         // SAFETY: each bit of OUT is at least R
-        8 => unsafe { port.out().read().p8().get() == true },
+        8 => unsafe { port.out().read().p8().get() },
         // SAFETY: each bit of OUT is at least R
-        9 => unsafe { port.out().read().p9().get() == true },
+        9 => unsafe { port.out().read().p9().get() },
         // SAFETY: each bit of OUT is at least R
-        10 => unsafe { port.out().read().p10().get() == true },
+        10 => unsafe { port.out().read().p10().get() },
         // SAFETY: each bit of OUT is at least R
-        11 => unsafe { port.out().read().p11().get() == true },
+        11 => unsafe { port.out().read().p11().get() },
         // SAFETY: each bit of OUT is at least R
-        12 => unsafe { port.out().read().p12().get() == true },
+        12 => unsafe { port.out().read().p12().get() },
         // SAFETY: each bit of OUT is at least R
-        13 => unsafe { port.out().read().p13().get() == true },
+        13 => unsafe { port.out().read().p13().get() },
         // SAFETY: each bit of OUT is at least R
-        14 => unsafe { port.out().read().p14().get() == true },
+        14 => unsafe { port.out().read().p14().get() },
         // SAFETY: each bit of OUT is at least R
-        15 => unsafe { port.out().read().p15().get() == true },
+        15 => unsafe { port.out().read().p15().get() },
         _ => {
             // Just return false for invalid pin numbers
             // TODO (alepez) should we panic here?
