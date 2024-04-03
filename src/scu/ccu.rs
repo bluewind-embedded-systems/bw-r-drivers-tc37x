@@ -106,7 +106,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
     // SAFETY: CLKSEL is RWH and takes values in range [0, 3], UP is a W bit. Written respectively with 0 and 1
     unsafe {
         SCU.ccucon0()
-            .modify(|r| r.clksel().set(CLKSEL_BACKUP.into()).up().set(true))
+            .modify(|r| r.clksel().set(CLKSEL_BACKUP).up().set(true))
     };
     wait_ccucon0_lock()?;
 
@@ -158,7 +158,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         // MODE is written with 0
         unsafe {
             SCU.osccon()
-                .modify(|r| r.mode().set(mode.into()).oscval().set(oscval))
+                .modify(|r| r.mode().set(mode).oscval().set(oscval))
         };
     }
 
@@ -173,7 +173,7 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
                 .ndiv()
                 .set(plls_params.sys_pll.n_divider)
                 .insel()
-                .set((plls_params.pll_input_clock_selection as u8).into())
+                .set(plls_params.pll_input_clock_selection as u8)
         })
     }
 
@@ -340,22 +340,22 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         // Each bitfield in the following instructions is RW, and takes specific value ranges that are guaranteed by the types used
         let cuccon0 = unsafe { SCU.ccucon0().read() }
             .stmdiv()
-            .set(config.clock_distribution.ccucon0.stm_div.into())
+            .set(config.clock_distribution.ccucon0.stm_div)
             .gtmdiv()
-            .set(config.clock_distribution.ccucon0.gtm_div.into())
+            .set(config.clock_distribution.ccucon0.gtm_div)
             .sridiv()
-            .set(config.clock_distribution.ccucon0.sri_div.into())
+            .set(config.clock_distribution.ccucon0.sri_div)
             // TODO: check this
             .lpdiv()
-            .set(config.clock_distribution.ccucon0.lp_div.into())
+            .set(config.clock_distribution.ccucon0.lp_div)
             .spbdiv()
-            .set(config.clock_distribution.ccucon0.spb_div.into())
+            .set(config.clock_distribution.ccucon0.spb_div)
             .bbbdiv()
-            .set(config.clock_distribution.ccucon0.bbb_div.into())
+            .set(config.clock_distribution.ccucon0.bbb_div)
             .fsidiv()
-            .set(config.clock_distribution.ccucon0.fsi_div.into())
+            .set(config.clock_distribution.ccucon0.fsi_div)
             .fsi2div()
-            .set(config.clock_distribution.ccucon0.fsi2_div.into());
+            .set(config.clock_distribution.ccucon0.fsi2_div);
 
         wait_ccucon0_lock()?;
 
@@ -376,21 +376,21 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         {
             ccucon1 = ccucon1
                 .mcandiv()
-                .set(config.clock_distribution.ccucon1.mcan_div.into())
+                .set(config.clock_distribution.ccucon1.mcan_div)
                 .clkselmcan()
-                .set(config.clock_distribution.ccucon1.clksel_mcan.into())
+                .set(config.clock_distribution.ccucon1.clksel_mcan)
                 .pll1divdis()
-                .set(config.clock_distribution.ccucon1.pll1_div_dis.into())
+                .set(config.clock_distribution.ccucon1.pll1_div_dis)
                 .i2cdiv()
-                .set(config.clock_distribution.ccucon1.i2c_div.into())
+                .set(config.clock_distribution.ccucon1.i2c_div)
                 .mscdiv()
-                .set(config.clock_distribution.ccucon1.msc_div.into())
+                .set(config.clock_distribution.ccucon1.msc_div)
                 .clkselmsc()
-                .set(config.clock_distribution.ccucon1.clksel_msc.into())
+                .set(config.clock_distribution.ccucon1.clksel_msc)
                 .qspidiv()
-                .set(config.clock_distribution.ccucon1.qspi_div.into())
+                .set(config.clock_distribution.ccucon1.qspi_div)
                 .clkselqspi()
-                .set(config.clock_distribution.ccucon1.clksel_qspi.into());
+                .set(config.clock_distribution.ccucon1.clksel_qspi);
 
             ccucon1 = ccucon1
                 .clkselmcan()
@@ -413,21 +413,21 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         // SAFETY: each bit of CCUCON1 is at least R
         ccucon1 = unsafe { SCU.ccucon1().read() }
             .mcandiv()
-            .set(config.clock_distribution.ccucon1.mcan_div.into())
+            .set(config.clock_distribution.ccucon1.mcan_div)
             .clkselmcan()
-            .set(config.clock_distribution.ccucon1.clksel_mcan.into())
+            .set(config.clock_distribution.ccucon1.clksel_mcan)
             .pll1divdis()
             .set(config.clock_distribution.ccucon1.pll1_div_dis)
             .i2cdiv()
-            .set(config.clock_distribution.ccucon1.i2c_div.into())
+            .set(config.clock_distribution.ccucon1.i2c_div)
             .mscdiv()
-            .set(config.clock_distribution.ccucon1.msc_div.into())
+            .set(config.clock_distribution.ccucon1.msc_div)
             .clkselmsc()
-            .set(config.clock_distribution.ccucon1.clksel_msc.into())
+            .set(config.clock_distribution.ccucon1.clksel_msc)
             .qspidiv()
-            .set(config.clock_distribution.ccucon1.qspi_div.into())
+            .set(config.clock_distribution.ccucon1.qspi_div)
             .clkselqspi()
-            .set(config.clock_distribution.ccucon1.clksel_qspi.into());
+            .set(config.clock_distribution.ccucon1.clksel_qspi);
 
         wait_ccucon1_lock()?;
 
@@ -449,11 +449,11 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
             // SAFETY: each bit of CCUCON2 is at least R
             ccucon2 = unsafe { SCU.ccucon2().read() }
                 .asclinfdiv()
-                .set(config.clock_distribution.ccucon2.asclinf_div.into())
+                .set(config.clock_distribution.ccucon2.asclinf_div)
                 .asclinsdiv()
-                .set(config.clock_distribution.ccucon2.asclins_div.into())
+                .set(config.clock_distribution.ccucon2.asclins_div)
                 .clkselasclins()
-                .set(config.clock_distribution.ccucon2.clksel_asclins.into());
+                .set(config.clock_distribution.ccucon2.clksel_asclins);
 
             ccucon2 = ccucon2
                 .clkselasclins()
@@ -472,11 +472,11 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         // SAFETY: each bit of CCUCON2 is at least R
         ccucon2 = unsafe { SCU.ccucon2().read() }
             .asclinfdiv()
-            .set(config.clock_distribution.ccucon2.asclinf_div.into())
+            .set(config.clock_distribution.ccucon2.asclinf_div)
             .asclinsdiv()
-            .set(config.clock_distribution.ccucon2.asclins_div.into())
+            .set(config.clock_distribution.ccucon2.asclins_div)
             .clkselasclins()
-            .set(config.clock_distribution.ccucon2.clksel_asclins.into());
+            .set(config.clock_distribution.ccucon2.clksel_asclins);
 
         wait_ccucon2_lock()?;
 
@@ -493,9 +493,9 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         // SAFETY: each bit of CCUCON5 is at least R, except for bit UP (W, if read always return 0)
         let mut ccucon5 = unsafe { SCU.ccucon5().read() }
             .gethdiv()
-            .set(config.clock_distribution.ccucon5.geth_div.into())
+            .set(config.clock_distribution.ccucon5.geth_div)
             .mcanhdiv()
-            .set(config.clock_distribution.ccucon5.mcanh_div.into());
+            .set(config.clock_distribution.ccucon5.mcanh_div);
 
         ccucon5 = ccucon5.up().set(true);
 
