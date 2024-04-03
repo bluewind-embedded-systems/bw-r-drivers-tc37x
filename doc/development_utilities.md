@@ -4,17 +4,15 @@
 
 ## Tracing
 
-This crate has a `tracing` feature, which let you trace all side effects to the
-peripherals registers:
+This crate has a `tracing` feature, which let you trace all side effects to the peripherals registers:
 
 - read
 - write
 - load-modify-store
 
-This is particularly useful to write automatic tests for low level drivers,
-because you don't need a real Aurix hardware to run the tests. You can use the
-`tracing` feature to test your application or other higher level drivers built
-on top of this crate.
+This is particularly useful to write automatic tests for low level drivers, because you don't need a real Aurix hardware to run the tests. 
+
+You can use the `tracing` feature to test your application or other higher level drivers built on top of this crate.
 
 Take a look at [`tests/gpio.rs`](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x/tests/gpio.rs) for some simple examples of tests.
 
