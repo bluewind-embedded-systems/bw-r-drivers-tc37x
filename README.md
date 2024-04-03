@@ -10,11 +10,11 @@ Bluewind is a strategic partner who creates value in the whole product innovatio
 
 # Table of Contents
 
-- [Usage Guide](/doc/usage-guide.md)
-- [Code Examples](/doc/code-examples/README.md)
+- [Getting started and Code Examples](#getting-started)
+- [Usage Guide](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x/blob/main/doc/usage-guide.md)
 - [Code Documenation](https://bluewind-embedded-systems.github.io/bw-r-drivers-tc37x/)
-- [Development utilities](/doc/development_utilities.md)
-- [Troubleshooting](/doc/troubleshooting.md)
+- [Development utilities](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x/blob/main/doc/development_utilities.md)
+- [Troubleshooting](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x/blob/main/doc/troubleshooting.md)
 
 
 # AURIX™ Rust Startup Ecosystem
