@@ -1,6 +1,3 @@
-// TODO Remove this once the code is stable
-#![allow(clippy::undocumented_unsafe_blocks)]
-
 use super::*;
 
 impl<const P: PortIndex, const N: PinIndex, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
@@ -159,7 +156,7 @@ fn change_pin_mode_port_pin<MODE: PinMode>(port: &AnyPort, pin: PinId) {
 
 #[inline(always)]
 fn change_pin_mode<const P: PortIndex, const N: PinIndex, M: PinMode>() {
-    // SAFETY: All Port instances have the same layout as Port00
+    // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
     change_pin_mode_port_pin::<M>(&unsafe { *Gpio::<P>::ptr() }, PinId(N))
 }
 
@@ -167,6 +164,7 @@ use super::ErasedPin;
 impl<MODE: PinMode> ErasedPin<MODE> {
     #[inline(always)]
     pub(super) fn mode<M: PinMode>(&mut self) {
+        // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
         let block = unsafe { self.block() };
         change_pin_mode_port_pin::<M>(block, self.pin_id());
     }
@@ -184,6 +182,7 @@ impl<const P: PortIndex, MODE: PinMode> PartiallyErasedPin<P, MODE> {
     #[inline(always)]
     pub(super) fn mode<M: PinMode>(&mut self) {
         let n = self.pin_id();
+        // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
         change_pin_mode_port_pin::<M>(&unsafe { *Gpio::<P>::ptr() }, n)
     }
 

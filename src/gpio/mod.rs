@@ -1,6 +1,3 @@
-// TODO Remove this once the code is stable
-#![allow(clippy::undocumented_unsafe_blocks)]
-
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::unused_self)]
 
@@ -397,6 +394,7 @@ where
             Pull::Down => 0b01,
         };
 
+        // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
         let port = unsafe { (*Gpio::<P>::ptr()) };
 
         match N {
@@ -506,6 +504,7 @@ impl<const P: PortIndex, const N: PinIndex, MODE> Pin<P, N, MODE> {
     /// a short spike of an incorrect value
     #[inline(always)]
     fn _set_state(&mut self, state: PinState) {
+        // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
         let port = &unsafe { (*Gpio::<P>::ptr()) };
         pin_set_state(port, PinId(N), state);
     }
@@ -520,18 +519,21 @@ impl<const P: PortIndex, const N: PinIndex, MODE> Pin<P, N, MODE> {
 
     #[inline(always)]
     fn _is_high(&self) -> bool {
+        // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
         let port = &(unsafe { *Gpio::<P>::ptr() });
         pin_input_is_high(port, PinId(N))
     }
 
     #[inline(always)]
     fn _is_set_high(&self) -> bool {
+        // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
         let port = &(unsafe { *Gpio::<P>::ptr() });
         pin_output_is_high(port, PinId(N))
     }
 
     #[inline(always)]
     fn _toggle(&mut self) {
+        // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
         let port = &unsafe { (*Gpio::<P>::ptr()) };
         pin_toggle_state(port, PinId(N));
     }
@@ -626,11 +628,11 @@ macro_rules! gpio {
                 type Parts = Parts;
 
                 fn split(self) -> Parts {
-                    unsafe {
+                    // unsafe {
                         // Enable clock.
                         // TODO (alepez) $PORTX::enable_unchecked();
                         // TODO (alepez) $PORTX::reset_unchecked();
-                    }
+                    // }
                     Parts {
                         $(
                             $pxi: $PXi::new(),
@@ -675,22 +677,39 @@ impl<const P: PortIndex> Gpio<P> {
         // TODO (annabo) load automatically from pac file `port_##.rs`
         #[allow(clippy::useless_transmute)]
         match P {
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             0 => unsafe { transmute(&crate::pac::P00) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             1 => unsafe { transmute(&crate::pac::P01) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             2 => unsafe { transmute(&crate::pac::P02) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             10 => unsafe { transmute(&crate::pac::P10) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             11 => unsafe { transmute(&crate::pac::P11) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             12 => unsafe { transmute(&crate::pac::P12) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             13 => unsafe { transmute(&crate::pac::P13) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             14 => unsafe { transmute(&crate::pac::P14) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             15 => unsafe { transmute(&crate::pac::P15) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             20 => unsafe { transmute(&crate::pac::P20) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             21 => unsafe { transmute(&crate::pac::P21) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             22 => unsafe { transmute(&crate::pac::P22) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             23 => unsafe { transmute(&crate::pac::P23) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             32 => unsafe { transmute(&crate::pac::P32) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             33 => unsafe { transmute(&crate::pac::P33) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             34 => unsafe { transmute(&crate::pac::P34) },
+            // SAFETY: The following transmutes are safe because the underlying registers have the same layout
             40 => unsafe { transmute(&crate::pac::P40) },
             _ => panic!("Unknown GPIO port"),
         }

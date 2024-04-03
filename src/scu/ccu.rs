@@ -3,7 +3,6 @@
 #![allow(clippy::result_unit_err)]
 #![allow(clippy::float_arithmetic)]
 // TODO Remove this once the code is stable
-#![allow(clippy::undocumented_unsafe_blocks)]
 #![allow(clippy::cast_possible_truncation)]
 #![allow(clippy::cast_precision_loss)]
 #![allow(clippy::cast_sign_loss)]

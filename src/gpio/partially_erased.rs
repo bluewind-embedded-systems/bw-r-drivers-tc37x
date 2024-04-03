@@ -1,6 +1,3 @@
-// TODO Remove this once the code is stable
-#![allow(clippy::undocumented_unsafe_blocks)]
-
 use super::*;
 
 pub use PartiallyErasedPin as PEPin;
@@ -92,6 +89,7 @@ impl<const P: PortIndex, MODE> PartiallyErasedPin<P, Output<MODE>> {
     /// Drives the pin high or low depending on the provided value
     #[inline(always)]
     pub fn set_state(&mut self, state: PinState) {
+        // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
         let port = &unsafe { (*Gpio::<P>::ptr()) };
         pin_set_state(port, self.pin, state);
     }
@@ -99,6 +97,7 @@ impl<const P: PortIndex, MODE> PartiallyErasedPin<P, Output<MODE>> {
     /// Is the pin in drive high mode?
     #[inline(always)]
     pub(crate) fn _is_set_high(&self) -> bool {
+        // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
         let port = &(unsafe { *Gpio::<P>::ptr() });
         pin_output_is_high(port, self.pin)
     }
@@ -112,6 +111,7 @@ impl<const P: PortIndex, MODE> PartiallyErasedPin<P, Output<MODE>> {
     /// Toggle pin output
     #[inline(always)]
     pub fn toggle(&mut self) {
+        // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
         let port = &unsafe { (*Gpio::<P>::ptr()) };
         pin_toggle_state(port, self.pin)
     }
@@ -124,6 +124,7 @@ where
     /// Is the input pin high?
     #[inline(always)]
     #[must_use] pub fn is_high(&self) -> bool {
+        // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
         let port = &(unsafe { *Gpio::<P>::ptr() });
         pin_input_is_high(port, self.pin)
     }
