@@ -75,15 +75,9 @@ fn wait_divider() -> Result<(), ()> {
 
 fn set_pll_power(syspllpower: bool, perpllpower: bool) -> Result<(), ()> {
     // SAFETY: PLLPWD is a RW bit, syspllpower takes only values in range [0, 1]
-    unsafe {
-        SCU.syspllcon0()
-            .modify(|r| r.pllpwd().set(syspllpower))
-    };
+    unsafe { SCU.syspllcon0().modify(|r| r.pllpwd().set(syspllpower)) };
     // SAFETY: PLLPWD is a RW bit, syspllpower takes only values in range [0, 1]
-    unsafe {
-        SCU.perpllcon0()
-            .modify(|r| r.pllpwd().set(perpllpower))
-    };
+    unsafe { SCU.perpllcon0().modify(|r| r.pllpwd().set(perpllpower)) };
 
     wait_cond(SYSPLLSTAT_PWDSTAT_TIMEOUT_COUNT, || {
         // SAFETY: each bit of SYSPLLSTAT is at least R
@@ -295,10 +289,7 @@ pub(crate) fn modulation_init(config: &Config) {
         };
 
         // SAFETY: MODEN is a RW bit
-        unsafe {
-            SCU.syspllcon0()
-                .modify(|r| r.moden().set(true))
-        };
+        unsafe { SCU.syspllcon0().modify(|r| r.moden().set(true)) };
 
         wdt::set_safety_endinit_inline();
     }
@@ -455,9 +446,7 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
                 .clkselasclins()
                 .set(config.clock_distribution.ccucon2.clksel_asclins);
 
-            ccucon2 = ccucon2
-                .clkselasclins()
-                .set(0);
+            ccucon2 = ccucon2.clkselasclins().set(0);
 
             wait_ccucon2_lock()?;
 

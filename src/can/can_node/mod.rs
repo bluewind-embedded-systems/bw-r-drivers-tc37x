@@ -154,7 +154,8 @@ macro_rules! impl_can_node {
                 Ok(node)
             }
 
-            #[must_use] pub fn lock_configuration(self) -> Node<$NodeReg, $ModuleReg, I, Configured> {
+            #[must_use]
+            pub fn lock_configuration(self) -> Node<$NodeReg, $ModuleReg, I, Configured> {
                 self.effects.disable_configuration_change();
 
                 Node {
@@ -291,7 +292,7 @@ macro_rules! impl_can_node {
                             OutputMode::PUSH_PULL,
                             PadDriver::CmosAutomotiveSpeed3,
                         );
-                    },
+                    }
                     None => {
                         self.effects.enable_loopback();
                     }

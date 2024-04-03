@@ -12,9 +12,15 @@ use core::mem::transmute;
 pub(crate) fn get_cpu_watchdog_password() -> u16 {
     let core_id = read_cpu_core_id();
     let password = match core_id {
-        0 => unsafe { pac::SCU.wdtcpu()[0].wdtcpuycon0().read() }.pw().get(),
-        1 => unsafe { pac::SCU.wdtcpu()[1].wdtcpuycon0().read() }.pw().get(),
-        2 => unsafe { pac::SCU.wdtcpu()[2].wdtcpuycon0().read() }.pw().get(),
+        0 => unsafe { pac::SCU.wdtcpu()[0].wdtcpuycon0().read() }
+            .pw()
+            .get(),
+        1 => unsafe { pac::SCU.wdtcpu()[1].wdtcpuycon0().read() }
+            .pw()
+            .get(),
+        2 => unsafe { pac::SCU.wdtcpu()[2].wdtcpuycon0().read() }
+            .pw()
+            .get(),
         _ => unreachable!(),
     };
 
@@ -131,27 +137,9 @@ pub(crate) fn clear_safety_endinit_inline() {
     let con0 = pac::SCU.wdts().wdtscon0();
 
     if unsafe { con0.read() }.lck().get() == true {
-        unsafe {
-            con0.modify(|r| {
-                r.endinit()
-                    .set(true)
-                    .lck()
-                    .set(false)
-                    .pw()
-                    .set(password)
-            })
-        };
+        unsafe { con0.modify(|r| r.endinit().set(true).lck().set(false).pw().set(password)) };
     }
-    unsafe {
-        con0.modify(|r| {
-            r.endinit()
-                .set(false)
-                .lck()
-                .set(true)
-                .pw()
-                .set(password)
-        })
-    }
+    unsafe { con0.modify(|r| r.endinit().set(false).lck().set(true).pw().set(password)) }
 
     #[cfg(tricore_arch = "tricore")]
     while unsafe { con0.read() }.endinit().get() {}
@@ -164,40 +152,17 @@ pub(crate) fn set_safety_endinit_inline() {
     let con0 = pac::SCU.wdts().wdtscon0();
 
     if unsafe { con0.read() }.lck().get() == true {
-        unsafe {
-            con0.modify(|r| {
-                r.endinit()
-                    .set(true)
-                    .lck()
-                    .set(false)
-                    .pw()
-                    .set(password)
-            })
-        };
+        unsafe { con0.modify(|r| r.endinit().set(true).lck().set(false).pw().set(password)) };
     }
 
-    unsafe {
-        con0.modify(|r| {
-            r.endinit()
-                .set(true)
-                .lck()
-                .set(true)
-                .pw()
-                .set(password)
-        })
-    }
+    unsafe { con0.modify(|r| r.endinit().set(true).lck().set(true).pw().set(password)) }
     #[cfg(tricore_arch = "tricore")]
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
 pub fn disable_safety_watchdog() {
     clear_safety_endinit_inline();
-    unsafe {
-        pac::SCU
-            .wdts()
-            .wdtscon1()
-            .modify(|p| p.dr().set(true))
-    };
+    unsafe { pac::SCU.wdts().wdtscon1().modify(|p| p.dr().set(true)) };
     set_safety_endinit_inline();
 }
 

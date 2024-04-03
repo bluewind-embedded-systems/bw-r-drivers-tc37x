@@ -85,7 +85,7 @@ pub(crate) fn read_cpu_core_id() -> u32 {
     }
 
     #[cfg(target_arch = "tricore")]
-    // SAFETY: Assembly instruction to read cpu id 
+    // SAFETY: Assembly instruction to read cpu id
     unsafe {
         let value: u32;
         core::arch::asm!("mfcr {0}, 0xFE1C", out(reg32) value);

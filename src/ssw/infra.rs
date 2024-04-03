@@ -5,7 +5,6 @@
 // TODO Remove this once the code is stable
 #![allow(clippy::if_same_then_else)]
 
-
 #[inline]
 pub(crate) fn is_application_reset() -> bool {
     use crate::pac::RegisterValue;
@@ -40,8 +39,8 @@ pub(crate) fn is_application_reset() -> bool {
     } else if v.cb3().get() {
         true
     } else if
-        // SAFETY: KRST0.RSTSTAT is R (no privilege required)
-        unsafe { crate::pac::CPU0.krst0().read().rststat().get() } != 0 {
+    // SAFETY: KRST0.RSTSTAT is R (no privilege required)
+    unsafe { crate::pac::CPU0.krst0().read().rststat().get() } != 0 {
         true
     } else {
         false

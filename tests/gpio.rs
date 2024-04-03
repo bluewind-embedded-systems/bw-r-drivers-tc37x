@@ -65,11 +65,19 @@ fn test_input_pin() {
     let port = P00.split();
     let pin = port.p00_7.into_input();
 
-    report.expect_read(P00.r#in().ptr() as u32, 4, 0b00000000000000000000000000000000);
+    report.expect_read(
+        P00.r#in().ptr() as u32,
+        4,
+        0b00000000000000000000000000000000,
+    );
     let is_high = pin.is_high();
     assert!(!is_high);
 
-    report.expect_read(P00.r#in().ptr() as u32, 4, 0b00000000000000000000000010000000);
+    report.expect_read(
+        P00.r#in().ptr() as u32,
+        4,
+        0b00000000000000000000000010000000,
+    );
     let is_high = pin.is_high();
     assert!(is_high);
 
@@ -123,11 +131,19 @@ fn test_input_pin_type_erasure_number() {
     let pin = port.p00_7.into_input();
     let pin = pin.erase_number();
 
-    report.expect_read(P00.r#in().ptr() as u32, 4, 0b00000000000000000000000000000000);
+    report.expect_read(
+        P00.r#in().ptr() as u32,
+        4,
+        0b00000000000000000000000000000000,
+    );
     let is_high = pin.is_high();
     assert!(!is_high);
 
-    report.expect_read(P00.r#in().ptr() as u32, 4, 0b00000000000000000000000010000000);
+    report.expect_read(
+        P00.r#in().ptr() as u32,
+        4,
+        0b00000000000000000000000010000000,
+    );
     let is_high = pin.is_high();
     assert!(is_high);
 
@@ -142,11 +158,19 @@ fn test_input_pin_type_erasure_port_and_number() {
     let pin = port.p00_7.into_input();
     let pin = pin.erase();
 
-    report.expect_read(P00.r#in().ptr() as u32, 4, 0b00000000000000000000000000000000);
+    report.expect_read(
+        P00.r#in().ptr() as u32,
+        4,
+        0b00000000000000000000000000000000,
+    );
     let is_high = pin.is_high();
     assert!(!is_high);
 
-    report.expect_read(P00.r#in().ptr() as u32, 4, 0b00000000000000000000000010000000);
+    report.expect_read(
+        P00.r#in().ptr() as u32,
+        4,
+        0b00000000000000000000000010000000,
+    );
     let is_high = pin.is_high();
     assert!(is_high);
 
@@ -204,7 +228,11 @@ fn toggle_stateful_output_pin_stateful() {
     let port = P00.split();
     let output = port.p00_5.into_push_pull_output();
 
-    report.expect_read(P00.out().ptr() as u32, 4, 0b00000000000000000000000000100000);
+    report.expect_read(
+        P00.out().ptr() as u32,
+        4,
+        0b00000000000000000000000000100000,
+    );
 
     assert!(stateful_output_pin_is_set_high(output));
 
@@ -219,7 +247,11 @@ fn toggle_stateful_output_pin_type_erasure_number() {
     let output = port.p00_5.into_push_pull_output();
     let output = output.erase_number();
 
-    report.expect_read(P00.out().ptr() as u32, 4, 0b00000000000000000000000000100000);
+    report.expect_read(
+        P00.out().ptr() as u32,
+        4,
+        0b00000000000000000000000000100000,
+    );
 
     assert!(stateful_output_pin_is_set_high(output));
 
@@ -234,7 +266,11 @@ fn toggle_stateful_output_pin_type_erasure_port_and_number() {
     let output = port.p00_5.into_push_pull_output();
     let output = output.erase();
 
-    report.expect_read(P00.out().ptr() as u32, 4, 0b00000000000000000000000000100000);
+    report.expect_read(
+        P00.out().ptr() as u32,
+        4,
+        0b00000000000000000000000000100000,
+    );
 
     assert!(stateful_output_pin_is_set_high(output));
 
