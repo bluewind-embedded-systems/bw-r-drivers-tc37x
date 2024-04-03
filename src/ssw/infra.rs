@@ -5,7 +5,6 @@
 // TODO Remove this once the code is stable
 #![allow(clippy::if_same_then_else)]
 
-use crate::intrinsics::read_volatile;
 
 #[inline]
 pub(crate) fn is_application_reset() -> bool {
