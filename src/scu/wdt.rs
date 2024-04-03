@@ -1,6 +1,5 @@
 // TODO Remove this once the code is stable
 #![allow(clippy::undocumented_unsafe_blocks)]
-
 #![allow(clippy::cast_possible_truncation)]
 
 use crate::intrinsics::read_cpu_core_id;
@@ -136,7 +135,7 @@ pub(crate) fn clear_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
-    if unsafe { con0.read() }.lck().get() == true {
+    if unsafe { con0.read() }.lck().get() {
         unsafe { con0.modify(|r| r.endinit().set(true).lck().set(false).pw().set(password)) };
     }
     unsafe { con0.modify(|r| r.endinit().set(false).lck().set(true).pw().set(password)) }
@@ -151,7 +150,7 @@ pub(crate) fn set_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
-    if unsafe { con0.read() }.lck().get() == true {
+    if unsafe { con0.read() }.lck().get() {
         unsafe { con0.modify(|r| r.endinit().set(true).lck().set(false).pw().set(password)) };
     }
 
