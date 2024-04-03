@@ -278,17 +278,24 @@ macro_rules! impl_can_node {
             }
 
             // TODO I think this should accept pins as provided by gpio module
-            pub fn setup_pins(&self, pins: &Pins<$ModuleId, I>) {
-                self.connect_pin_rx(
-                    &pins.rx,
-                    InputMode::PULL_UP,
-                    PadDriver::CmosAutomotiveSpeed3,
-                );
-                self.connect_pin_tx(
-                    &pins.tx,
-                    OutputMode::PUSH_PULL,
-                    PadDriver::CmosAutomotiveSpeed3,
-                );
+            pub fn setup_pins(&self, pins: Option<&Pins<$ModuleId, I>>) {
+                match pins {
+                    Some(pins) => {
+                        self.connect_pin_rx(
+                            &pins.rx,
+                            InputMode::PULL_UP,
+                            PadDriver::CmosAutomotiveSpeed3,
+                        );
+                        self.connect_pin_tx(
+                            &pins.tx,
+                            OutputMode::PUSH_PULL,
+                            PadDriver::CmosAutomotiveSpeed3,
+                        );
+                    },
+                    None => {
+                        self.effects.enable_loopback();
+                    }
+                };
             }
 
             pub fn setup_interrupt(&self, interrupt: &NodeInterruptConfig) {

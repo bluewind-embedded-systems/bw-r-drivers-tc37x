@@ -12,9 +12,9 @@ use core::mem::transmute;
 pub(crate) fn get_cpu_watchdog_password() -> u16 {
     let core_id = read_cpu_core_id();
     let password = match core_id {
-        0 => unsafe { pac::SCU.wdtcpu0con0().read() }.pw().get(),
-        1 => unsafe { pac::SCU.wdtcpu1con0().read() }.pw().get(),
-        2 => unsafe { pac::SCU.wdtcpu2con0().read() }.pw().get(),
+        0 => unsafe { pac::SCU.wdtcpu()[0].wdtcpuycon0().read() }.pw().get(),
+        1 => unsafe { pac::SCU.wdtcpu()[1].wdtcpuycon0().read() }.pw().get(),
+        2 => unsafe { pac::SCU.wdtcpu()[2].wdtcpuycon0().read() }.pw().get(),
         _ => unreachable!(),
     };
 
@@ -32,17 +32,17 @@ pub(crate) fn get_safety_watchdog_password() -> u16 {
 }
 
 #[inline]
-unsafe fn get_wdt_con0(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con0_SPEC, pac::RW> {
+unsafe fn get_wdt_con0(core_id: u8) -> pac::Reg<pac::scu::wdtcpu::WdtcpUyCon0_SPEC, pac::RW> {
     // unsafe cast to get the valid SCU WDT based on the core id
-    let off: *mut u8 = unsafe { transmute(pac::SCU.wdtcpu0con0()) };
+    let off: *mut u8 = unsafe { transmute(pac::SCU.wdtcpu()[0].wdtcpuycon0()) };
     let off = unsafe { off.add(core::mem::size_of::<u32>() * 3 * core_id as usize) };
     unsafe { transmute(off) }
 }
 
 #[inline]
-unsafe fn get_wdt_con1(core_id: u8) -> pac::Reg<pac::scu::Wdtcpu0Con1_SPEC, pac::RW> {
+unsafe fn get_wdt_con1(core_id: u8) -> pac::Reg<pac::scu::wdtcpu::WdtcpUyCon1_SPEC, pac::RW> {
     // unsafe cast to get the valid SCU WDT based on the core id
-    let off: *mut u8 = unsafe { transmute(pac::SCU.wdtcpu0con1()) };
+    let off: *mut u8 = unsafe { transmute(pac::SCU.wdtcpu()[0].wdtcpuycon1()) };
     let off = unsafe { off.add(core::mem::size_of::<u32>() * 3 * core_id as usize) };
     unsafe { transmute(off) }
 }
@@ -57,7 +57,7 @@ pub(crate) fn clear_cpu_endinit_inline() {
     // FIXME con0 is read twice
     if unsafe { con0.read() }.lck().get() {
         let rel = unsafe { con0.read() }.rel().get();
-        let data = pac::scu::Wdtcpu0Con0::default()
+        let data = pac::scu::wdtcpu::WdtcpUyCon0::default()
             .endinit()
             .set(true)
             .lck()
@@ -70,7 +70,7 @@ pub(crate) fn clear_cpu_endinit_inline() {
     }
 
     let rel = unsafe { con0.read() }.rel().get();
-    let data = pac::scu::Wdtcpu0Con0::default()
+    let data = pac::scu::wdtcpu::WdtcpUyCon0::default()
         .endinit()
         .set(false)
         .lck()
@@ -95,7 +95,7 @@ pub(crate) fn set_cpu_endinit_inline() {
     // FIXME con0 is read twice
     if unsafe { con0.read() }.lck().get() {
         let rel = unsafe { con0.read() }.rel().get();
-        let data = pac::scu::Wdtcpu0Con0::default()
+        let data = pac::scu::wdtcpu::WdtcpUyCon0::default()
             .endinit()
             .set(true)
             .lck()
@@ -108,7 +108,7 @@ pub(crate) fn set_cpu_endinit_inline() {
     }
 
     let rel = unsafe { con0.read() }.rel().get();
-    let data = pac::scu::Wdtcpu0Con0::default()
+    let data = pac::scu::wdtcpu::WdtcpUyCon0::default()
         .endinit()
         .set(true)
         .lck()
@@ -130,13 +130,13 @@ pub(crate) fn clear_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
-    if unsafe { con0.read() }.lck().get().0 == 1 {
+    if unsafe { con0.read() }.lck().get() == true {
         unsafe {
             con0.modify(|r| {
                 r.endinit()
-                    .set(1u8.into())
+                    .set(true)
                     .lck()
-                    .set(0u8.into())
+                    .set(false)
                     .pw()
                     .set(password)
             })
@@ -145,9 +145,9 @@ pub(crate) fn clear_safety_endinit_inline() {
     unsafe {
         con0.modify(|r| {
             r.endinit()
-                .set(0u8.into())
+                .set(false)
                 .lck()
-                .set(1u8.into())
+                .set(true)
                 .pw()
                 .set(password)
         })
@@ -163,13 +163,13 @@ pub(crate) fn set_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
     let con0 = pac::SCU.wdts().wdtscon0();
 
-    if unsafe { con0.read() }.lck().get().0 == 1 {
+    if unsafe { con0.read() }.lck().get() == true {
         unsafe {
             con0.modify(|r| {
                 r.endinit()
-                    .set(1u8.into())
+                    .set(true)
                     .lck()
-                    .set(0u8.into())
+                    .set(false)
                     .pw()
                     .set(password)
             })
@@ -179,9 +179,9 @@ pub(crate) fn set_safety_endinit_inline() {
     unsafe {
         con0.modify(|r| {
             r.endinit()
-                .set(1u8.into())
+                .set(true)
                 .lck()
-                .set(1u8.into())
+                .set(true)
                 .pw()
                 .set(password)
         })
@@ -196,7 +196,7 @@ pub fn disable_safety_watchdog() {
         pac::SCU
             .wdts()
             .wdtscon1()
-            .modify(|p| p.dr().set(1u8.into()))
+            .modify(|p| p.dr().set(true))
     };
     set_safety_endinit_inline();
 }

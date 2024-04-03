@@ -69,7 +69,7 @@ pub mod util;
 
 pub use embedded_can;
 pub use embedded_hal;
-pub use tc37x as pac;
+pub use tc375_pac as pac;
 
 mod sealed {
     pub trait Sealed {}

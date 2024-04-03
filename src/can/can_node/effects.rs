@@ -23,7 +23,7 @@ macro_rules! impl_can_node_effect {
                     self.reg
                         .rx()
                         .rxesci()
-                        .modify(|r| r.rbds().set(size.to_esci_register_value().into()))
+                        .modify(|r| r.rbds().set(size.to_esci_register_value()))
                 };
             }
 
@@ -34,7 +34,7 @@ macro_rules! impl_can_node_effect {
                     self.reg
                         .rx()
                         .rxesci()
-                        .modify(|r| r.f0ds().set(size.to_esci_register_value().into()))
+                        .modify(|r| r.f0ds().set(size.to_esci_register_value()))
                 };
             }
 
@@ -45,7 +45,7 @@ macro_rules! impl_can_node_effect {
                     self.reg
                         .rx()
                         .rxesci()
-                        .modify(|r| r.f1ds().set(size.to_esci_register_value().into()))
+                        .modify(|r| r.f1ds().set(size.to_esci_register_value()))
                 };
             }
 
@@ -80,28 +80,26 @@ macro_rules! impl_can_node_effect {
             // TODO Move logic to the caller
             pub(crate) fn set_rx_fifo0_operating_mode(&self, mode: RxFifoMode) {
                 let overwrite = mode == RxFifoMode::Overwrite;
-                let overwrite = u8::from(overwrite);
                 // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
                 // bits 1:0, 23 are written with 0, overwrite is in range [0, 1]
                 unsafe {
                     self.reg
                         .rx()
                         .rxf0ci()
-                        .modify(|r| r.f0om().set(overwrite.into()))
+                        .modify(|r| r.f0om().set(overwrite))
                 };
             }
 
             // TODO Move logic to the caller
             pub(crate) fn set_rx_fifo1_operating_mode(&self, mode: RxFifoMode) {
                 let overwrite = mode == RxFifoMode::Overwrite;
-                let overwrite = u8::from(overwrite);
                 // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
                 // bits 1:0, 23 are written with 0, overwrite is in range [0, 1]
                 unsafe {
                     self.reg
                         .rx()
                         .rxf1ci()
-                        .modify(|r| r.f1om().set(overwrite.into()))
+                        .modify(|r| r.f1om().set(overwrite))
                 };
             }
 
@@ -151,10 +149,9 @@ macro_rules! impl_can_node_effect {
             // TODO Move logic to the caller
             pub(crate) fn set_transmit_fifo_queue_mode(&self, mode: TxMode) {
                 let val = mode != TxMode::DedicatedBuffers;
-                let val = u8::from(val);
                 // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_tx after node.effects.enable_configuration_change has been called in Node::new.
                 // bits 1:0, 23:22 and 31:30 are written with 0, val is in range [0, 1]
-                unsafe { self.reg.tx().txbci().modify(|r| r.tfqm().set(val.into())) };
+                unsafe { self.reg.tx().txbci().modify(|r| r.tfqm().set(val)) };
             }
 
             pub(crate) fn set_transmit_fifo_queue_size(&self, number: u8) {
@@ -196,38 +193,38 @@ macro_rules! impl_can_node_effect {
 
                         // TODO A (safer?) alternative is being more explicit. Discuss about it.
                         // self.reg.ndat1i().init(|r| match rx_buffer_id.0 {
-                        //     0 => r.nd0().set(1u8.into()),
-                        //     1 => r.nd1().set(1u8.into()),
-                        //     2 => r.nd2().set(1u8.into()),
-                        //     3 => r.nd3().set(1u8.into()),
-                        //     4 => r.nd4().set(1u8.into()),
-                        //     5 => r.nd5().set(1u8.into()),
-                        //     6 => r.nd6().set(1u8.into()),
-                        //     7 => r.nd7().set(1u8.into()),
-                        //     8 => r.nd8().set(1u8.into()),
-                        //     9 => r.nd9().set(1u8.into()),
-                        //     10 => r.nd10().set(1u8.into()),
-                        //     11 => r.nd11().set(1u8.into()),
-                        //     12 => r.nd12().set(1u8.into()),
-                        //     13 => r.nd13().set(1u8.into()),
-                        //     14 => r.nd14().set(1u8.into()),
-                        //     15 => r.nd15().set(1u8.into()),
-                        //     16 => r.nd16().set(1u8.into()),
-                        //     17 => r.nd17().set(1u8.into()),
-                        //     18 => r.nd18().set(1u8.into()),
-                        //     19 => r.nd19().set(1u8.into()),
-                        //     20 => r.nd20().set(1u8.into()),
-                        //     21 => r.nd21().set(1u8.into()),
-                        //     22 => r.nd22().set(1u8.into()),
-                        //     23 => r.nd23().set(1u8.into()),
-                        //     24 => r.nd24().set(1u8.into()),
-                        //     25 => r.nd25().set(1u8.into()),
-                        //     26 => r.nd26().set(1u8.into()),
-                        //     27 => r.nd27().set(1u8.into()),
-                        //     28 => r.nd28().set(1u8.into()),
-                        //     29 => r.nd29().set(1u8.into()),
-                        //     30 => r.nd30().set(1u8.into()),
-                        //     31 => r.nd31().set(1u8.into()),
+                        //     0 => r.nd0().set(true),
+                        //     1 => r.nd1().set(true),
+                        //     2 => r.nd2().set(true),
+                        //     3 => r.nd3().set(true),
+                        //     4 => r.nd4().set(true),
+                        //     5 => r.nd5().set(true),
+                        //     6 => r.nd6().set(true),
+                        //     7 => r.nd7().set(true),
+                        //     8 => r.nd8().set(true),
+                        //     9 => r.nd9().set(true),
+                        //     10 => r.nd10().set(true),
+                        //     11 => r.nd11().set(true),
+                        //     12 => r.nd12().set(true),
+                        //     13 => r.nd13().set(true),
+                        //     14 => r.nd14().set(true),
+                        //     15 => r.nd15().set(true),
+                        //     16 => r.nd16().set(true),
+                        //     17 => r.nd17().set(true),
+                        //     18 => r.nd18().set(true),
+                        //     19 => r.nd19().set(true),
+                        //     20 => r.nd20().set(true),
+                        //     21 => r.nd21().set(true),
+                        //     22 => r.nd22().set(true),
+                        //     23 => r.nd23().set(true),
+                        //     24 => r.nd24().set(true),
+                        //     25 => r.nd25().set(true),
+                        //     26 => r.nd26().set(true),
+                        //     27 => r.nd27().set(true),
+                        //     28 => r.nd28().set(true),
+                        //     29 => r.nd29().set(true),
+                        //     30 => r.nd30().set(true),
+                        //     31 => r.nd31().set(true),
                         //     _ => unreachable!(),
                         // });
                     };
@@ -246,30 +243,30 @@ macro_rules! impl_can_node_effect {
                 let cccr = self.reg.cccri();
 
                 // SAFETY: INIT bit is RWH
-                if unsafe { cccr.read() }.init().get().0 == 1u8 {
+                if unsafe { cccr.read() }.init().get() == true {
                     // SAFETY: CCE bit is RW
-                    unsafe { cccr.modify(|r| r.cce().set(0u8.into())) };
+                    unsafe { cccr.modify(|r| r.cce().set(false)) };
                     while {
                         // SAFETY: CCE bit is RW
-                        unsafe { cccr.read() }.cce().get().0 != 0u8
+                        unsafe { cccr.read() }.cce().get() != false
                     } {}
                     // SAFETY: INIT bit is RWH
-                    unsafe { cccr.modify(|r| r.init().set(0u8.into())) };
+                    unsafe { cccr.modify(|r| r.init().set(false)) };
                     while {
                         // SAFETY: INIT bit is RWH
-                        unsafe { cccr.read() }.init().get().0 != 0u8
+                        unsafe { cccr.read() }.init().get() != false
                     } {}
                 }
 
                 // SAFETY: INIT bit is RWH
-                unsafe { cccr.modify(|r| r.init().set(1u8.into())) };
+                unsafe { cccr.modify(|r| r.init().set(true)) };
                 while {
                     // SAFETY: INIT bit is RWH
-                    unsafe { cccr.read() }.init().get().0 != 1u8
+                    unsafe { cccr.read() }.init().get() != true
                 } {}
 
                 // SAFETY: INIT bit is RWH, CCE bit is RW
-                unsafe { cccr.modify(|r| r.cce().set(1u8.into()).init().set(1u8.into())) };
+                unsafe { cccr.modify(|r| r.cce().set(true).init().set(true)) };
             }
 
             // TODO Return a different type which does not implement methods needing configuration change enabled
@@ -277,17 +274,17 @@ macro_rules! impl_can_node_effect {
                 let cccr = self.reg.cccri();
 
                 // SAFETY: CCE bit is RW
-                unsafe { cccr.modify(|r| r.cce().set(0u8.into())) };
+                unsafe { cccr.modify(|r| r.cce().set(false)) };
                 while {
                     // SAFETY: CCE bit is RW
-                    unsafe { cccr.read() }.cce().get().0 != 0u8
+                    unsafe { cccr.read() }.cce().get() != false
                 } {}
 
                 // SAFETY: INIT bit is RWH
-                unsafe { cccr.modify(|r| r.init().set(0u8.into())) };
+                unsafe { cccr.modify(|r| r.init().set(false)) };
                 while {
                     // SAFETY: INIT bit is RWH
-                    unsafe { cccr.read() }.init().get().0 != 0u8
+                    unsafe { cccr.read() }.init().get() != false
                 } {}
             }
 
@@ -350,21 +347,19 @@ macro_rules! impl_can_node_effect {
             }
 
             pub(crate) fn set_frame_mode(&self, fdoe: bool, brse: bool) {
-                let fdoe = u8::from(fdoe);
-                let brse = u8::from(brse);
                 // SAFETY: write is CCE and INIT protected: called in Node<Configurable>. after node.effects.enable_configuration_change has been called in Node::new.
                 // bits 11:10 and 31:16 are written with 0, fdoe and brse are in range [0, 1]
                 unsafe {
                     self.reg
                         .cccri()
-                        .modify(|r| r.fdoe().set(fdoe.into()).brse().set(brse.into()))
+                        .modify(|r| r.fdoe().set(fdoe).brse().set(brse))
                 };
             }
 
             pub(crate) fn set_transceiver_delay_compensation_offset(&self, delay: u8) {
                 // SAFETY: write is CCE and INIT protected: called after node.effects.enable_configuration_change has been called in Node::new.
                 // bits 15:13, 22:21 and 31:24 are written with 0, TDC bit is RW
-                unsafe { self.reg.dbtpi().modify(|r| r.tdc().set(1u8.into())) };
+                unsafe { self.reg.dbtpi().modify(|r| r.tdc().set(true)) };
                 // SAFETY: write is CCE and INIT protected: called after node.effects.enable_configuration_change has been called in Node::new.
                 // bits 7 and 31:15 are written with 0, TODO delay should be in range [0, 2^7)
                 unsafe { self.reg.tdcri().modify(|r| r.tdco().set(delay)) };
@@ -415,6 +410,11 @@ macro_rules! impl_can_node_effect {
                 };
             }
 
+            pub(crate) fn enable_loopback(&self) {
+                // SAFETY: bits 7:3 and 31:11 are written with 0, LBM is a RW bit
+                unsafe { self.reg.npcri().modify(|r| r.lbm().set(true)) };
+            }
+
             pub(crate) fn connect_pin_rx(&self, rx_sel: RxSel) {
                 // SAFETY: bits 7:3 and 31:11 are written with 0, rx_sel is guaranteed to take only allowed values
                 unsafe { self.reg.npcri().modify(|r| r.rxsel().set(rx_sel.into())) };
@@ -460,17 +460,17 @@ macro_rules! impl_can_node_effect {
 
             pub(crate) fn is_tx_event_fifo_element_lost(&self) -> bool {
                 // SAFETY: TEFL is RH
-                unsafe { self.reg.tx().txefsi().read() }.tefl().get().0 == 1
+                unsafe { self.reg.tx().txefsi().read() }.tefl().get() == true
             }
 
             pub(crate) fn is_tx_event_fifo_full(&self) -> bool {
                 // SAFETY: EFF is RH
-                unsafe { self.reg.tx().txefsi().read() }.eff().get().0 == 1
+                unsafe { self.reg.tx().txefsi().read() }.eff().get() == true
             }
 
             pub(crate) fn is_tx_fifo_queue_full(&self) -> bool {
                 // SAFETY: TFQF is RH
-                unsafe { self.reg.tx().txfqsi().read() }.tfqf().get().0 == 1
+                unsafe { self.reg.tx().txfqsi().read() }.tfqf().get() == true
             }
 
             pub(crate) fn pause_trasmission(&self, enable: bool) {
@@ -479,7 +479,7 @@ macro_rules! impl_can_node_effect {
                 unsafe {
                     self.reg
                         .cccri()
-                        .modify(|r| r.txp().set(u8::from(enable).into()))
+                        .modify(|r| r.txp().set(enable))
                 };
             }
 
@@ -501,7 +501,7 @@ macro_rules! impl_can_node_effect {
                 unsafe {
                     self.reg
                         .gfci()
-                        .modify(|r| r.rrfs().set(u8::from(true).into()))
+                        .modify(|r| r.rrfs().set(true))
                 };
             }
 
@@ -517,14 +517,14 @@ macro_rules! impl_can_node_effect {
                 unsafe {
                     self.reg
                         .xidfci()
-                        .modify(|r| r.lse().set(u8::from(size).into()))
+                        .modify(|r| r.lse().set(size.into()))
                 };
             }
 
             pub(crate) fn reject_remote_frames_with_extended_id(&self) {
                  // SAFETY: write is CCE and INIT protected: TODO: never used
                 // bits 31:6 are written with 0, RRFE is a RW bit
-                unsafe { self.reg.gfci().modify(|r| r.rrfe().set(1u8.into())) };
+                unsafe { self.reg.gfci().modify(|r| r.rrfe().set(true)) };
             }
 
             pub(crate) fn get_tx_fifo_queue_put_index(&self) -> u8 {
@@ -598,69 +598,69 @@ macro_rules! impl_can_node_effect {
                 let txbari = self.reg.tx().txbari();
                 match id {
                     // SAFETY: AR0 is a RWH bit
-                    0 => unsafe { txbari.modify(|r| r.ar0().set(1u8.into())) },
+                    0 => unsafe { txbari.modify(|r| r.ar0().set(true)) },
                     // SAFETY: AR1 is a RWH bit
-                    1 => unsafe { txbari.modify(|r| r.ar1().set(1u8.into())) },
+                    1 => unsafe { txbari.modify(|r| r.ar1().set(true)) },
                     // SAFETY: AR2 is a RWH bit
-                    2 => unsafe { txbari.modify(|r| r.ar2().set(1u8.into())) },
+                    2 => unsafe { txbari.modify(|r| r.ar2().set(true)) },
                     // SAFETY: AR3 is a RWH bit
-                    3 => unsafe { txbari.modify(|r| r.ar3().set(1u8.into())) },
+                    3 => unsafe { txbari.modify(|r| r.ar3().set(true)) },
                     // SAFETY: AR4 is a RWH bit
-                    4 => unsafe { txbari.modify(|r| r.ar4().set(1u8.into())) },
+                    4 => unsafe { txbari.modify(|r| r.ar4().set(true)) },
                     // SAFETY: AR5 is a RWH bit
-                    5 => unsafe { txbari.modify(|r| r.ar5().set(1u8.into())) },
+                    5 => unsafe { txbari.modify(|r| r.ar5().set(true)) },
                     // SAFETY: AR6 is a RWH bit
-                    6 => unsafe { txbari.modify(|r| r.ar6().set(1u8.into())) },
+                    6 => unsafe { txbari.modify(|r| r.ar6().set(true)) },
                     // SAFETY: AR7 is a RWH bit
-                    7 => unsafe { txbari.modify(|r| r.ar7().set(1u8.into())) },
+                    7 => unsafe { txbari.modify(|r| r.ar7().set(true)) },
                     // SAFETY: AR8 is a RWH bit
-                    8 => unsafe { txbari.modify(|r| r.ar8().set(1u8.into())) },
+                    8 => unsafe { txbari.modify(|r| r.ar8().set(true)) },
                     // SAFETY: AR9 is a RWH bit
-                    9 => unsafe { txbari.modify(|r| r.ar9().set(1u8.into())) },
+                    9 => unsafe { txbari.modify(|r| r.ar9().set(true)) },
                     // SAFETY: AR10 is a RWH bit
-                    10 => unsafe { txbari.modify(|r| r.ar10().set(1u8.into())) },
+                    10 => unsafe { txbari.modify(|r| r.ar10().set(true)) },
                     // SAFETY: AR11 is a RWH bit
-                    11 => unsafe { txbari.modify(|r| r.ar11().set(1u8.into())) },
+                    11 => unsafe { txbari.modify(|r| r.ar11().set(true)) },
                     // SAFETY: AR12 is a RWH bit
-                    12 => unsafe { txbari.modify(|r| r.ar12().set(1u8.into())) },
+                    12 => unsafe { txbari.modify(|r| r.ar12().set(true)) },
                     // SAFETY: AR13 is a RWH bit
-                    13 => unsafe { txbari.modify(|r| r.ar13().set(1u8.into())) },
+                    13 => unsafe { txbari.modify(|r| r.ar13().set(true)) },
                     // SAFETY: AR14 is a RWH bit
-                    14 => unsafe { txbari.modify(|r| r.ar14().set(1u8.into())) },
+                    14 => unsafe { txbari.modify(|r| r.ar14().set(true)) },
                     // SAFETY: AR15 is a RWH bit
-                    15 => unsafe { txbari.modify(|r| r.ar15().set(1u8.into())) },
+                    15 => unsafe { txbari.modify(|r| r.ar15().set(true)) },
                     // SAFETY: AR16 is a RWH bit
-                    16 => unsafe { txbari.modify(|r| r.ar16().set(1u8.into())) },
+                    16 => unsafe { txbari.modify(|r| r.ar16().set(true)) },
                     // SAFETY: AR17 is a RWH bit
-                    17 => unsafe { txbari.modify(|r| r.ar17().set(1u8.into())) },
+                    17 => unsafe { txbari.modify(|r| r.ar17().set(true)) },
                     // SAFETY: AR18 is a RWH bit
-                    18 => unsafe { txbari.modify(|r| r.ar18().set(1u8.into())) },
+                    18 => unsafe { txbari.modify(|r| r.ar18().set(true)) },
                     // SAFETY: AR19 is a RWH bit
-                    19 => unsafe { txbari.modify(|r| r.ar19().set(1u8.into())) },
+                    19 => unsafe { txbari.modify(|r| r.ar19().set(true)) },
                     // SAFETY: AR20 is a RWH bit
-                    20 => unsafe { txbari.modify(|r| r.ar20().set(1u8.into())) },
+                    20 => unsafe { txbari.modify(|r| r.ar20().set(true)) },
                     // SAFETY: AR21 is a RWH bit
-                    21 => unsafe { txbari.modify(|r| r.ar21().set(1u8.into())) },
+                    21 => unsafe { txbari.modify(|r| r.ar21().set(true)) },
                     // SAFETY: AR22 is a RWH bit
-                    22 => unsafe { txbari.modify(|r| r.ar22().set(1u8.into())) },
+                    22 => unsafe { txbari.modify(|r| r.ar22().set(true)) },
                     // SAFETY: AR23 is a RWH bit
-                    23 => unsafe { txbari.modify(|r| r.ar23().set(1u8.into())) },
+                    23 => unsafe { txbari.modify(|r| r.ar23().set(true)) },
                     // SAFETY: AR24 is a RWH bit
-                    24 => unsafe { txbari.modify(|r| r.ar24().set(1u8.into())) },
+                    24 => unsafe { txbari.modify(|r| r.ar24().set(true)) },
                     // SAFETY: AR25 is a RWH bit
-                    25 => unsafe { txbari.modify(|r| r.ar25().set(1u8.into())) },
+                    25 => unsafe { txbari.modify(|r| r.ar25().set(true)) },
                     // SAFETY: AR26 is a RWH bit
-                    26 => unsafe { txbari.modify(|r| r.ar26().set(1u8.into())) },
+                    26 => unsafe { txbari.modify(|r| r.ar26().set(true)) },
                     // SAFETY: AR27 is a RWH bit
-                    27 => unsafe { txbari.modify(|r| r.ar27().set(1u8.into())) },
+                    27 => unsafe { txbari.modify(|r| r.ar27().set(true)) },
                     // SAFETY: AR28 is a RWH bit
-                    28 => unsafe { txbari.modify(|r| r.ar28().set(1u8.into())) },
+                    28 => unsafe { txbari.modify(|r| r.ar28().set(true)) },
                     // SAFETY: AR29 is a RWH bit
-                    29 => unsafe { txbari.modify(|r| r.ar29().set(1u8.into())) },
+                    29 => unsafe { txbari.modify(|r| r.ar29().set(true)) },
                     // SAFETY: AR30 is a RWH bit
-                    30 => unsafe { txbari.modify(|r| r.ar30().set(1u8.into())) },
+                    30 => unsafe { txbari.modify(|r| r.ar30().set(true)) },
                     // SAFETY: AR31 is a RWH bit
-                    31 => unsafe { txbari.modify(|r| r.ar31().set(1u8.into())) },
+                    31 => unsafe { txbari.modify(|r| r.ar31().set(true)) },
                     _ => {
                         // Invalid id, nothing to do
                     }
@@ -672,9 +672,9 @@ macro_rules! impl_can_node_effect {
                 // SAFETY: each bit of RXESCI is at least R
                 let rx_esc = unsafe { self.reg.rx().rxesci().read() };
                 let size_code: u8 = match from {
-                    ReadFrom::Buffer(_) => rx_esc.rbds().get().0,
-                    ReadFrom::RxFifo0 => rx_esc.f0ds().get().0,
-                    ReadFrom::RxFifo1 => rx_esc.f1ds().get().0,
+                    ReadFrom::Buffer(_) => rx_esc.rbds().get(),
+                    ReadFrom::RxFifo0 => rx_esc.f0ds().get(),
+                    ReadFrom::RxFifo1 => rx_esc.f1ds().get(),
                 };
 
                 if size_code < (DataFieldSize::_32 as u8) {
@@ -700,38 +700,38 @@ macro_rules! impl_can_node_effect {
                 let txbrpi = unsafe { self.reg.tx().txbrpi().read() };
                 let id: u8 = tx_buffer_id.into();
                 match id {
-                    0 => txbrpi.trp0().get().0 == 1,
-                    1 => txbrpi.trp1().get().0 == 1,
-                    2 => txbrpi.trp2().get().0 == 1,
-                    3 => txbrpi.trp3().get().0 == 1,
-                    4 => txbrpi.trp4().get().0 == 1,
-                    5 => txbrpi.trp5().get().0 == 1,
-                    6 => txbrpi.trp6().get().0 == 1,
-                    7 => txbrpi.trp7().get().0 == 1,
-                    8 => txbrpi.trp8().get().0 == 1,
-                    9 => txbrpi.trp9().get().0 == 1,
-                    10 => txbrpi.trp10().get().0 == 1,
-                    11 => txbrpi.trp11().get().0 == 1,
-                    12 => txbrpi.trp12().get().0 == 1,
-                    13 => txbrpi.trp13().get().0 == 1,
-                    14 => txbrpi.trp14().get().0 == 1,
-                    15 => txbrpi.trp15().get().0 == 1,
-                    16 => txbrpi.trp16().get().0 == 1,
-                    17 => txbrpi.trp17().get().0 == 1,
-                    18 => txbrpi.trp18().get().0 == 1,
-                    19 => txbrpi.trp19().get().0 == 1,
-                    20 => txbrpi.trp20().get().0 == 1,
-                    21 => txbrpi.trp21().get().0 == 1,
-                    22 => txbrpi.trp22().get().0 == 1,
-                    23 => txbrpi.trp23().get().0 == 1,
-                    24 => txbrpi.trp24().get().0 == 1,
-                    25 => txbrpi.trp25().get().0 == 1,
-                    26 => txbrpi.trp26().get().0 == 1,
-                    27 => txbrpi.trp27().get().0 == 1,
-                    28 => txbrpi.trp28().get().0 == 1,
-                    29 => txbrpi.trp29().get().0 == 1,
-                    30 => txbrpi.trp30().get().0 == 1,
-                    31 => txbrpi.trp31().get().0 == 1,
+                    0 => txbrpi.trp0().get() == true,
+                    1 => txbrpi.trp1().get() == true,
+                    2 => txbrpi.trp2().get() == true,
+                    3 => txbrpi.trp3().get() == true,
+                    4 => txbrpi.trp4().get() == true,
+                    5 => txbrpi.trp5().get() == true,
+                    6 => txbrpi.trp6().get() == true,
+                    7 => txbrpi.trp7().get() == true,
+                    8 => txbrpi.trp8().get() == true,
+                    9 => txbrpi.trp9().get() == true,
+                    10 => txbrpi.trp10().get() == true,
+                    11 => txbrpi.trp11().get() == true,
+                    12 => txbrpi.trp12().get() == true,
+                    13 => txbrpi.trp13().get() == true,
+                    14 => txbrpi.trp14().get() == true,
+                    15 => txbrpi.trp15().get() == true,
+                    16 => txbrpi.trp16().get() == true,
+                    17 => txbrpi.trp17().get() == true,
+                    18 => txbrpi.trp18().get() == true,
+                    19 => txbrpi.trp19().get() == true,
+                    20 => txbrpi.trp20().get() == true,
+                    21 => txbrpi.trp21().get() == true,
+                    22 => txbrpi.trp22().get() == true,
+                    23 => txbrpi.trp23().get() == true,
+                    24 => txbrpi.trp24().get() == true,
+                    25 => txbrpi.trp25().get() == true,
+                    26 => txbrpi.trp26().get() == true,
+                    27 => txbrpi.trp27().get() == true,
+                    28 => txbrpi.trp28().get() == true,
+                    29 => txbrpi.trp29().get() == true,
+                    30 => txbrpi.trp30().get() == true,
+                    31 => txbrpi.trp31().get() == true,
                     _ => false,
                 }
             }
