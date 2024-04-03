@@ -69,8 +69,7 @@ This crate contains many low level drivers for the `TC37x` microcontroller:
 - [gpio](gpio)
 - [can](can)
 
-Refer to the documentation you find here and the examples to understand how to
-use the different drivers.
+Refer to the documentation you find here and the examples to understand how to use the different drivers.
 
 ### Safety
 
@@ -90,8 +89,7 @@ this, because it can lead to undefined behavior.
 
 ### Toolchain
 
-Check [Rust
-Development Platform for Infineon AURIX](https://hightec-rt.com/en/rust) website to get the toolchain.
+Check [Hightec - Rust Development Platform for Infineon AURIX](https://hightec-rt.com/en/rust) website to get the toolchain.
 
 Once it is installed it should appear as a rustup toolchain:
 
