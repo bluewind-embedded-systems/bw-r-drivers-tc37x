@@ -29,8 +29,7 @@ build the `blinky` example and generate an ELF file in
 `./target/tc162-htc-none/debug/blinky.elf` directory.
 
 If it fails with an error like `error: toolchain 'tricore' is not installable`,
-you need to install the `tricore` toolchain. Check the [Toolchain](/doc/development_utilities.md#toolchain)
-section below.
+you need to install the `tricore` toolchain. Check the [Toolchain](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x/blob/main/doc/usage-guide.md#toolchain) section.
 
 You can use the `tricore-probe` tool to flash the binary to the target hardware:
 

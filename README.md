@@ -57,4 +57,4 @@ cd blinky
 cargo +tricore build --target=tc162-htc-none
 ```
 
-Check the [Toolchain](/doc/development_utilities.md#toolchain) guide for additional information.
+Check the [Toolchain](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x/blob/main/doc/usage-guide.md#toolchain) guide for additional information.

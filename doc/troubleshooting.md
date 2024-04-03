@@ -9,7 +9,7 @@ error: toolchain 'tricore' is not installable
 ```
 
 If you see this error message, you need to install the `tricore` toolchain. 
-Check the [Toolchain](/doc/development_utilities.md#toolchain)) section.
+Check the [Toolchain](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x/blob/main/doc/usage-guide.md#toolchain) section.
 
 ### Could not find tricore in arch
 
