@@ -1,0 +1,4 @@
+
+[registries]
+infineon = { index = "https://github.com/Infineon/aurix-cargo-index"}
+bluewind = { index = "https://github.com/bluewind-embedded-systems/bw-cargo-index" }

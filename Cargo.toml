@@ -8,13 +8,11 @@ license = "BSL-1.0"
 version = "=0.4.1"
 
 [dependencies.embedded-hal]
-package = "embedded-hal"
-git = "https://github.com/rust-embedded/embedded-hal.git"
-rev = "v1.0.0-rc.1"
+version = "1.0.0"
 
 [dependencies.tc375-pac]
-git = "https://github.com/bluewind-embedded-systems/tc375-pac"
-rev = "201961c0c6a5d3f80e1cd56099bad3544a580493"
+registry = "bluewind"
+version = "0.0.1"
 features = [
     "scu",
     "smu",
@@ -72,3 +70,4 @@ default = []
 log_with_defmt = ["dep:defmt", "dep:defmt-rtt", "dep:critical-section"]
 log_with_env_logger = ["dep:log", "dep:env_logger"]
 tracing = ["dep:insta", "tc375-pac/tracing"]
+
