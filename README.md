@@ -4,7 +4,7 @@
 
 # About Bluewind 
 
-[Bluewind](https://www.bluewind.it/), an independent engineering company, provides world-class products, engineering and software solutions in the domains of electronics, safety critical applications, and connected devices.
+[Bluewind](https://www.bluewind.it/) is an independent engineering company that provides world-class products, engineering and software solutions in the domains of electronics, safety critical applications, and connected devices.
 
 Bluewind is a strategic partner who creates value in the whole product innovation cycle, taking part to product strategy stage, and providing electronics and software design, certifications consultancy, and production.
 
