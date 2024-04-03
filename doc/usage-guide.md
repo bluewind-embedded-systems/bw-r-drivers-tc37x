@@ -1,4 +1,4 @@
-<img src=".media/logo_bw.png" align="right" width="150" />  
+<img src="../.media/logo_bw.png" align="right" width="150" />  
 
 # Usage guide 
 
