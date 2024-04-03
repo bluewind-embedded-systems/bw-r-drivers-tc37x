@@ -41,7 +41,7 @@ pub(crate) fn is_application_reset() -> bool {
         true
     } else if
         // SAFETY: KRST0.RSTSTAT is R (no privilege required)
-        unsafe { tc37x::CPU0.krst0().read().rststat().get().0 } != 0 {
+        unsafe { crate::pac::CPU0.krst0().read().rststat().get() } != 0 {
         true
     } else {
         false
