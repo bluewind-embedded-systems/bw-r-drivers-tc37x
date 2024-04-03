@@ -23,13 +23,13 @@ pub(crate) fn is_application_reset() -> bool {
     // SAFETY: Reset Status Register RSTSTAT is RH (no privilege required)
     let v = unsafe { SCU.rststat().read() };
 
-    if v.stbyr().get() == true
-        || v.swd().get() == true
-        || v.evr33().get() == true
-        || v.evrc().get() == true
-        || v.cb1().get() == true
-        || v.cb0().get() == true
-        || v.porst().get() == true
+    if v.stbyr().get()
+        || v.swd().get()
+        || v.evr33().get()
+        || v.evrc().get()
+        || v.cb1().get()
+        || v.cb0().get()
+        || v.porst().get()
     {
         false
     } else if (v.get_raw() & APP_RESET_MSK) > 0 {
@@ -37,7 +37,7 @@ pub(crate) fn is_application_reset() -> bool {
         // SAFETY: Reset Configuration Register is R (no privilege required)
         let v = (unsafe { SCU.rstcon().read() }.get_raw() >> ((31 - v.leading_zeros()) << 1)) & 3;
         v == 2
-    } else if v.cb3().get() == true {
+    } else if v.cb3().get() {
         true
     } else if
         // SAFETY: KRST0.RSTSTAT is R (no privilege required)
