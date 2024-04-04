@@ -57,6 +57,7 @@ where
 /// Volatile read from a memory location.
 /// This is the equivalent of ptr.read_volatile() but it is tracked when the tracing feature is enabled.
 #[allow(unreachable_code)]
+#[allow(dead_code)]
 #[inline(always)]
 pub(crate) unsafe fn read_volatile<T>(addr: *const T) -> T
 where
