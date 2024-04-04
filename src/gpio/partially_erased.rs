@@ -20,7 +20,8 @@ impl<const P: PortIndex, MODE> PartiallyErasedPin<P, MODE> {
     }
 
     /// Convert partially type erased pin to `Pin` with fixed type
-    #[must_use] pub fn restore<const N: PinIndex>(self) -> Pin<P, N, MODE> {
+    #[must_use]
+    pub fn restore<const N: PinIndex>(self) -> Pin<P, N, MODE> {
         assert_eq!(self.pin.0, N);
         Pin::new()
     }
@@ -123,7 +124,8 @@ where
 {
     /// Is the input pin high?
     #[inline(always)]
-    #[must_use] pub fn is_high(&self) -> bool {
+    #[must_use]
+    pub fn is_high(&self) -> bool {
         // SAFETY: Gpio::<P>::ptr() will panic if P is not a valid port index, all Port instances have the same layout as P00
         let port = &(unsafe { *Gpio::<P>::ptr() });
         pin_input_is_high(port, self.pin)
@@ -131,7 +133,8 @@ where
 
     /// Is the input pin low?
     #[inline(always)]
-    #[must_use] pub fn is_low(&self) -> bool {
+    #[must_use]
+    pub fn is_low(&self) -> bool {
         !self.is_high()
     }
 }
