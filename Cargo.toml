@@ -11,8 +11,10 @@ version = "=0.4.1"
 version = "1.0.0"
 
 [dependencies.tc375-pac]
-registry = "bluewind"
-version = "0.0.1"
+#registry = "bluewind"
+#version = "0.0.1"
+git = "https://github.com/Infineon/tc375-pac.git"
+branch = "feature/tracing"
 features = [
     "scu",
     "smu",
@@ -69,5 +71,6 @@ version = "=0.3.6"
 default = []
 log_with_defmt = ["dep:defmt", "dep:defmt-rtt", "dep:critical-section"]
 log_with_env_logger = ["dep:log", "dep:env_logger"]
-tracing = ["dep:insta", "tc375-pac/tracing"]
+#tracing = ["dep:insta", "tc375-pac/tracing", "tc375-pac/tracing_dummy"]
+tracing = ["dep:insta", "tc375-pac/tracing_dummy"]
 
