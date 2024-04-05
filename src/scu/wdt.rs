@@ -2,76 +2,47 @@
 
 use crate::intrinsics::read_cpu_core_id;
 use crate::pac;
-use core::mem::transmute;
 
-// TODO Are we sure we want to publish this function?
-#[inline]
-pub(crate) fn get_cpu_watchdog_password() -> u16 {
-    let core_id = read_cpu_core_id();
-    let password = match core_id {
-        // SAFETY: Each bit of WDTCPU0CON0 is at least R
-        0 => unsafe { pac::SCU.wdtcpu()[0].wdtcpuycon0().read() }
-            .pw()
-            .get(),
-        // SAFETY: Each bit of WDTCPU1CON0 is at least R
-        1 => unsafe { pac::SCU.wdtcpu()[1].wdtcpuycon0().read() }
-            .pw()
-            .get(),
-        // SAFETY: Each bit of WDTCPU2CON0 is at least R
-        2 => unsafe { pac::SCU.wdtcpu()[2].wdtcpuycon0().read() }
-            .pw()
-            .get(),
-        _ => unreachable!(),
-    };
-
-    // If PAS=0: WDTxCON0.PW[7:2] must be written with inverted current value read from WDTxCON0.PW[7:2]
-    password ^ 0x003F
-}
-
-// TODO Are we sure we want to publish this function?
-#[inline]
-pub(crate) fn get_safety_watchdog_password() -> u16 {
-    // SAFETY: Each bit of WDTSCON0 is at least R
-    let password = unsafe { pac::SCU.wdts().wdtscon0().read() }.pw().get();
-
-    // If PAS=0: WDTxCON0.PW[7:2] must be written with inverted current value read from WDTxCON0.PW[7:2]
+// If PAS=0: WDTxCON0.PW[7:2] must be written with inverted current value read from WDTxCON0.PW[7:2]
+fn correct_password(password: u16) -> u16 {
     password ^ 0x003F
 }
 
 #[inline]
-unsafe fn get_wdt_con0(core_id: u8) -> pac::Reg<pac::scu::wdtcpu::WdtcpUyCon0_SPEC, pac::RW> {
-    // SAFETY: The following transmute is safe, getting WDTCPU0CON0 base address
-    let off: *mut u8 = unsafe { transmute(pac::SCU.wdtcpu()[0].wdtcpuycon0()) };
-    // SAFETY: The following operation is safe, TODO: core_id should be less than available cores
-    let off = unsafe { off.add(core::mem::size_of::<u32>() * 3 * core_id as usize) };
-    // SAFETY: The following transmute is safe since WDTCPUyCON0 have the same layout
-    unsafe { transmute(off) }
+fn get_wdt_con0(core_id: u8) -> pac::Reg<pac::scu::wdtcpu::WdtcpUyCon0_SPEC, pac::RW> {
+    pac::SCU.wdtcpu()[usize::from(core_id)].wdtcpuycon0()
 }
 
 #[inline]
-unsafe fn get_wdt_con1(core_id: u8) -> pac::Reg<pac::scu::wdtcpu::WdtcpUyCon1_SPEC, pac::RW> {
-    // SAFETY: The following transmute is safe, getting WDTCPU0CON1 base address
-    let off: *mut u8 = unsafe { transmute(pac::SCU.wdtcpu()[0].wdtcpuycon1()) };
-    // SAFETY: The following operation is safe, TODO: core_id should be less than available cores
-    let off = unsafe { off.add(core::mem::size_of::<u32>() * 3 * core_id as usize) };
-    // SAFETY: The following transmute is safe since WDTCPUyCON1 have the same layout
-    unsafe { transmute(off) }
+fn get_wdt_con1(core_id: u8) -> pac::Reg<pac::scu::wdtcpu::WdtcpUyCon1_SPEC, pac::RW> {
+    pac::SCU.wdtcpu()[usize::from(core_id)].wdtcpuycon1()
+}
+
+#[inline]
+fn get_wdts_con0() -> pac::Reg<pac::scu::wdts::Wdtscon0_SPEC, pac::RW> {
+    pac::SCU.wdts().wdtscon0()
+}
+
+#[inline]
+fn get_wdts_con1() -> pac::Reg<pac::scu::wdts::Wdtscon1_SPEC, pac::RW> {
+    pac::SCU.wdts().wdtscon1()
 }
 
 // TODO Duplicate? Bad function name?
 #[inline]
 pub(crate) fn clear_cpu_endinit_inline() {
-    let password = get_cpu_watchdog_password();
     let core_id = read_cpu_core_id();
-    // SAFETY: core_id is read through assembly instruction MFCR
-    let con0 = unsafe { get_wdt_con0(core_id as u8) };
+    let con0 = get_wdt_con0(core_id as u8);
 
-    // FIXME con0 is read twice
-    // SAFETY: LCK is a RWH bit
-    if unsafe { con0.read() }.lck().get() {
-        // SAFETY: REL is a RW bitfield
-        let rel = unsafe { con0.read() }.rel().get();
-        let data = pac::scu::wdtcpu::WdtcpUyCon0::default()
+    // SAFETY: core_id is read through assembly instruction MFCR
+    let mut wdtcon0 = unsafe { con0.read() };
+    // If PAS=0: WDTxCON0.PW[7:2] must be written with inverted current value read from WDTxCON0.PW[7:2]
+    let password = correct_password(wdtcon0.pw().get());
+
+    let rel = wdtcon0.rel().get();
+
+    if wdtcon0.lck().get() {
+        wdtcon0 = wdtcon0
             .endinit()
             .set(true)
             .lck()
@@ -81,12 +52,10 @@ pub(crate) fn clear_cpu_endinit_inline() {
             .rel()
             .set(rel);
         // SAFETY: Each bit of WDTCPUyCON0 is at least W
-        unsafe { con0.write(data) };
+        unsafe { con0.write(wdtcon0) };
     }
 
-    // SAFETY: REL is a RW bitfield
-    let rel = unsafe { con0.read() }.rel().get();
-    let data = pac::scu::wdtcpu::WdtcpUyCon0::default()
+    wdtcon0 = wdtcon0
         .endinit()
         .set(false)
         .lck()
@@ -96,26 +65,26 @@ pub(crate) fn clear_cpu_endinit_inline() {
         .rel()
         .set(rel);
     // SAFETY: Each bit of WDTCPUyCON0 is at least W
-    unsafe { con0.write(data) };
+    unsafe { con0.write(wdtcon0) };
 
+    // TODO This conditional compilation can be removed, now that tracing can set the register value
     #[cfg(tricore_arch = "tricore")]
     while unsafe { con0.read() }.endinit().get() {}
 }
 
-// TODO Duplicate? Bad function name?
 #[inline]
 pub(crate) fn set_cpu_endinit_inline() {
-    let password = get_cpu_watchdog_password();
     let core_id = read_cpu_core_id();
+    let con0 = get_wdt_con0(core_id as u8);
     // SAFETY: core_id is read through assembly instruction MFCR
-    let con0 = unsafe { get_wdt_con0(core_id as u8) };
+    let mut wdtcon0 = unsafe { con0.read() };
 
-    // FIXME con0 is read twice
-    // SAFETY: LCK is a RWH bit
-    if unsafe { con0.read() }.lck().get() {
-        // SAFETY: REL is a RW bitfield
-        let rel = unsafe { con0.read() }.rel().get();
-        let data = pac::scu::wdtcpu::WdtcpUyCon0::default()
+    let password = correct_password(wdtcon0.pw().get());
+
+    let rel = wdtcon0.rel().get();
+
+    if wdtcon0.lck().get() {
+        wdtcon0 = wdtcon0
             .endinit()
             .set(true)
             .lck()
@@ -125,12 +94,10 @@ pub(crate) fn set_cpu_endinit_inline() {
             .rel()
             .set(rel);
         // SAFETY: Each bit of WDTCPUyCON0 is at least W
-        unsafe { con0.write(data) };
+        unsafe { con0.write(wdtcon0) };
     }
 
-    // SAFETY: REL is a RW bitfield
-    let rel = unsafe { con0.read() }.rel().get();
-    let data = pac::scu::wdtcpu::WdtcpUyCon0::default()
+    wdtcon0 = wdtcon0
         .endinit()
         .set(true)
         .lck()
@@ -141,53 +108,97 @@ pub(crate) fn set_cpu_endinit_inline() {
         .set(rel);
 
     // SAFETY: Each bit of WDTCPUyCON0 is at least W
-    unsafe { con0.write(data) };
+    unsafe { con0.write(wdtcon0) };
 
-    // FIXME do we need to enable it only with tricore like clear_cpu_endinit_inline?
-    // SAFETY: ENDINIT is a RWH bit
+    // TODO This conditional compilation can be removed, now that tracing can set the register value
+    #[cfg(tricore_arch = "tricore")]
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
-// TODO Duplicate? Bad function name?
 #[inline]
 pub(crate) fn clear_safety_endinit_inline() {
-    let password = get_safety_watchdog_password();
-    let con0 = pac::SCU.wdts().wdtscon0();
+    let con0 = get_wdts_con0();
+
+    let mut wdtcon0 = unsafe { con0.read() };
+    let password = correct_password(wdtcon0.pw().get());
+
+    let rel = wdtcon0.rel().get();
 
     // SAFETY: LCK is a RWH bit
-    if unsafe { con0.read() }.lck().get() {
-        // SAFETY: Each bit of WDTSCON0 is RW
-        unsafe { con0.modify(|r| r.endinit().set(true).lck().set(false).pw().set(password)) };
+    if wdtcon0.lck().get() {
+        wdtcon0 = wdtcon0
+            .endinit()
+            .set(true)
+            .lck()
+            .set(false)
+            .pw()
+            .set(password)
+            .rel()
+            .set(rel);
+        unsafe { con0.write(wdtcon0) };
     }
+
+    wdtcon0 = wdtcon0
+        .endinit()
+        .set(false)
+        .lck()
+        .set(true)
+        .pw()
+        .set(password)
+        .rel()
+        .set(rel);
+
     // SAFETY: Each bit of WDTSCON0 is RW
-    unsafe { con0.modify(|r| r.endinit().set(false).lck().set(true).pw().set(password)) }
+    unsafe { con0.write(wdtcon0) };
 
     #[cfg(tricore_arch = "tricore")]
     while unsafe { con0.read() }.endinit().get() {}
 }
 
-// TODO Duplicate? Bad function name?
 #[inline]
 pub(crate) fn set_safety_endinit_inline() {
-    let password = get_safety_watchdog_password();
-    let con0 = pac::SCU.wdts().wdtscon0();
+    let con0 = get_wdts_con0();
 
-    // SAFETY: LCK is a RWH bit
-    if unsafe { con0.read() }.lck().get() {
-        // SAFETY: Each bit of WDTSCON0 is RW
-        unsafe { con0.modify(|r| r.endinit().set(true).lck().set(false).pw().set(password)) };
+    let mut wdtcon0 = unsafe { con0.read() };
+    let password = correct_password(wdtcon0.pw().get());
+
+    let rel = wdtcon0.rel().get();
+
+    if wdtcon0.lck().get() {
+        wdtcon0 = wdtcon0
+            .endinit()
+            .set(true)
+            .lck()
+            .set(false)
+            .pw()
+            .set(password)
+            .rel()
+            .set(rel);
+        unsafe { con0.write(wdtcon0) };
     }
 
-    // SAFETY: Each bit of WDTSCON0 is RW
-    unsafe { con0.modify(|r| r.endinit().set(true).lck().set(true).pw().set(password)) }
+    wdtcon0 = wdtcon0
+        .endinit()
+        .set(true)
+        .lck()
+        .set(true)
+        .pw()
+        .set(password)
+        .rel()
+        .set(rel);
+    unsafe { con0.write(wdtcon0) };
+
     #[cfg(tricore_arch = "tricore")]
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
 pub fn disable_safety_watchdog() {
     clear_safety_endinit_inline();
+
+    let con1 = get_wdts_con1();
     // SAFETY: DR is a RW bit, it can be modified only when safety endinit is de-asserted (clear_safety_endinit_inline)
-    unsafe { pac::SCU.wdts().wdtscon1().modify(|p| p.dr().set(true)) };
+    unsafe { con1.modify(|p| p.dr().set(true)) };
+
     set_safety_endinit_inline();
 }
 
@@ -196,7 +207,7 @@ pub fn disable_cpu_watchdog() {
 
     let core_id = read_cpu_core_id();
     // SAFETY: core_id is read through assembly instruction MFCR
-    let con1 = unsafe { get_wdt_con1(core_id as u8) };
+    let con1 = get_wdt_con1(core_id as u8);
     // SAFETY: DR is a RW bit, it can be modified only when safety endinit is de-asserted (clear_cpu_endinit_inline)
     unsafe { con1.modify(|p| p.dr().set(true)) };
 
@@ -210,10 +221,110 @@ mod tests {
     use crate::tracing::log::Report;
 
     #[test]
-    fn test_get_wdt_con0() {
+    fn test_clear_cpu_endinit_inline() {
         let report = Report::new();
-        report.expect_read(0xF003624Cu32, 4, 0x00000000);
-        let pwd = get_cpu_watchdog_password();
-        assert_eq!(pwd, 0x3F);
+        let con0 = get_wdt_con0(0);
+        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        clear_cpu_endinit_inline();
+        insta::assert_snapshot!(report.take_log());
+    }
+
+    #[test]
+    fn test_set_cpu_endinit_inline() {
+        let report = Report::new();
+        let con0 = get_wdt_con0(0);
+        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        set_cpu_endinit_inline();
+        insta::assert_snapshot!(report.take_log());
+    }
+
+    #[test]
+    fn test_clear_then_set_cpu_endinit_inline() {
+        let report = Report::new();
+        let con0 = get_wdt_con0(0);
+        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        clear_cpu_endinit_inline();
+        report.expect_read(con0.ptr() as usize, 4, 0b10);
+        set_cpu_endinit_inline();
+        insta::assert_snapshot!(report.take_log());
+    }
+
+    #[test]
+    fn test_set_then_clear_cpu_endinit_inline() {
+        let report = Report::new();
+        let con0 = get_wdt_con0(0);
+        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        set_cpu_endinit_inline();
+        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        clear_cpu_endinit_inline();
+        insta::assert_snapshot!(report.take_log());
+    }
+
+    #[test]
+    fn test_clear_safety_endinit_inline() {
+        let report = Report::new();
+        let con0 = get_wdts_con0();
+        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        clear_safety_endinit_inline();
+        insta::assert_snapshot!(report.take_log());
+    }
+
+    #[test]
+    fn test_set_safety_endinit_inline() {
+        let report = Report::new();
+        let con0 = get_wdts_con0();
+        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        set_safety_endinit_inline();
+        insta::assert_snapshot!(report.take_log());
+    }
+
+    #[test]
+    fn test_clear_then_set_safety_endinit_inline() {
+        let report = Report::new();
+        let con0 = get_wdts_con0();
+        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        clear_safety_endinit_inline();
+        report.expect_read(con0.ptr() as usize, 4, 0b10);
+        set_safety_endinit_inline();
+        insta::assert_snapshot!(report.take_log());
+    }
+
+    #[test]
+    fn test_set_then_clear_safety_endinit_inline() {
+        let report = Report::new();
+        let con0 = get_wdts_con0();
+        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        set_safety_endinit_inline();
+        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        clear_safety_endinit_inline();
+        insta::assert_snapshot!(report.take_log());
+    }
+
+    #[test]
+    fn test_disable_cpu_watchdog() {
+        let report = Report::new();
+        let con0 = get_wdt_con0(0);
+        let con1 = get_wdt_con1(0);
+
+        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        report.expect_read(con1.ptr() as usize, 4, 0b00);
+        report.expect_read(con0.ptr() as usize, 4, 0b10);
+
+        disable_cpu_watchdog();
+        insta::assert_snapshot!(report.take_log());
+    }
+
+    #[test]
+    fn test_disable_safety_watchdog() {
+        let report = Report::new();
+        let con0 = get_wdts_con0();
+        let con1 = get_wdts_con1();
+
+        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        report.expect_read(con1.ptr() as usize, 4, 0b00);
+        report.expect_read(con0.ptr() as usize, 4, 0b10);
+
+        disable_safety_watchdog();
+        insta::assert_snapshot!(report.take_log());
     }
 }

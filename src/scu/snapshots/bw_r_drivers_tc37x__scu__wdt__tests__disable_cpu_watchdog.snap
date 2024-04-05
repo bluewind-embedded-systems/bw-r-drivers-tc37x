@@ -1,0 +1,13 @@
+---
+source: src/scu/wdt.rs
+assertion_line: 246
+expression: report.take_log()
+---
+r    0xF003624C 04 0x00000003
+w    0xF003624C 04 0x000000FD
+w    0xF003624C 04 0x000000FE
+r    0xF0036250 04 0x00000000
+w    0xF0036250 04 0x00000008
+r    0xF003624C 04 0x00000002
+w    0xF003624C 04 0x000000FD
+w    0xF003624C 04 0x000000FF
