@@ -11,10 +11,8 @@ version = "=0.4.1"
 version = "1.0.0"
 
 [dependencies.tc375-pac]
-#registry = "bluewind"
-#version = "0.0.1"
-git = "https://github.com/Infineon/tc375-pac.git"
-branch = "feature/tracing"
+registry = "infineon"
+version = "0.0.2"
 features = [
     "scu",
     "smu",
