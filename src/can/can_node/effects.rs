@@ -77,7 +77,6 @@ macro_rules! impl_can_node_effect {
                 };
             }
 
-            // TODO Move logic to the caller
             pub(crate) fn set_rx_fifo0_operating_mode(&self, mode: RxFifoMode) {
                 let overwrite = mode == RxFifoMode::Overwrite;
                 // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
@@ -90,7 +89,6 @@ macro_rules! impl_can_node_effect {
                 };
             }
 
-            // TODO Move logic to the caller
             pub(crate) fn set_rx_fifo1_operating_mode(&self, mode: RxFifoMode) {
                 let overwrite = mode == RxFifoMode::Overwrite;
                 // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_rx after node.effects.enable_configuration_change has been called in Node::new.
@@ -146,7 +144,6 @@ macro_rules! impl_can_node_effect {
                 unsafe { self.reg.tx().txefci().modify(|r| r.efs().set(size.into())) };
             }
 
-            // TODO Move logic to the caller
             pub(crate) fn set_transmit_fifo_queue_mode(&self, mode: TxMode) {
                 let val = mode != TxMode::DedicatedBuffers;
                 // SAFETY: write is CCE and INIT protected: called in Node<Configurable>.setup_tx after node.effects.enable_configuration_change has been called in Node::new.

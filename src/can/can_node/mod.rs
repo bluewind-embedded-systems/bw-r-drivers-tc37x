@@ -94,7 +94,6 @@ pub struct Node<N, M, I: NodeId, State> {
     ram_base_address: u32,
     _phantom: PhantomData<(M, I, State)>,
 
-    // TODO Not all of rx_config fields are used, keep only the ones that are used
     rx_config: Option<RxConfig>,
 }
 
@@ -934,9 +933,6 @@ impl Port {
             // SAFETY: Bits 0:16 of PDISC are RW, TODO: index should be in range [0, 16)?
             wdt_call::call_without_cpu_endinit(|| unsafe {
                 self.inner.pdisc().modify(|r| {
-                    // TODO Check if the new version is compatible with the previous one:
-                    // *r.data_mut_ref() &= !(1 << index);
-
                     let mut v = r.get_raw();
                     v &= !(1 << index);
                     r.set_raw(v)
