@@ -1,6 +1,5 @@
 use bw_r_drivers_tc37x::gpio::{ErasedPin, GpioExt};
-use bw_r_drivers_tc37x::pac::P01;
-use bw_r_drivers_tc37x::pac::{P00, P20};
+use bw_r_drivers_tc37x::pac::{self, P00, P01, P20};
 use bw_r_drivers_tc37x::tracing;
 use embedded_hal::digital::PinState;
 use tracing::log::Report;
@@ -217,7 +216,7 @@ fn toggle_output_pin_type_erasure_port_and_number() {
 
 // Set the pin high by using StatefulOutputPin interface
 // This is needed to ensure the StatefulOutputPin trait is implemented
-fn stateful_output_pin_is_set_high(pin: impl embedded_hal::digital::StatefulOutputPin) -> bool {
+fn stateful_output_pin_is_set_high(mut pin: impl embedded_hal::digital::StatefulOutputPin) -> bool {
     pin.is_set_high().unwrap()
 }
 
@@ -297,7 +296,7 @@ fn pin_can_type_match_with_peripheral() {
     let rx = port.p20_7;
     let tx = port.p20_8;
 
-    let _can = Can::<tc37x::can0::Can0>::new(tx, rx);
+    let _can = Can::<crate::pac::can0::Can0>::new(tx, rx);
 }
 
 mod mock_can {
