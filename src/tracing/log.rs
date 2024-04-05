@@ -40,6 +40,26 @@ impl Default for Report {
     }
 }
 
+pub struct Addr(usize);
+
+impl From<u32> for Addr {
+    fn from(value: u32) -> Self {
+        Addr(value as usize)
+    }
+}
+
+impl From<*mut u32> for Addr {
+    fn from(value: *mut u32) -> Self {
+        Addr(value as usize)
+    }
+}
+
+impl From<usize> for Addr {
+    fn from(value: usize) -> Self {
+        Addr(value)
+    }
+}
+
 impl Report {
     pub fn new() -> Self {
         let data = Arc::new(Mutex::new(SharedData::default()));
@@ -59,7 +79,9 @@ impl Report {
         Log(g.log.0.drain(0..len).collect())
     }
 
-    pub fn expect_read(&self, addr: usize, len: usize, val: u64) {
+    pub fn expect_read(&self, addr: impl Into<Addr>, len: usize, val: u64) {
+        let addr: Addr = addr.into();
+        let addr: usize = addr.0;
         self.shared_data()
             .read_fifo
             .0

@@ -129,7 +129,7 @@ mod tests {
     fn test_read_volatile() {
         let report = tracing::log::Report::new();
         let v_ptr = 0x1000 as *mut u32;
-        report.expect_read(0x1000, 4, 0x1234);
+        report.expect_read(0x1000u32, 4, 0x1234);
         let val = unsafe { read_volatile(v_ptr) };
         assert_eq!(val, 0x1234);
         assert_eq!(
