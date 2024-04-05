@@ -1,3 +1,7 @@
+//! TC37x drivers
+//! This crate provides a set of drivers for the TC37x family of microcontrollers.
+//! For more information, please refer to the [GitHub repository](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x)
+
 // Allow unknown lints to be compatible with different versions of Rust
 #![allow(unknown_lints)]
 // Configure clippy to be very strict
@@ -52,8 +56,6 @@
 #![cfg_attr(target_os = "none", no_std)]
 // This feature is only needed for tricore targets and enable the intrinsics module.
 #![cfg_attr(target_arch = "tricore", feature(stdsimd))]
-// Add the documentation from the README.md file to the crate root documentation
-#![doc = include_str!("../README.md")]
 
 #[cfg(feature = "tracing")]
 pub mod tracing;
