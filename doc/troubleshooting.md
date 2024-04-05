@@ -8,8 +8,8 @@
 error: toolchain 'tricore' is not installable
 ```
 
-If you see this error message, you need to install the `tricore` toolchain. 
-Check the [Toolchain](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x/blob/main/doc/usage-guide.md#toolchain) section.
+If you see this error message, you need to install the `tricore` toolchain.
+Check the [Toolchain][usage-guide-toolchain] section in the [Usage guide][usage-guide]
 
 ### Could not find tricore in arch
 
@@ -24,7 +24,7 @@ For more information about this error, try `rustc --explain E0433`.
 error: could not compile `tc37x` (lib) due to previous error
 ```
 
-If you see this error message, you need to select the correct target for your 
+If you see this error message, you need to select the correct target for your
 project.
 
 This is usually done by setting the `--target=tc162-htc-none` option when
@@ -54,15 +54,20 @@ error: cannot find attribute `test` in this scope
 error[E0463]: can't find crate for `test`
 ```
 
-If you see any of these error messages, you are probably trying to run tests meant to be
-run on the host machine, but you are using the `tc162-htc-none` target.
+If you see any of these error messages, you are probably trying to run tests
+meant to be run on the host machine, but you are using the `tc162-htc-none`
+target.
 
-This happens when there is a `config.toml` file in the `.cargo` directory of your project.
-To run tests on the host machine, you need to remove the `config.toml` file or
-change the target to the host machine. You can use the `x86_64-unknown-linux-gnu`
-target. Check `rustc -vV` output to see which is your host triple.
-For instance, if you are using a Linux machine, you should be able to run:
+This happens when there is a `config.toml` file in the `.cargo` directory of
+your project. To run tests on the host machine, you need to remove the
+`config.toml` file or change the target to the host machine. You can use the
+`x86_64-unknown-linux-gnu` target. Check `rustc -vV` output to see which is
+your host triple. For instance, if you are using a Linux machine, you should be
+able to run:
 
 ```shell
 cargo +tricore test --target=x86_64-unknown-linux-gnu -Ftracing
 ```
+
+[usage-guide-toolchain]: /doc/usage-guide.md#toolchain
+[usage-guide]: /doc/usage-guide.md

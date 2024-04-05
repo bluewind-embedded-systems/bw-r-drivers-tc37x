@@ -31,7 +31,7 @@ for automotive and industrial applications. The primary objective is to empower
     implementations for evaluation and pre-development purposes.
 
 <p align="center">
-  <img src="./.github/ecosystem.png" alt="AURIX Rust Startup Ecosystem" width="75%"/>
+  <img src="./doc/ecosystem.png" alt="AURIX Rust Startup Ecosystem" width="75%"/>
 </p>
 
 The AURIX™ Rust Startup Ecosystem consists of:
@@ -78,11 +78,11 @@ cd blinky
 cargo +tricore build --target=tc162-htc-none
 ```
 
-Check the [Toolchain](toolchain) guide for additional information.
+Check the [Toolchain][usage-guide-toolchain] guide for additional information.
 
 [usage-guide]: doc/usage-guide.md
-[toolchain]: doc/usage-guide.md#toolchain
-[dev-utils]: doc/development_utilities.md
+[usage-guide-toolchain]: doc/usage-guide.md#toolchain
+[dev-utils]: doc/dev-utils
 [troubleshooting]: doc/troubleshooting.md
 [bw-r-drivers-tc37x-documentation]: https://bluewind-embedded-systems.github.io/bw-r-drivers-tc37x/
 [veecle]: https://www.veecle.io/

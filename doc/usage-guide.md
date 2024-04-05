@@ -10,7 +10,7 @@ To get familiar with the drivers, you can start with the examples.
 
 ### Examples
 
-[Here you can find some examples](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x-examples).
+[Here you can find some examples](bw-r-drivers-tc37x-examples).
 
 They are meant to be standalone and to be used as a boilerplate for your new
 project. 
@@ -29,7 +29,7 @@ build the `blinky` example and generate an ELF file in
 `./target/tc162-htc-none/debug/blinky.elf` directory.
 
 If it fails with an error like `error: toolchain 'tricore' is not installable`,
-you need to install the `tricore` toolchain. Check the [Toolchain](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x/blob/main/doc/usage-guide.md#toolchain) section.
+you need to install the `tricore` toolchain. Check the [Toolchain][usage-guide-toolchain] section.
 
 You can use the `tricore-probe` tool to flash the binary to the target hardware:
 
@@ -38,12 +38,10 @@ tricore-probe ./target/tc162-htc-none/debug/blinky.elf
 ```
 
 If `tricore-probe` is not available in your system, you can install it by following
-the instructions in the [tricore-probe repository](https://github.com/veecle/tricore-probe).
+the instructions in the [tricore-probe repository][tricore-probe].
 
-Alternatively, you can use other tools like 
-[Infineon MemTool](https://www.infineon.com/cms/en/tools/aurix-tools/free-tools/infineon/)
-or
-[Universal Debug Engine](https://www.pls-mc.com/products/universal-debug-engine/).
+Alternatively, you can use other tools like [Infineon MemTool] or [Universal
+Debug Engine].
 
 ### Make your own executable
 
@@ -68,7 +66,8 @@ This crate contains many low level drivers for the `TC37x` microcontroller:
 - [gpio](gpio)
 - [can](can)
 
-Refer to the documentation you find here and the examples to understand how to use the different drivers.
+Refer to the documentation you find here and the examples to understand how to
+use the different drivers.
 
 ### Safety
 
@@ -87,7 +86,8 @@ this, because it can lead to undefined behavior.
 
 ### Toolchain
 
-Check [Hightec - Rust Development Platform for Infineon AURIX](https://hightec-rt.com/en/rust) website to get the toolchain.
+Check [Hightec - Rust Development Platform for Infineon AURIX] website to get
+the toolchain.
 
 Once it is installed it should appear as a rustup toolchain:
 
@@ -95,7 +95,8 @@ Once it is installed it should appear as a rustup toolchain:
 rustup toolchain list
 ```
 
-The expected output should be something like this, it may vary depending on your system:
+The expected output should be something like this, it may vary depending on
+your system:
 
 ```text
 stable-x86_64-unknown-linux-gnu (default)       /home/user/.rustup/toolchains/stable-x86_64-unknown-linux-gnu
@@ -104,7 +105,8 @@ tricore /opt/HighTec/toolchains/rust/v0.2.0/
 
 If `tricore` does not appear in this list, but the toolchain is installed
 somewhere in your system, you can [teach rustup about
-it](https://rust-lang.github.io/rustup/concepts/toolchains.html#custom-toolchains).
+it][rust-custom-toolchains].
+
 For instance, if the toolchain is installed in
 `/opt/HighTec/toolchains/rust/v0.2.0/` you can add an alias for that toolchain:
 
@@ -133,3 +135,24 @@ lines to your `.cargo/config.toml` file:
 runner = "tricore-probe"
 ```
 
+[usage-guide]: doc/usage-guide.md
+[usage-guide-toolchain]: doc/usage-guide.md#toolchain
+[dev-utils]: doc/dev-utils
+[troubleshooting]: doc/troubleshooting.md
+[bw-r-drivers-tc37x-documentation]: https://bluewind-embedded-systems.github.io/bw-r-drivers-tc37x/
+[veecle]: https://www.veecle.io/
+[infineon]: https://www.infineon.com/
+[hightec]: https://hightec-rt.com
+[bluewind]: https://www.bluewind.it
+[pxros]: https://hightec-rt.com/en/products/real-time-os
+[tc375-pac]: https://github.com/Infineon/tc375-pac
+[bw-r-drivers-tc37x-github]: https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x
+[pxros-rust-bindings]: https://github.com/hightec-rt/pxros
+[veecle-pxros]: https://github.com/veecle/veecle-pxros
+[hightec-development-platform]: https://hightec-rt.com/en/products/development-platform
+[tricore-probe]: https://github.com/veecle/tricore-probe
+[bw-r-drivers-tc37x-examples]: https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x-examples
+[Infineon MemTool]: https://www.infineon.com/cms/en/tools/aurix-tools/free-tools/infineon
+[Universal Debug Engine]: https://www.pls-mc.com/products/universal-debug-engine
+[Hightec - Rust Development Platform for Infineon AURIX]: https://hightec-rt.com/en/rust
+[rust-custom-toolchains](https://rust-lang.github.io/rustup/concepts/toolchains.html#custom-toolchains).
