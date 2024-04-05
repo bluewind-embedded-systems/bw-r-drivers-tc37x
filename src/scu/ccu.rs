@@ -96,7 +96,6 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
 
     wait_ccucon0_lock()?;
 
-    // TODO Explain this
     // SAFETY: CLKSEL is RWH and takes values in range [0, 3], UP is a W bit. Written respectively with 0 and 1
     unsafe {
         SCU.ccucon0()
@@ -110,11 +109,6 @@ pub(crate) fn configure_ccu_initial_step(config: &Config) -> Result<(), ()> {
         // SAFETY: CFGLCK and PERLCK are RW, bits 16:31 are written with 0
         unsafe { SMU.keys().init(|r| r.cfglck().set(0xBC)) };
 
-        // unsafe { SMU.ag8cfj()[0].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
-        // unsafe { SMU.ag8cfj()[1].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
-        // unsafe { SMU.ag8cfj()[2].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
-
-        // TODO Check if this is correct, see above the previous version
         // Clear CF0, CF2, CF3 and CF4
         // SAFETY: Each bit of AgiCFj is RW
         unsafe { SMU.agicfj()[8].agicfj_()[0].modify(|r| r.set_raw(r.get_raw() & !0x1D)) };
@@ -436,9 +430,7 @@ pub(crate) fn distribute_clock_inline(config: &Config) -> Result<(), ()> {
         let mut ccucon2 = unsafe { SCU.ccucon2().read() };
 
         if ccucon2.clkselasclins().get() != 0 {
-            // TODO Why is this read again?
-            // SAFETY: each bit of CCUCON2 is at least R
-            ccucon2 = unsafe { SCU.ccucon2().read() }
+            ccucon2 = ccucon2
                 .asclinfdiv()
                 .set(config.clock_distribution.ccucon2.asclinf_div)
                 .asclinsdiv()
@@ -693,7 +685,7 @@ pub struct Con2RegConfig {
 pub struct Con5RegConfig {
     pub geth_div: u8,
     pub mcanh_div: u8,
-    pub adas_div: u8, // TODO: missing adas in pac
+    pub adas_div: u8,
 }
 
 pub struct Con6RegConfig {
@@ -835,23 +827,16 @@ pub const DEFAULT_CLOCK_CONFIG: Config = Config {
 };
 
 pub(crate) fn get_mcan_frequency() -> u32 {
-    //TODO create enum!
-    const CLKSELMCAN_USEMCANI: u8 = 1;
-    const CLKSELMCAN_USEOSCILLATOR: u8 = 2;
-    const MCANDIV_STOPPED: u8 = 0;
-
     // SAFETY: each bit of CCUCON1 is at least R
     let ccucon1 = unsafe { SCU.ccucon1().read() };
     let clkselmcan = ccucon1.clkselmcan().get();
     let mcandiv = ccucon1.mcandiv().get();
 
-    //info!("clkselmcan: {}, mcandiv: {}", clkselmcan, mcandiv);
-
     match clkselmcan {
-        CLKSELMCAN_USEMCANI => {
+        MCANClockSource::USEMCANI => {
             let source = get_source_frequency(1);
             debug!("source: {}", source);
-            if mcandiv == MCANDIV_STOPPED {
+            if mcandiv == MCANDiv::STOPPED {
                 source
             } else {
                 let div: u64 = mcandiv.into();
@@ -859,22 +844,18 @@ pub(crate) fn get_mcan_frequency() -> u32 {
                 source / div
             }
         }
-        CLKSELMCAN_USEOSCILLATOR => get_osc0_frequency(),
+        MCANClockSource::USEOSCILLATOR => get_osc0_frequency(),
         _ => 0,
     }
 }
 
 fn get_source_frequency(source: u32) -> u32 {
-    const CLKSEL_BACKUP: u8 = 0; // TODO create enum
-    const CLKSEL_PLL: u8 = 1;
-
     // SAFETY: each bit of CCUCON0 is at least R
     let clksel = unsafe { SCU.ccucon0().read() }.clksel().get();
-    //info!("clksel: {}", clksel);
 
     match clksel {
-        CLKSEL_BACKUP => get_evr_frequency(),
-        CLKSEL_PLL => match source {
+        ClockSource::BACKUP => get_evr_frequency(),
+        ClockSource::PLL => match source {
             0 => get_pll_frequency(),
             1 => {
                 let source_freq = get_per_pll_frequency1();
@@ -899,4 +880,21 @@ fn get_evr_frequency() -> u32 {
 
 pub(crate) fn get_osc0_frequency() -> u32 {
     XTAL_FREQUENCY
+}
+
+struct ClockSource(u8);
+impl ClockSource {
+    const BACKUP: u8 = 0;
+    const PLL: u8 = 1;
+}
+
+struct MCANClockSource(u8);
+impl MCANClockSource {
+    const USEMCANI: u8 = 1;
+    const USEOSCILLATOR: u8 = 2;
+}
+
+struct MCANDiv(u8);
+impl MCANDiv {
+    const STOPPED: u8 = 0;
 }

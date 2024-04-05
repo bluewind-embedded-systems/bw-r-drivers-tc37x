@@ -4,7 +4,6 @@ use crate::intrinsics::read_cpu_core_id;
 use crate::pac;
 use core::mem::transmute;
 
-// TODO Are we sure we want to publish this function?
 #[inline]
 pub(crate) fn get_cpu_watchdog_password() -> u16 {
     let core_id = read_cpu_core_id();
@@ -28,7 +27,6 @@ pub(crate) fn get_cpu_watchdog_password() -> u16 {
     password ^ 0x003F
 }
 
-// TODO Are we sure we want to publish this function?
 #[inline]
 pub(crate) fn get_safety_watchdog_password() -> u16 {
     // SAFETY: Each bit of WDTSCON0 is at least R
@@ -58,7 +56,6 @@ unsafe fn get_wdt_con1(core_id: u8) -> pac::Reg<pac::scu::wdtcpu::WdtcpUyCon1_SP
     unsafe { transmute(off) }
 }
 
-// TODO Duplicate? Bad function name?
 #[inline]
 pub(crate) fn clear_cpu_endinit_inline() {
     let password = get_cpu_watchdog_password();
@@ -99,10 +96,10 @@ pub(crate) fn clear_cpu_endinit_inline() {
     unsafe { con0.write(data) };
 
     #[cfg(tricore_arch = "tricore")]
+    // SAFETY: ENDINIT is a RWH bit
     while unsafe { con0.read() }.endinit().get() {}
 }
 
-// TODO Duplicate? Bad function name?
 #[inline]
 pub(crate) fn set_cpu_endinit_inline() {
     let password = get_cpu_watchdog_password();
@@ -143,12 +140,11 @@ pub(crate) fn set_cpu_endinit_inline() {
     // SAFETY: Each bit of WDTCPUyCON0 is at least W
     unsafe { con0.write(data) };
 
-    // FIXME do we need to enable it only with tricore like clear_cpu_endinit_inline?
+    #[cfg(tricore_arch = "tricore")]
     // SAFETY: ENDINIT is a RWH bit
     while !unsafe { con0.read() }.endinit().get() {}
 }
 
-// TODO Duplicate? Bad function name?
 #[inline]
 pub(crate) fn clear_safety_endinit_inline() {
     let password = get_safety_watchdog_password();
@@ -166,7 +162,6 @@ pub(crate) fn clear_safety_endinit_inline() {
     while unsafe { con0.read() }.endinit().get() {}
 }
 
-// TODO Duplicate? Bad function name?
 #[inline]
 pub(crate) fn set_safety_endinit_inline() {
     let password = get_safety_watchdog_password();

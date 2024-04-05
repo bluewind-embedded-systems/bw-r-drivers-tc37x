@@ -1,8 +1,4 @@
 // TODO Remove this once the code is stable
-#![allow(dead_code)]
-// TODO Remove this once the code is stable
-#![allow(clippy::needless_bool)]
-// TODO Remove this once the code is stable
 #![allow(clippy::if_same_then_else)]
 
 #[inline]
@@ -10,7 +6,7 @@ pub(crate) fn is_application_reset() -> bool {
     use crate::pac::RegisterValue;
     use crate::pac::SCU;
 
-    // TODO: why only bits [0:7]?
+    // Reset Request Trigger Reset Status for ESR0, ESR1, SMU, SW, STM0, STM1 and STM2
     const APP_RESET_MSK: u32 = ((0x1) << (4))
         | ((0x1) << (7))
         | ((0x1) << (6))
@@ -40,7 +36,7 @@ pub(crate) fn is_application_reset() -> bool {
         true
     } else if
     // SAFETY: KRST0.RSTSTAT is R (no privilege required)
-    unsafe { crate::pac::CPU0.krst0().read().rststat().get() } != 0 {
+    unsafe { crate::pac::CPU0.krst0().read() }.rststat().get() != 0 {
         true
     } else {
         false
