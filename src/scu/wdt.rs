@@ -224,7 +224,7 @@ mod tests {
     fn test_clear_cpu_endinit_inline() {
         let report = Report::new();
         let con0 = get_wdt_con0(0);
-        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        report.expect_read(con0.ptr(), 4, 0b11);
         clear_cpu_endinit_inline();
         insta::assert_snapshot!(report.take_log());
     }
@@ -233,7 +233,7 @@ mod tests {
     fn test_set_cpu_endinit_inline() {
         let report = Report::new();
         let con0 = get_wdt_con0(0);
-        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        report.expect_read(con0.ptr(), 4, 0b11);
         set_cpu_endinit_inline();
         insta::assert_snapshot!(report.take_log());
     }
@@ -242,9 +242,9 @@ mod tests {
     fn test_clear_then_set_cpu_endinit_inline() {
         let report = Report::new();
         let con0 = get_wdt_con0(0);
-        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        report.expect_read(con0.ptr(), 4, 0b11);
         clear_cpu_endinit_inline();
-        report.expect_read(con0.ptr() as usize, 4, 0b10);
+        report.expect_read(con0.ptr(), 4, 0b10);
         set_cpu_endinit_inline();
         insta::assert_snapshot!(report.take_log());
     }
@@ -253,9 +253,9 @@ mod tests {
     fn test_set_then_clear_cpu_endinit_inline() {
         let report = Report::new();
         let con0 = get_wdt_con0(0);
-        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        report.expect_read(con0.ptr(), 4, 0b11);
         set_cpu_endinit_inline();
-        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        report.expect_read(con0.ptr(), 4, 0b11);
         clear_cpu_endinit_inline();
         insta::assert_snapshot!(report.take_log());
     }
@@ -264,7 +264,7 @@ mod tests {
     fn test_clear_safety_endinit_inline() {
         let report = Report::new();
         let con0 = get_wdts_con0();
-        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        report.expect_read(con0.ptr(), 4, 0b11);
         clear_safety_endinit_inline();
         insta::assert_snapshot!(report.take_log());
     }
@@ -273,7 +273,7 @@ mod tests {
     fn test_set_safety_endinit_inline() {
         let report = Report::new();
         let con0 = get_wdts_con0();
-        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        report.expect_read(con0.ptr(), 4, 0b11);
         set_safety_endinit_inline();
         insta::assert_snapshot!(report.take_log());
     }
@@ -282,9 +282,9 @@ mod tests {
     fn test_clear_then_set_safety_endinit_inline() {
         let report = Report::new();
         let con0 = get_wdts_con0();
-        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        report.expect_read(con0.ptr(), 4, 0b11);
         clear_safety_endinit_inline();
-        report.expect_read(con0.ptr() as usize, 4, 0b10);
+        report.expect_read(con0.ptr(), 4, 0b10);
         set_safety_endinit_inline();
         insta::assert_snapshot!(report.take_log());
     }
@@ -293,9 +293,9 @@ mod tests {
     fn test_set_then_clear_safety_endinit_inline() {
         let report = Report::new();
         let con0 = get_wdts_con0();
-        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        report.expect_read(con0.ptr(), 4, 0b11);
         set_safety_endinit_inline();
-        report.expect_read(con0.ptr() as usize, 4, 0b11);
+        report.expect_read(con0.ptr(), 4, 0b11);
         clear_safety_endinit_inline();
         insta::assert_snapshot!(report.take_log());
     }
@@ -306,9 +306,9 @@ mod tests {
         let con0 = get_wdt_con0(0);
         let con1 = get_wdt_con1(0);
 
-        report.expect_read(con0.ptr() as usize, 4, 0b11);
-        report.expect_read(con1.ptr() as usize, 4, 0b00);
-        report.expect_read(con0.ptr() as usize, 4, 0b10);
+        report.expect_read(con0.ptr(), 4, 0b11);
+        report.expect_read(con1.ptr(), 4, 0b00);
+        report.expect_read(con0.ptr(), 4, 0b10);
 
         disable_cpu_watchdog();
         insta::assert_snapshot!(report.take_log());
@@ -320,9 +320,9 @@ mod tests {
         let con0 = get_wdts_con0();
         let con1 = get_wdts_con1();
 
-        report.expect_read(con0.ptr() as usize, 4, 0b11);
-        report.expect_read(con1.ptr() as usize, 4, 0b00);
-        report.expect_read(con0.ptr() as usize, 4, 0b10);
+        report.expect_read(con0.ptr(), 4, 0b11);
+        report.expect_read(con1.ptr(), 4, 0b00);
+        report.expect_read(con0.ptr(), 4, 0b10);
 
         disable_safety_watchdog();
         insta::assert_snapshot!(report.take_log());

@@ -62,8 +62,6 @@ pub struct TraceGuard;
 
 impl TraceGuard {
     pub fn new<T: Reporter + 'static>(reporter: T) -> Self {
-        eprintln!("TraceGuard::new");
-
         pac::tracing::set_read_fn(read_volatile);
         pac::tracing::set_write_fn(write_volatile);
         pac::tracing::set_ldmst_fn(load_modify_store);
