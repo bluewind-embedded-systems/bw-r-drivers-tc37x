@@ -71,6 +71,4 @@ version = "=0.3.6"
 default = []
 log_with_defmt = ["dep:defmt", "dep:defmt-rtt", "dep:critical-section"]
 log_with_env_logger = ["dep:log", "dep:env_logger"]
-#tracing = ["dep:insta", "tc375-pac/tracing", "tc375-pac/tracing_dummy"]
-tracing = ["dep:insta", "tc375-pac/tracing_dummy"]
-
+tracing = ["dep:insta", "tc375-pac/tracing_dummy", "tc375-pac/tracing"]
