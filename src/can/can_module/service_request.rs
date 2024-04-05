@@ -26,7 +26,6 @@ impl ServiceRequest {
 
         // Set priority and type of service
         // SAFETY: FIXME Check Aurix manual, tos is in range [0, 3], bits 9:8, 15:14, 23:21, 31 are written with 0
-        // TODO .tos() is only available in patched pac. If Infineon does not fix it, we need to use set_raw
         unsafe { self.0.modify(|r| r.srpn().set(priority).tos().set(tos)) };
 
         // Clear request

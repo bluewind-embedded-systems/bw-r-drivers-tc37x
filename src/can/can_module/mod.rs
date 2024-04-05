@@ -61,7 +61,6 @@ macro_rules! impl_can_module {
         }
 
         impl Module<$ModuleId, $ModuleReg, Enabled> {
-            // TODO interrupts should be nested into cfg
             /// Take ownership of a CAN node and configure it
             pub fn take_node<I>(&mut self, node_id: I, config: NodeConfig) -> Option<Node<$($m)::+::N, $ModuleReg, I, crate::can::can_node::Configurable>> where I: NodeId {
                 let node_index = node_id.as_index();
