@@ -28,7 +28,6 @@ fn get_wdts_con1() -> pac::Reg<pac::scu::wdts::Wdtscon1_SPEC, pac::RW> {
     pac::SCU.wdts().wdtscon1()
 }
 
-// TODO Duplicate? Bad function name?
 #[inline]
 pub(crate) fn clear_cpu_endinit_inline() {
     let core_id = read_cpu_core_id();
@@ -67,7 +66,8 @@ pub(crate) fn clear_cpu_endinit_inline() {
     // SAFETY: Each bit of WDTCPUyCON0 is at least W
     unsafe { con0.write(wdtcon0) };
 
-    // TODO This conditional compilation can be removed, now that tracing can set the register value
+    // Note: this is currently disabled when tracing is enabled to prevent
+    // infinite loop in tests.
     #[cfg(tricore_arch = "tricore")]
     while unsafe { con0.read() }.endinit().get() {}
 }
@@ -110,7 +110,8 @@ pub(crate) fn set_cpu_endinit_inline() {
     // SAFETY: Each bit of WDTCPUyCON0 is at least W
     unsafe { con0.write(wdtcon0) };
 
-    // TODO This conditional compilation can be removed, now that tracing can set the register value
+    // Note: this is currently disabled when tracing is enabled to prevent
+    // infinite loop in tests.
     #[cfg(tricore_arch = "tricore")]
     while !unsafe { con0.read() }.endinit().get() {}
 }
@@ -151,6 +152,8 @@ pub(crate) fn clear_safety_endinit_inline() {
     // SAFETY: Each bit of WDTSCON0 is RW
     unsafe { con0.write(wdtcon0) };
 
+    // Note: this is currently disabled when tracing is enabled to prevent
+    // infinite loop in tests.
     #[cfg(tricore_arch = "tricore")]
     while unsafe { con0.read() }.endinit().get() {}
 }
@@ -188,6 +191,8 @@ pub(crate) fn set_safety_endinit_inline() {
         .set(rel);
     unsafe { con0.write(wdtcon0) };
 
+    // Note: this is currently disabled when tracing is enabled to prevent
+    // infinite loop in tests.
     #[cfg(tricore_arch = "tricore")]
     while !unsafe { con0.read() }.endinit().get() {}
 }
