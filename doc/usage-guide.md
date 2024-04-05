@@ -82,7 +82,6 @@ or interrupt handlers, but you need to be careful with the synchronization.
 Currently, **there is no ownership system in place to prevent you from using the
 same peripheral in different parts of your code**. You need to be careful with
 this, because it can lead to undefined behavior.
-</details>
 
 ## Prerequisites
 
