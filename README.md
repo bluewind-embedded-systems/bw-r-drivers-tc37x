@@ -64,7 +64,7 @@ For additional information visit:
 ## Getting started
 
 To get familiar with the drivers, you can start with the examples
-[here](bw-r-drivers-tc37x-examples).
+[here][bw-r-drivers-tc37x-examples].
 
 They are meant to be standalone and to be used as a boilerplate for your new
 project. 
@@ -82,7 +82,7 @@ Check the [Toolchain][usage-guide-toolchain] guide for additional information.
 
 [usage-guide]: doc/usage-guide.md
 [usage-guide-toolchain]: doc/usage-guide.md#toolchain
-[dev-utils]: doc/dev-utils
+[dev-utils]: doc/dev-utils.md
 [troubleshooting]: doc/troubleshooting.md
 [bw-r-drivers-tc37x-documentation]: https://bluewind-embedded-systems.github.io/bw-r-drivers-tc37x/
 [veecle]: https://www.veecle.io/
