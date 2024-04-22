@@ -10,7 +10,7 @@ To get familiar with the drivers, you can start with the examples.
 
 ### Examples
 
-[Here you can find some examples](bw-r-drivers-tc37x-examples).
+[Here you can find some examples][bw-r-drivers-tc37x-examples].
 
 They are meant to be standalone and to be used as a boilerplate for your new
 project. 
@@ -63,8 +63,8 @@ name = "my-rust-project"
 
 This crate contains many low level drivers for the `TC37x` microcontroller:
 
-- [gpio](gpio)
-- [can](can)
+- [gpio](../src/gpio)
+- [can](../src/can)
 
 Refer to the documentation you find here and the examples to understand how to
 use the different drivers.
@@ -136,7 +136,7 @@ runner = "tricore-probe"
 ```
 
 [usage-guide]: doc/usage-guide.md
-[usage-guide-toolchain]: doc/usage-guide.md#toolchain
+[usage-guide-toolchain]: usage-guide.md#toolchain
 [dev-utils]: doc/dev-utils
 [troubleshooting]: doc/troubleshooting.md
 [bw-r-drivers-tc37x-documentation]: https://bluewind-embedded-systems.github.io/bw-r-drivers-tc37x/
@@ -155,4 +155,4 @@ runner = "tricore-probe"
 [Infineon MemTool]: https://www.infineon.com/cms/en/tools/aurix-tools/free-tools/infineon
 [Universal Debug Engine]: https://www.pls-mc.com/products/universal-debug-engine
 [Hightec - Rust Development Platform for Infineon AURIX]: https://hightec-rt.com/en/rust
-[rust-custom-toolchains](https://rust-lang.github.io/rustup/concepts/toolchains.html#custom-toolchains).
+[rust-custom-toolchains]: https://rust-lang.github.io/rustup/concepts/toolchains.html#custom-toolchains
